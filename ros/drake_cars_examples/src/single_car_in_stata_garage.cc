@@ -1,7 +1,12 @@
 #include "ros/ros.h"
 
+#include <cmath>
+
+#include "rosgraph_msgs/Clock.h"
+
 #include "drake/examples/Cars/car_simulation.h"
 #include "drake/examples/Cars/gen/driving_command.h"
+#include "drake/ros/simulation_abort_function.h"
 #include "drake/ros/systems/ros_tf_publisher.h"
 #include "drake/ros/systems/ros_vehicle_system.h"
 #include "drake/ros/systems/ros_sensor_publisher_joint_state.h"
@@ -110,11 +115,18 @@ int DoMain(int argc, const char* argv[]) {
           tf_publisher),
         joint_state_publisher);
 
+  // Instantiates a ROS node handle. For more information, see:
+  // http://wiki.ros.org/roscpp/Overview/NodeHandles.
+  ::ros::NodeHandle node_handle;
+
+  // Instantiates a ROS topic publisher for publishing clock information. For
+  // more information, see: http://wiki.ros.org/Clock.
+  ::ros::Publisher clock_publisher =
+      node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
+
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
-  options.should_stop = [](double sim_time) {
-    return !::ros::ok();
-  };
+  AddAbortFunction(&options, &clock_publisher);
 
   // Obtains a valid zero configuration for the vehicle.
   VectorXd x0 = VectorXd::Zero(rigid_body_sys->getNumStates());

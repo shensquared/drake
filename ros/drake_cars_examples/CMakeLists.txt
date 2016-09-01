@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   drake_ros_systems
   roscpp
   tf
+  rosgraph_msgs
   sensor_msgs)
 
 
