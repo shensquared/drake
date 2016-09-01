@@ -203,7 +203,7 @@ class DrakeRosTfPublisher {
    */
   bool ShouldPublishTfForRigidBody(const RigidBody& rigid_body) {
     // Skips parent-less links. This includes the world.
-    return rigid_body.hasParent();
+    return rigid_body.has_mobilizer_joint();
   }
 
   /* Derives a key for obtaining the transform message for @p rigid_body
