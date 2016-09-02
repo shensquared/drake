@@ -18,12 +18,20 @@ To run it:
     <param name="throttle_k" type="double" value="100" />
     <param name="initial_step_size" type="double" value="5e-3" />
 
+    <param
+        name="car_filename"
+        type="string"
+        value="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf" />
+    <param
+        name="world_filename"
+        type="string"
+        value="$(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf" />
+
     <node
         name="single_car_in_stata_garage"
         pkg="drake_cars_examples"
         type="single_car_in_stata_garage"
         output="screen"
-        args="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf $(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf"
     />
   </group>
 

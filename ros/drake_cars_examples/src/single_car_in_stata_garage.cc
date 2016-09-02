@@ -32,10 +32,12 @@ namespace ros {
 namespace cars {
 namespace {
 
-using drake::examples::cars::CreateRigidBodySystem;
 using drake::examples::cars::CreateVehicleSystem;
 using drake::examples::cars::GetCarSimulationDefaultOptions;
 using drake::examples::cars::ParseDuration;
+using drake::examples::cars::SetRigidBodySystemParameters;
+
+using drake::parsers::ModelInstanceIdTable;
 
 using drake::ros::systems::RosTfPublisher;
 using drake::ros::systems::RosClockPublisher;
@@ -45,10 +47,53 @@ using drake::ros::systems::RosSensorPublisherOdometry;
 
 using drake::ros::systems::run_ros_vehicle_sim;
 
-/**
- * This implements the main method of the single car simulation. The vehicle
- * resides within the Stata garage.
- */
+// Initializes the RigidBodySystem by setting the collision gains, adding the
+// vehicle model, and adding the world model to @p rigid_body_system.
+ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
+    RigidBodySystem* rigid_body_system) {
+  // Sets the desired contact penetration stiffness and damping in the
+  // RigidBodySystem.
+  rigid_body_system->penetration_stiffness =
+      GetROSParameter<double>(node_handle, "penetration_stiffness");
+
+  rigid_body_system->penetration_damping =
+      GetROSParameter<double>(node_handle, "penetration_damping");
+
+  // Adds the vehicle model instance to the RigidBodySystem.
+  std::string vehicle_filename = GetROSParameter<std::string>(node_handle,
+        "car_filename");
+
+  ModelInstanceIdTable vehicle_instance_id_table =
+      rigid_body_system->AddModelInstanceFromFile(vehicle_filename,
+          DrakeJoint::QUATERNION);
+
+  // Verifies that only one vehicle was added to the world.
+  if (vehicle_instance_id_table.size() != 1) {
+    throw std::runtime_error(
+        "More than one vehicle model was added to the world.");
+  }
+
+  // Instantiates a model_instance_id_table and saves the vehicle's model
+  // instance ID in the table.
+  ModelInstanceIdTable model_instance_id_table = vehicle_instance_id_table;
+
+  // Adds the world to the RigidBodySystem. Updates model_instance_id_table
+  // with the ID of the world model.
+  std::string world_filename = GetROSParameter<std::string>(node_handle,
+        "world_filename");
+  ModelInstanceIdTable world_instance_id_table =
+      rigid_body_system->AddModelInstanceFromFile(world_filename,
+          DrakeJoint::FIXED);
+  drake::parsers::AddModelInstancesToTable(world_instance_id_table,
+      &model_instance_id_table);
+
+  SetRigidBodySystemParameters(rigid_body_system);
+
+  return model_instance_id_table;
+}
+
+// This implements the main method of the single car simulation. The vehicle
+// resides within the Stata garage.
 int DoMain(int argc, const char* argv[]) {
   ::ros::init(argc, const_cast<char**>(argv), "single_car_in_stata_garage");
 
@@ -65,38 +110,35 @@ int DoMain(int argc, const char* argv[]) {
   // Initializes the communication layer.
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
 
-  // Instantiates a duration variable that will be set by the call to
-  // CreateRigidBodySystem() below.
+  // Instantiates a duration variable. This specifies how long the simulation
+  // will run.
   double duration = std::numeric_limits<double>::infinity();
 
-  // Instantiates a data structure that maps model instance names to their model
-  // instance IDs.
-  drake::parsers::ModelInstanceIdTable model_instances;
-
   // Initializes the rigid body system.
-  auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
-      &model_instances);
+  auto rigid_body_sys = std::allocate_shared<RigidBodySystem>(
+      Eigen::aligned_allocator<RigidBodySystem>());
 
-  // Sets the desired contact penetration stiffness and damping in the
-  // RigidBodySystem.
-  rigid_body_sys->penetration_stiffness =
-      GetROSParameter<double>(node_handle, "penetration_stiffness");
-
-  rigid_body_sys->penetration_damping =
-      GetROSParameter<double>(node_handle, "penetration_damping");
+  ModelInstanceIdTable model_instance_id_table =
+      InitRigidBodySystem(node_handle, rigid_body_sys.get());
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
+
+  ROS_INFO_STREAM("**** model_instance_id_table[\"prius_1\"] = "
+      << model_instance_id_table["prius_1"]);
+  ROS_INFO_STREAM("**** model_instance_id_table[\"P1\"] = "
+      << model_instance_id_table["P1"]);
 
   // Instantiates a map that converts model instance IDs to model instance
   // names.
   std::map<int, std::string> model_instance_name_table;
   // TODO(liang.fok): Once #3088 is resolved, include the model instance ID and
   // name of the world in model_instance_name_table.
-  model_instance_name_table[model_instances["prius_1"]] = "prius";
-  model_instance_name_table[model_instances["P1"]] = "stata_garage";
+  model_instance_name_table[model_instance_id_table["prius_1"]] = "prius";
+  model_instance_name_table[model_instance_id_table["P1"]] = "stata_garage";
 
   std::map<int, std::string> model_instance_name_table_odometry;
-  model_instance_name_table_odometry[model_instances["prius_1"]] = "prius";
+  model_instance_name_table_odometry[model_instance_id_table["prius_1"]]
+      = "prius";
 
   // Obtains the gains to be used by the steering and throttle controllers.
   double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
