@@ -4,11 +4,12 @@
 #include "drake/examples/Cars/gen/driving_command.h"
 #include "drake/ros/parameter_server.h"
 #include "drake/ros/simulation_abort_function.h"
-#include "drake/ros/systems/ros_tf_publisher.h"
+#include "drake/ros/systems/ros_clock_publisher.h"
 #include "drake/ros/systems/ros_multi_vehicle_system.h"
 #include "drake/ros/systems/ros_sensor_publisher_joint_state.h"
 #include "drake/ros/systems/ros_sensor_publisher_lidar.h"
 #include "drake/ros/systems/ros_sensor_publisher_odometry.h"
+#include "drake/ros/systems/ros_tf_publisher.h"
 #include "drake/systems/LCMSystem.h"
 #include "drake/systems/LinearSystem.h"
 #include "drake/systems/pd_control_system.h"
@@ -36,6 +37,7 @@ using drake::examples::cars::GetCarSimulationDefaultOptions;
 using drake::parsers::ModelInstanceIdTable;
 
 using drake::ros::systems::DrakeRosTfPublisher;
+using drake::ros::systems::RosClockPublisher;
 using drake::ros::systems::run_ros_vehicle_sim;
 using drake::ros::systems::SensorPublisherJointState;
 using drake::ros::systems::SensorPublisherLidar;
@@ -234,27 +236,32 @@ int DoMain(int argc, const char* argv[]) {
       SensorPublisherJointState<RigidBodySystem::StateVector>>(
               rigid_body_sys, model_instance_name_table);
 
+  auto clock_publisher =
+      std::make_shared<RosClockPublisher<RigidBodySystem::StateVector>>();
+
   auto sys =
       cascade(
         cascade(
           cascade(
             cascade(
               cascade(
-                vehicle_sys,
-                bot_visualizer_publisher),
-              tf_publisher),
-            joint_state_publisher),
-          lidar_publisher),
-        odometry_publisher);
+                cascade(
+                  vehicle_sys,
+                  bot_visualizer_publisher),
+                tf_publisher),
+              joint_state_publisher),
+            lidar_publisher),
+          odometry_publisher),
+        clock_publisher);
 
   // Instantiates a ROS topic publisher for publishing clock information. For
   // more information, see: http://wiki.ros.org/Clock.
-  ::ros::Publisher clock_publisher =
-      node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
+  // ::ros::Publisher clock_publisher =
+  //     node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
 
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
-  AddAbortFunction(&options, &clock_publisher);
+  AddAbortFunction(&options);
 
   // Obtains a valid zero configuration for the vehicle.
   VectorXd x0 = VectorXd::Zero(rigid_body_sys->getNumStates());
