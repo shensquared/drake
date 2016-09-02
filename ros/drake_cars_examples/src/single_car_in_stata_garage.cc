@@ -36,12 +36,13 @@ using drake::examples::cars::CreateVehicleSystem;
 using drake::examples::cars::GetCarSimulationDefaultOptions;
 using drake::examples::cars::ParseDuration;
 
-using drake::ros::systems::DrakeRosTfPublisher;
+using drake::ros::systems::RosTfPublisher;
 using drake::ros::systems::RosClockPublisher;
+using drake::ros::systems::RosSensorPublisherJointState;
+using drake::ros::systems::RosSensorPublisherLidar;
+using drake::ros::systems::RosSensorPublisherOdometry;
+
 using drake::ros::systems::run_ros_vehicle_sim;
-using drake::ros::systems::SensorPublisherJointState;
-using drake::ros::systems::SensorPublisherLidar;
-using drake::ros::systems::SensorPublisherOdometry;
 
 /**
  * This implements the main method of the single car simulation. The vehicle
@@ -90,19 +91,19 @@ int DoMain(int argc, const char* argv[]) {
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);
 
   auto lidar_publisher = std::make_shared<
-      SensorPublisherLidar<RigidBodySystem::StateVector>>(
+      RosSensorPublisherLidar<RigidBodySystem::StateVector>>(
       rigid_body_sys, model_instance_name_table);
 
   auto odometry_publisher = std::make_shared<
-      SensorPublisherOdometry<RigidBodySystem::StateVector>>(
+      RosSensorPublisherOdometry<RigidBodySystem::StateVector>>(
       rigid_body_sys, model_instance_name_table_odometry);
 
   auto tf_publisher = std::make_shared<
-      DrakeRosTfPublisher<RigidBodySystem::StateVector>>(tree,
+      RosTfPublisher<RigidBodySystem::StateVector>>(tree,
           model_instance_name_table);
 
   auto joint_state_publisher = std::make_shared<
-      SensorPublisherJointState<RigidBodySystem::StateVector>>(
+      RosSensorPublisherJointState<RigidBodySystem::StateVector>>(
       rigid_body_sys, model_instance_name_table);
 
   auto clock_publisher =

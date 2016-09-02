@@ -32,7 +32,7 @@ namespace systems {
  * For convenience, the input is passed directly through as an output.
  */
 template <template <typename> class RobotStateVector>
-class DrakeRosTfPublisher {
+class RosTfPublisher {
  private:
   // Specifies the minimum period in seconds between successive transmissions of
   // of tf transforms. This is to prevent flooding the tf ROS topic.
@@ -64,7 +64,7 @@ class DrakeRosTfPublisher {
    * model instance names. These names are used to prefix the transform names,
    * which is necessary for RViz to simultaneously visualize multiple robots.
    */
-  explicit DrakeRosTfPublisher(
+  explicit RosTfPublisher(
       const std::shared_ptr<RigidBodyTree> rigid_body_tree,
       const std::map<int, std::string>& model_instance_name_table) :
           rigid_body_tree_(rigid_body_tree) {
@@ -121,7 +121,7 @@ class DrakeRosTfPublisher {
       auto message_in_map = transform_messages_.find(key);
       if (message_in_map == transform_messages_.end()) {
         throw std::runtime_error(
-            "ERROR: DrakeRosTfPublisher: Unable to obtain transform message "
+            "ERROR: RosTfPublisher: Unable to obtain transform message "
             "for rigid body \"" + rigid_body->get_name() + "\" using key \"" +
             key + "\"");
       }
@@ -172,7 +172,7 @@ class DrakeRosTfPublisher {
       auto message_in_map = transform_messages_.find(key);
       if (message_in_map == transform_messages_.end()) {
         throw std::runtime_error(
-            "ERROR: DrakeRosTfPublisher: Unable to obtain transform message "
+            "ERROR: RosTfPublisher: Unable to obtain transform message "
             "for frame \"" + frame->get_name() + "\" using key \"" +
             key + "\"");
       }
@@ -260,7 +260,7 @@ class DrakeRosTfPublisher {
       // Throws an exception if it does not have an instance name.
       if (model_instance_name_table.find(model_instance_id) ==
           model_instance_name_table.end()) {
-        throw std::runtime_error("DrakeRosTfPublisher: Could not find model "
+        throw std::runtime_error("RosTfPublisher: Could not find model "
           "instance ID " + std::to_string(model_instance_id) + " in "
           "model_instance_name_table. Expected it to be of model type \"" +
           rigid_body.get_model_name() + "\".");
@@ -299,7 +299,7 @@ class DrakeRosTfPublisher {
     if (model_instance_name_table.find(model_instance_id) ==
         model_instance_name_table.end()) {
       throw std::runtime_error(
-          "ERROR: DrakeRosTfPublisher: Model instance with ID " +
+          "ERROR: RosTfPublisher: Model instance with ID " +
           std::to_string(model_instance_id) + " does not have a name.");
     }
     std::string model_instance_name =

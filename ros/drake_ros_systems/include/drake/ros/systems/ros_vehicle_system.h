@@ -42,7 +42,7 @@ bool decode(const ackermann_msgs::AckermannDriveStamped& msg,
 namespace internal {
 
 template <template <typename> class Vector>
-class ROSAckermannCommandReceiverSystem {
+class RosAckermannCommandReceiverSystem {
  private:
   static const int kSubscriberQueueSize = 100;
 
@@ -54,20 +54,20 @@ class ROSAckermannCommandReceiverSystem {
   template <typename ScalarType>
   using OutputVector = Vector<ScalarType>;
 
-  ROSAckermannCommandReceiverSystem() : spinner_(1) {
+  RosAckermannCommandReceiverSystem() : spinner_(1) {
     ::ros::NodeHandle nh;
 
     // Instantiates a ROS topic subscriber that receives vehicle driving
     // commands.
     subscriber_ =
         nh.subscribe("ackermann_cmd", kSubscriberQueueSize,
-                     &ROSAckermannCommandReceiverSystem::commandCallback, this);
+                     &RosAckermannCommandReceiverSystem::commandCallback, this);
 
     // Instantiates a child thread for receiving ROS messages.
     spinner_.start();
   }
 
-  virtual ~ROSAckermannCommandReceiverSystem() {}
+  virtual ~RosAckermannCommandReceiverSystem() {}
 
   void commandCallback(const ackermann_msgs::AckermannDriveStamped& msg) {
     data_mutex_.lock();
@@ -123,7 +123,7 @@ void run_ros_vehicle_sim(
     const typename System::template StateVector<double>& x0,
     const SimulationOptions& options = SimulationOptions()) {
   auto ros_ackermann_input =
-      std::make_shared<internal::ROSAckermannCommandReceiverSystem<
+      std::make_shared<internal::RosAckermannCommandReceiverSystem<
           System::template InputVector>>();
 
   auto ros_sys = cascade(ros_ackermann_input, sys);

@@ -59,7 +59,7 @@ struct ModelStateStruct {
  * enables other systems to be cascaded after this system.
  */
 template <template <typename> class RobotStateVector>
-class SensorPublisherJointState {
+class RosSensorPublisherJointState {
  private:
   // Specifies that the odometry messages should be transmitted with a minimum
   // period of 0.05 seconds.
@@ -87,7 +87,7 @@ class SensorPublisherJointState {
    * is necessary since multiple model instances may be simultaneously
    * simulated.
    */
-  explicit SensorPublisherJointState(
+  explicit RosSensorPublisherJointState(
       std::shared_ptr<RigidBodySystem> rigid_body_system,
       const std::map<int, std::string>& model_instance_name_table)
       : rigid_body_system_(rigid_body_system) {
@@ -243,8 +243,9 @@ class SensorPublisherJointState {
           // velocity DOFs. Throws an exception if this is not true.
           if (joint.getNumPositions() != joint.getNumVelocities()) {
             throw std::runtime_error(
-                "SensorPublisherJointState: ERROR: Joint \"" + joint.getName() +
-                "\" in model instance \"" + model_instance_name +
+                "RosSensorPublisherJointState: ERROR: Joint \"" +
+                joint.getName() + "\" in model instance \"" +
+                model_instance_name +
                 "\" has a different number of positions (" +
                 std::to_string(joint.getNumPositions()) +
                 ") and velocities (" +
