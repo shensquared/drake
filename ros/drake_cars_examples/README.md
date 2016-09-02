@@ -71,3 +71,8 @@ You can plot the reference and actual speed of the vehicle by executing:
 ```
 $ rqt_plot /drake/ackermann_cmd/drive/speed
 ```
+
+Contacts are modeled using virtual springs. The stiffness and damping gains of
+these springs can be set by opening
+`drake_cars_examples/launch/single_car_in_stata_garage.launch` and
+modifying the `penetration_stiffness` and `penetration_damping` parameters.

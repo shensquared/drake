@@ -10,10 +10,18 @@ To run it:
   <include file="$(find drake_cars_examples)/launch/single_car_in_stata_garage_desc.xml" />
   <include file="$(find drake_cars_examples)/launch/single_car_in_stata_garage_rviz.xml" />
 
-  <node name="single_car_in_stata_garage" pkg="drake_cars_examples"
-    type="single_car_in_stata_garage" output="screen"
-    args="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf $(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf"
-    ns="drake"/>
+  <group ns="drake">
+    <param name="penetration_stiffness" type="double" value="7500" />
+    <param name="penetration_damping" type="double" value="750" />
+
+    <node
+        name="single_car_in_stata_garage"
+        pkg="drake_cars_examples"
+        type="single_car_in_stata_garage"
+        output="screen"
+        args="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf $(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf"
+    />
+  </group>
 
   <!-- <include file="$(find drake_cars_examples)/launch/golfcart_adapter.launch" /> -->
 </launch>

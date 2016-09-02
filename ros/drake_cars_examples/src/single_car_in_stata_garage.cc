@@ -1,6 +1,7 @@
-#include "ros/ros.h"
-
 #include <cmath>
+
+#include "ros/ros.h"
+#include "ros/console.h"
 
 #include "rosgraph_msgs/Clock.h"
 
@@ -51,6 +52,16 @@ using drake::ros::systems::run_ros_vehicle_sim;
 int DoMain(int argc, const char* argv[]) {
   ::ros::init(argc, const_cast<char**>(argv), "single_car_in_stata_garage");
 
+  // Instantiates a ROS node handle. For more information, see:
+  // http://wiki.ros.org/roscpp/Overview/NodeHandles.
+  ::ros::NodeHandle node_handle;
+
+  // Sets the log level to be INFO.
+  if(::ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
+      ::ros::console::levels::Info) ) {
+    ::ros::console::notifyLoggerLevelsChanged();
+  }
+
   // Initializes the communication layer.
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
 
@@ -65,6 +76,19 @@ int DoMain(int argc, const char* argv[]) {
   // Initializes the rigid body system.
   auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
       &model_instances);
+
+  // Obtains the desired penetration stiffness and damping
+    // Obtains the number of vehicles to simulate.
+  rigid_body_sys->penetration_stiffness =
+      GetROSParameter<int>(node_handle, "penetration_stiffness");
+
+  rigid_body_sys->penetration_damping =
+      GetROSParameter<int>(node_handle, "penetration_damping");
+
+  ROS_INFO_STREAM("Using penetration_stiffness = "
+      << rigid_body_sys->penetration_stiffness
+      << ", penetration_damping = "
+      << rigid_body_sys->penetration_damping);
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
@@ -122,10 +146,6 @@ int DoMain(int argc, const char* argv[]) {
             tf_publisher),
           joint_state_publisher),
         clock_publisher);
-
-  // Instantiates a ROS node handle. For more information, see:
-  // http://wiki.ros.org/roscpp/Overview/NodeHandles.
-  // ::ros::NodeHandle node_handle;
 
   // Instantiates a ROS topic publisher for publishing clock information. For
   // more information, see: http://wiki.ros.org/Clock.
