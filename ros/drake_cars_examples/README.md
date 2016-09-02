@@ -29,7 +29,7 @@ the simulated vehicle.
 Demo 2: Five Cars on a Plane
 ================================
 
-To run this demo, open six termainals. In the first terminal, execute the
+To run this demo, open six terminals. In the first terminal, execute the
 following command to launch Drake and RViz. The simulation runs in
 Drake while RViz serves as the visualizer.
 
@@ -50,3 +50,24 @@ $ rosrun ackermann_drive_teleop ackermann_drive_keyop.py 1.0 0.7 /drake/Prius_5/
 
 You can now issue driving commands to the vehicles using the terminals running
 `ackermann_drive_keyop.py`.
+
+Demo 3: Maximum Acceleration of Prius
+=====================================
+
+A ROS node that makes the vehicle in the single car demo execute a maximum
+acceleration trajectory is available in
+`nodes/max_accel_2016_toyota_prius.py`.
+
+To run the demo, first start Demo 1 as described above. You can omit the second
+command that runs `ackermann_drive_keyop.py`. Instead, execute the following
+command, which starts a node that publishes a maximum acceleration trajectory:
+
+```
+$ roslaunch drake_cars_examples max_accel_2016_toyota_prius.launch
+```
+
+You can plot the reference and actual speed of the vehicle by executing:
+
+```
+$ rqt_plot /drake/ackermann_cmd/drive/speed
+```
