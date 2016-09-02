@@ -121,6 +121,14 @@ int DoMain(int argc, const char* argv[]) {
   auto rigid_body_sys = std::allocate_shared<RigidBodySystem>(
       Eigen::aligned_allocator<RigidBodySystem>());
 
+  // Sets the desired contact penetration stiffness and damping in the
+  // RigidBodySystem.
+  rigid_body_sys->penetration_stiffness =
+      GetROSParameter<double>(node_handle, "penetration_stiffness");
+
+  rigid_body_sys->penetration_damping =
+      GetROSParameter<double>(node_handle, "penetration_damping");
+
   // Instantiates a map from model instance IDs to model instance names.
   std::map<int, std::string> model_instance_name_table;
 
@@ -207,6 +215,11 @@ int DoMain(int argc, const char* argv[]) {
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
+  // Obtains the gains to be used by the steering and throttle controllers.
+  double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
+  double steering_kd = GetROSParameter<double>(node_handle, "steering_kd");
+  double throttle_k = GetROSParameter<double>(node_handle, "throttle_k");
+
   // Initializes and cascades all of the other systems.
   // There are five vehicles each with the following three actuators:
   //
@@ -216,7 +229,7 @@ int DoMain(int argc, const char* argv[]) {
   //
   // Thus, there is a total of 3 * 5 = 15 actuators.
   auto vehicle_sys = CreateMultiVehicleSystem(rigid_body_sys,
-      &vehicle_model_instance_name_table);
+      &vehicle_model_instance_name_table, steering_kp, steering_kd, throttle_k);
 
   auto bot_visualizer_publisher =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);
@@ -263,6 +276,21 @@ int DoMain(int argc, const char* argv[]) {
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
   AddAbortFunction(&options);
+  options.initial_step_size =
+    GetROSParameter<double>(node_handle, "initial_step_size");
+
+  ROS_INFO_STREAM("Using:" << std::endl
+      << " - penetration_stiffness = " << rigid_body_sys->penetration_stiffness
+      << std::endl
+      << " - penetration_damping = " << rigid_body_sys->penetration_damping
+      << std::endl
+      << "  - steering_kp = " << steering_kp
+      << std::endl
+      << "  - steering_kd = " << steering_kd
+      << std::endl
+      << "  - throttle_k = " << throttle_k
+      << std::endl
+      << "  - initial_step_size = " << options.initial_step_size);
 
   // Obtains a valid zero configuration for the vehicle.
   VectorXd x0 = VectorXd::Zero(rigid_body_sys->getNumStates());

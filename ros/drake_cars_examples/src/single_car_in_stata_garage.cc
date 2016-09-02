@@ -77,18 +77,13 @@ int DoMain(int argc, const char* argv[]) {
   auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
       &model_instances);
 
-  // Obtains the desired penetration stiffness and damping
-    // Obtains the number of vehicles to simulate.
+  // Sets the desired contact penetration stiffness and damping in the
+  // RigidBodySystem.
   rigid_body_sys->penetration_stiffness =
-      GetROSParameter<int>(node_handle, "penetration_stiffness");
+      GetROSParameter<double>(node_handle, "penetration_stiffness");
 
   rigid_body_sys->penetration_damping =
-      GetROSParameter<int>(node_handle, "penetration_damping");
-
-  ROS_INFO_STREAM("Using penetration_stiffness = "
-      << rigid_body_sys->penetration_stiffness
-      << ", penetration_damping = "
-      << rigid_body_sys->penetration_damping);
+      GetROSParameter<double>(node_handle, "penetration_damping");
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
@@ -103,13 +98,19 @@ int DoMain(int argc, const char* argv[]) {
   std::map<int, std::string> model_instance_name_table_odometry;
   model_instance_name_table_odometry[model_instances["prius_1"]] = "prius";
 
+  // Obtains the gains to be used by the steering and throttle controllers.
+  double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
+  double steering_kd = GetROSParameter<double>(node_handle, "steering_kd");
+  double throttle_k = GetROSParameter<double>(node_handle, "throttle_k");
+
   // Initializes and cascades all of the other systems.
 
-  // The following method wraps the RigidBodySystem within a PD control system
-  // block that adds PD controllers for each actuator within the
-  // RigidBodySystem. It then cascades the PD control system block behind a
-  // gain block and returns the resulting cascade.
-  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys);
+  // Wraps the RigidBodySystem within a PD control system that adds PD
+  // controllers for each actuator within the RigidBodySystem. It then cascades
+  // the PD control system block behind a gain block and returns the resulting
+  // cascade.
+  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, steering_kp,
+      steering_kd, throttle_k);
 
   auto visualizer =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);
@@ -155,6 +156,22 @@ int DoMain(int argc, const char* argv[]) {
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
   AddAbortFunction(&options);
+
+  options.initial_step_size =
+      GetROSParameter<double>(node_handle, "initial_step_size");
+
+  ROS_INFO_STREAM("Using:" << std::endl
+      << " - penetration_stiffness = " << rigid_body_sys->penetration_stiffness
+      << std::endl
+      << " - penetration_damping = " << rigid_body_sys->penetration_damping
+      << std::endl
+      << "  - steering_kp = " << steering_kp
+      << std::endl
+      << "  - steering_kd = " << steering_kd
+      << std::endl
+      << "  - throttle_k = " << throttle_k
+      << std::endl
+      << "  - initial_step_size = " << options.initial_step_size);
 
   // Obtains a valid zero configuration for the vehicle.
   VectorXd x0 = VectorXd::Zero(rigid_body_sys->getNumStates());

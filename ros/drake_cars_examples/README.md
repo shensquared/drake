@@ -72,7 +72,22 @@ You can plot the reference and actual speed of the vehicle by executing:
 $ rqt_plot /drake/ackermann_cmd/drive/speed
 ```
 
+Tuning Tips
+-----------
+
+There are several parameters that impact the stability of the vehicle and
+simulation. These parameters are loaded onto the ROS parameter server and can
+be changed in
+`drake_cars_examples/launch/single_car_in_stata_garage.launch`. Below are
+descriptions of these parameters.
+
 Contacts are modeled using virtual springs. The stiffness and damping gains of
-these springs can be set by opening
-`drake_cars_examples/launch/single_car_in_stata_garage.launch` and
-modifying the `penetration_stiffness` and `penetration_damping` parameters.
+these springs can be set by modifying parameters "penetration_stiffness" and
+"penetration_damping".
+
+The steering and throttle of the vehicle are PD controlled. The gains of these
+controllers can be tweaked using parameters "steering_kp", "steering_kd", and
+"throttle_k".
+
+The initial time step using by the simulation's "solver" is set by parameter
+"initial_step_size".

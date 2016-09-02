@@ -151,13 +151,20 @@ void AddFlatTerrainToWorld(
  *
  * @param[in] rigid_body_sys The rigid body system.
  *
+ * @param[in] steering_kp The desired Kp gain used by the steering controller.
+ *
+ * @param[in] steering_kd The desired Kd gain used by the steering controller.
+ *
+ * @param[in] throttle_k The desired gain used by the throttle controller.
+ *
  * @return The resulting vehicle system.
  */
 DRAKECARS_EXPORT
 std::shared_ptr<CascadeSystem<
     Gain<DrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
-CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys);
+CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
+    double steering_kp = 400, double steering_kd = 80, double throttle_k = 100);
 
 /**
  * Creates a multi-vehicle system by instantiating PD controllers for the
@@ -190,6 +197,12 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys);
  * model instance names. This table should only contain the vehicle model
  * instances and not other models in the world.
  *
+ * @param[in] steering_kp The desired Kp gain used by the steering controller.
+ *
+ * @param[in] steering_kd The desired Kd gain used by the steering controller.
+ *
+ * @param[in] throttle_k The desired gain used by the throttle controller.
+ *
  * @return The resulting vehicle system.
  */
 DRAKECARS_EXPORT
@@ -197,7 +210,8 @@ std::shared_ptr<CascadeSystem<
     Gain<MultiDrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
 CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
-    const std::map<int, std::string>* model_instance_name_table);
+    const std::map<int, std::string>* model_instance_name_table,
+    double steering_kp = 400, double steering_kd = 80, double throttle_k = 100);
 
 /**
  * Creates a TrajectoryCar system with a fixed trajectory.

@@ -157,11 +157,9 @@ void AddFlatTerrainToWorld(
 std::shared_ptr<CascadeSystem<
     Gain<DrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
-CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
+CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
+    double steering_kp, double steering_kd, double throttle_k) {
   const auto& tree = rigid_body_sys->getRigidBodyTree();
-
-  // Sets up PD controllers for throttle and steering.
-  const double kpSteering = 400, kdSteering = 80, kThrottle = 100;
 
   MatrixXd Kp(getNumInputs(*rigid_body_sys), tree->number_of_positions());
   Kp.setZero();
@@ -197,10 +195,10 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
 
     if (actuator_name == "steering") {
       // Sets the steering actuator's Kp gain.
-      Kp(actuator_idx, rigid_body->get_position_start_index()) = kpSteering;
+      Kp(actuator_idx, rigid_body->get_position_start_index()) = steering_kp;
 
       // Sets the steering actuator's Kd gain.
-      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kdSteering;
+      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = steering_kd;
 
       // Saves the mapping between the driving command and the steering command.
       map_driving_cmd_to_x_d(
@@ -211,7 +209,7 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
     } else if (actuator_name == "right_wheel_joint" ||
                actuator_name == "left_wheel_joint") {
       // Sets the throttle Kd gain.
-      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kThrottle;
+      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = throttle_k;
 
       // Saves the mapping between the driving command and the throttle command.
       map_driving_cmd_to_x_d(
@@ -245,11 +243,9 @@ std::shared_ptr<CascadeSystem<
     Gain<MultiDrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
 CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
-    const std::map<int, std::string>* model_instance_name_table) {
+    const std::map<int, std::string>* model_instance_name_table,
+    double steering_kp, double steering_kd, double throttle_k) {
   const auto& tree = rigid_body_sys->getRigidBodyTree();
-
-  // Sets up PD controllers for throttle and steering.
-  const double kpSteering = 400, kdSteering = 80, kThrottle = 100;
 
   MatrixXd Kp(getNumInputs(*rigid_body_sys), tree->number_of_positions());
   Kp.setZero();
@@ -312,10 +308,10 @@ CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
 
     if (actuator_name == "steering") {
       // Sets the steering actuator's Kp gain.
-      Kp(actuator_idx, rigid_body->get_position_start_index()) = kpSteering;
+      Kp(actuator_idx, rigid_body->get_position_start_index()) = steering_kp;
 
       // Sets the steering actuator's Kd gain.
-      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kdSteering;
+      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = steering_kd;
 
       // Saves the mapping between the driving command and the steering command.
       map_driving_cmd_to_x_d(
@@ -326,7 +322,7 @@ CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
     } else if (actuator_name == "right_wheel_joint" ||
                actuator_name == "left_wheel_joint") {
       // Sets the throttle Kd gain.
-      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kThrottle;
+      Kd(actuator_idx, rigid_body->get_velocity_start_index()) = throttle_k;
 
       // Saves the mapping between the driving command and the throttle command.
       map_driving_cmd_to_x_d(
