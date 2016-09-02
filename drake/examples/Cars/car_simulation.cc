@@ -13,7 +13,6 @@ using drake::parsers::ModelInstanceIdTable;
 using Eigen::Matrix;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
-using drake::parsers::ModelInstanceIdTable;
 
 namespace drake {
 namespace examples {
