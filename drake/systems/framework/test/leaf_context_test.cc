@@ -1,4 +1,4 @@
-#include "drake/systems/framework/context.h"
+#include "drake/systems/framework/leaf_context.h"
 
 #include <memory>
 #include <stdexcept>
@@ -8,7 +8,6 @@
 #include "gtest/gtest.h"
 
 #include "drake/common/eigen_matrix_compare.h"
-#include "drake/systems/framework/basic_state_vector.h"
 #include "drake/systems/framework/basic_vector.h"
 #include "drake/systems/framework/system_input.h"
 #include "drake/systems/framework/value.h"
@@ -33,27 +32,23 @@ class ContextTest : public ::testing::Test {
     // Input
     context_.SetNumInputPorts(kNumInputPorts);
     for (int i = 0; i < kNumInputPorts; ++i) {
-      std::unique_ptr<VectorBase<double>> port_data(
-          new BasicVector<double>(kInputSize[i]));
-      std::unique_ptr<FreestandingInputPort> port(
-          new FreestandingInputPort(std::move(port_data)));
+      auto port_data = std::make_unique<BasicVector<double>>(kInputSize[i]);
+      auto port = std::make_unique<FreestandingInputPort>(std::move(port_data));
       context_.SetInputPort(i, std::move(port));
     }
 
     // State
-    std::unique_ptr<BasicVector<double>> state_data(
-        new BasicVector<double>(kStateSize));
-    state_data->get_mutable_value() << 1.0, 2.0, 3.0, 5.0, 8.0;
+    auto state = std::make_unique<BasicVector<double>>(kStateSize);
+    state->get_mutable_value() << 1.0, 2.0, 3.0, 5.0, 8.0;
 
     context_.get_mutable_state()->continuous_state.reset(
         new ContinuousState<double>(
-            std::unique_ptr<BasicStateVector<double>>(
-                new BasicStateVector<double>(std::move(state_data))),
+            std::move(state),
             kGeneralizedPositionSize, kGeneralizedVelocitySize,
             kMiscContinuousStateSize));
   }
 
-  Context<double> context_;
+  LeafContext<double> context_;
 };
 
 TEST_F(ContextTest, GetNumInputPorts) {
@@ -70,7 +65,7 @@ TEST_F(ContextTest, SetOutOfBoundsInputPort) {
 }
 
 TEST_F(ContextTest, GetVectorInput) {
-  Context<int> context;
+  LeafContext<int> context;
   context.SetNumInputPorts(2);
 
   // Add input port 0 to the context, but leave input port 1 uninitialized.
@@ -90,7 +85,7 @@ TEST_F(ContextTest, GetVectorInput) {
 }
 
 TEST_F(ContextTest, GetAbstractInput) {
-  Context<int> context;
+  LeafContext<int> context;
   context.SetNumInputPorts(2);
 
   // Add input port 0 to the context, but leave input port 1 uninitialized.
@@ -107,7 +102,7 @@ TEST_F(ContextTest, GetAbstractInput) {
 }
 
 TEST_F(ContextTest, Clone) {
-  std::unique_ptr<ContextBase<double>> clone = context_.Clone();
+  std::unique_ptr<Context<double>> clone = context_.Clone();
 
   // Verify that the time was copied.
   EXPECT_EQ(kTime, clone->get_time());
@@ -131,8 +126,8 @@ TEST_F(ContextTest, Clone) {
   EXPECT_EQ(expected, contents);
 
   // Verify that the state type was preserved.
-  BasicStateVector<double>* xc_data =
-      dynamic_cast<BasicStateVector<double>*>(xc->get_mutable_state());
+  BasicVector<double>* xc_data =
+      dynamic_cast<BasicVector<double>*>(xc->get_mutable_state());
   ASSERT_NE(nullptr, xc_data);
   EXPECT_EQ(kStateSize, xc_data->size());
 

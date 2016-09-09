@@ -9,8 +9,8 @@
 
 #include "drake/common/drake_assert.h"
 #include "drake/systems/framework/cache.h"
-#include "drake/systems/framework/context.h"
 #include "drake/systems/framework/diagram_context.h"
+#include "drake/systems/framework/leaf_context.h"
 #include "drake/systems/framework/state.h"
 #include "drake/systems/framework/system.h"
 #include "drake/systems/framework/system_port_descriptor.h"
@@ -95,12 +95,29 @@ class Diagram : public System<T> {
 
   ~Diagram() override {}
 
-  std::unique_ptr<ContextBase<T>> CreateDefaultContext() const override {
+  /// Returns true if any output of the Diagram might have direct-feedthrough
+  /// from any input of the Diagram.
+  bool has_any_direct_feedthrough() const override {
+    // TODO(david-german-tri, bradking): Make this less conservative once the
+    // sparsity matrix is available.
+
+    // For each output, see whether it has direct feedthrough all the way back
+    // to any input.
+    for (const auto& output_port_id : output_port_ids_) {
+      if (HasDirectFeedthroughFromAnyInput(output_port_id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  std::unique_ptr<Context<T>> CreateDefaultContext() const override {
+    const int num_systems = static_cast<int>(sorted_systems_.size());
     // Reserve inputs as specified during Diagram initialization.
-    auto context = std::make_unique<DiagramContext<T>>();
+    auto context = std::make_unique<DiagramContext<T>>(num_systems);
 
     // Add each constituent system to the Context.
-    for (int i = 0; i < static_cast<int>(sorted_systems_.size()); ++i) {
+    for (int i = 0; i < num_systems; ++i) {
       const System<T>* const sys = sorted_systems_[i];
       auto subcontext = sys->CreateDefaultContext();
       auto suboutput = sys->AllocateOutput(*subcontext);
@@ -121,11 +138,11 @@ class Diagram : public System<T> {
     }
 
     context->MakeState();
-    return std::unique_ptr<ContextBase<T>>(context.release());
+    return std::unique_ptr<Context<T>>(context.release());
   }
 
   std::unique_ptr<SystemOutput<T>> AllocateOutput(
-      const ContextBase<T>& context) const override {
+      const Context<T>& context) const override {
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
     DRAKE_ABORT_UNLESS(diagram_context != nullptr);
 
@@ -137,7 +154,7 @@ class Diagram : public System<T> {
     return std::unique_ptr<SystemOutput<T>>(output.release());
   }
 
-  void EvalOutput(const ContextBase<T>& context,
+  void EvalOutput(const Context<T>& context,
                   SystemOutput<T>* output) const override {
     // Down-cast the context and output to DiagramContext and DiagramOutput.
     auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
@@ -167,7 +184,7 @@ class Diagram : public System<T> {
         new internal::DiagramTimeDerivatives<T>(std::move(sub_derivatives)));
   }
 
-  void EvalTimeDerivatives(const ContextBase<T>& context,
+  void EvalTimeDerivatives(const Context<T>& context,
                            ContinuousState<T>* derivatives) const override {
     // Freshen all the subsystem inputs to match the provided context.
     //
@@ -185,8 +202,7 @@ class Diagram : public System<T> {
 
     // Evaluate the derivatives of each constituent system.
     for (int i = 0; i < n; ++i) {
-      const ContextBase<T>* subcontext =
-          diagram_context->GetSubsystemContext(i);
+      const Context<T>* subcontext = diagram_context->GetSubsystemContext(i);
       ContinuousState<T>* subderivatives =
           diagram_derivatives->get_mutable_substate(i);
       sorted_systems_[i]->EvalTimeDerivatives(*subcontext, subderivatives);
@@ -194,50 +210,50 @@ class Diagram : public System<T> {
   }
 
   void MapVelocityToConfigurationDerivatives(
-      const ContextBase<T>& context, const StateVector<T>& generalized_velocity,
-      StateVector<T>* configuration_derivatives) const override {
+      const Context<T>& context, const VectorBase<T>& generalized_velocity,
+      VectorBase<T>* configuration_derivatives) const override {
     // TODO(david-german-tri): Actually map velocity to derivatives.
   }
 
   /// Retrieves the state derivatives for a particular subsystem from the
-  /// derivatives for the entire diagram.
-  const ContinuousState<T>& GetSubsystemDerivatives(
+  /// derivatives for the entire diagram. Aborts if @p subsystem is not
+  /// actually a subsystem of this diagram. Returns nullptr if @p subsystem
+  /// is stateless.
+  const ContinuousState<T>* GetSubsystemDerivatives(
       const ContinuousState<T>& derivatives, const System<T>* subsystem) const {
     DRAKE_ABORT_UNLESS(subsystem != nullptr);
     auto diagram_derivatives =
         dynamic_cast<const DiagramContinuousState<T>*>(&derivatives);
     DRAKE_ABORT_UNLESS(diagram_derivatives != nullptr);
-    auto substate =
-        diagram_derivatives->get_substate(GetSystemIndex(subsystem));
-    // TODO(david-german-tri): We should fail softer than this for stateless
-    // systems.
-    DRAKE_ABORT_UNLESS(substate != nullptr);
-    return *substate;
+    const int i = GetSystemIndexOrAbort(subsystem);
+    return diagram_derivatives->get_substate(i);
   }
 
-  /// Returns the sub-context that corresponds to the system @p subsystem.
+  /// Returns the subcontext that corresponds to the system @p subsystem.
   /// Classes inheriting from %Diagram need access to this method in order to
-  /// pass their constituent subsystem's the apropriate subcontext.
-  ContextBase<T>* GetMutableSubsystemContext(ContextBase<T>* context,
-                                             const System<T>* subsystem) const {
+  /// pass their constituent subsystem's the apropriate subcontext. Aborts if
+  /// @p subsystem is not actually a subsystem of this diagram.
+  Context<T>* GetMutableSubsystemContext(Context<T>* context,
+                                         const System<T>* subsystem) const {
     DRAKE_ABORT_UNLESS(context != nullptr);
     DRAKE_ABORT_UNLESS(subsystem != nullptr);
     auto diagram_context = dynamic_cast<DiagramContext<T>*>(context);
     DRAKE_ABORT_UNLESS(diagram_context != nullptr);
-    const int i = GetSystemIndex(subsystem);
+    const int i = GetSystemIndexOrAbort(subsystem);
     return diagram_context->GetMutableSubsystemContext(i);
   }
 
   /// Retrieves the state for a particular subsystem from the context for the
   /// entire diagram. Invalidates all entries in that subsystem's cache that
-  /// depend on State. Returns nullptr if the subsystem is not part of the
-  /// diagram.
+  /// depend on State. Aborts if @p subsystem is not actually a subsystem of
+  /// this diagram.
   ///
   /// TODO(david-german-tri): Provide finer-grained accessors for finer-grained
   /// invalidation.
-  State<T>* GetMutableSubsystemState(ContextBase<T>* context,
+  State<T>* GetMutableSubsystemState(Context<T>* context,
                                      const System<T>* subsystem) const {
-    return GetMutableSubsystemContext(context, subsystem)->get_mutable_state();
+    Context<T>* subcontext = GetMutableSubsystemContext(context, subsystem);
+    return subcontext->get_mutable_state();
   }
 
  protected:
@@ -245,7 +261,7 @@ class Diagram : public System<T> {
   /// are obligated to call DiagramBuilder::BuildInto(this).
   Diagram() {}
 
-  void DoPublish(const ContextBase<T>& context) const override {
+  void DoPublish(const Context<T>& context) const override {
     // Freshen all the subsystem inputs to match the provided context.
     //
     // TODO(david-german-tri): This can be made less conservative: we don't
@@ -255,10 +271,8 @@ class Diagram : public System<T> {
     ComputeAllSubsystemOutputs(diagram_context);
 
     for (const System<T>* const system : sorted_systems_) {
-      const int index = GetSystemIndex(system);
-      const ContextBase<T>* subsystem_context =
-          diagram_context->GetSubsystemContext(index);
-      system->Publish(*subsystem_context);
+      const int i = GetSystemIndexOrAbort(system);
+      system->Publish(*diagram_context->GetSubsystemContext(i));
     }
   }
 
@@ -323,7 +337,7 @@ class Diagram : public System<T> {
     const System<T>* const sys = port.first;
     const int port_index = port.second;
     // Fail quickly if this system is not part of the sort order.
-    DRAKE_ABORT_UNLESS(GetSystemIndex(sys) >= 0);
+    GetSystemIndexOrAbort(sys);
 
     // Add this port to our externally visible topology.
     const auto& subsystem_ports = sys->get_input_ports();
@@ -344,7 +358,7 @@ class Diagram : public System<T> {
     const System<T>* const sys = port.first;
     const int port_index = port.second;
     // Fail quickly if this system is not part of the sort order.
-    DRAKE_ABORT_UNLESS(GetSystemIndex(sys) >= 0);
+    GetSystemIndexOrAbort(sys);
 
     // Add this port to our externally visible topology.
     const auto& subsystem_ports = sys->get_output_ports();
@@ -360,7 +374,9 @@ class Diagram : public System<T> {
     this->DeclareOutputPort(descriptor);
   }
 
-  int GetSystemIndex(const System<T>* sys) const {
+  // Returns the index of the given @p sys in the sorted order of this diagram,
+  // or aborts if @p sys is not a member of the diagram.
+  int GetSystemIndexOrAbort(const System<T>* sys) const {
     auto it = sorted_systems_map_.find(sys);
     DRAKE_ABORT_UNLESS(it != sorted_systems_map_.end());
     return it->second;
@@ -372,7 +388,7 @@ class Diagram : public System<T> {
   typename DiagramContext<T>::PortIdentifier ConvertToContextPortIdentifier(
       const PortIdentifier& id) const {
     typename DiagramContext<T>::PortIdentifier output;
-    output.first = GetSystemIndex(id.first);
+    output.first = GetSystemIndexOrAbort(id.first);
     output.second = id.second;
     return output;
   }
@@ -390,7 +406,7 @@ class Diagram : public System<T> {
       const PortIdentifier& id = output_port_ids_[i];
       // For each configured output port ID, obtain from the DiagramContext the
       // actual OutputPort that produces it.
-      const int sys_index = GetSystemIndex(id.first);
+      const int sys_index = GetSystemIndexOrAbort(id.first);
       const int port_index = id.second;
       SystemOutput<T>* subsystem_output = context.GetSubsystemOutput(sys_index);
       OutputPort* output_port = subsystem_output->get_mutable_port(port_index);
@@ -408,10 +424,9 @@ class Diagram : public System<T> {
     // TODO(david-german-tri): Use the diagram-level cache to skip systems that
     // are already fresh.
     for (const System<T>* const system : sorted_systems_) {
-      const int index = GetSystemIndex(system);
-      const ContextBase<T>* subsystem_context =
-          context->GetSubsystemContext(index);
-      SystemOutput<T>* subsystem_output = context->GetSubsystemOutput(index);
+      const int i = GetSystemIndexOrAbort(system);
+      const Context<T>* subsystem_context = context->GetSubsystemContext(i);
+      SystemOutput<T>* subsystem_output = context->GetSubsystemOutput(i);
       system->EvalOutput(*subsystem_context, subsystem_output);
     }
   }
@@ -443,11 +458,59 @@ class Diagram : public System<T> {
       if (!dest->has_any_direct_feedthrough()) {
         continue;
       }
-      if (GetSystemIndex(dest) <= GetSystemIndex(src)) {
+      if (GetSystemIndexOrAbort(dest) <= GetSystemIndexOrAbort(src)) {
         return false;
       }
     }
     return true;
+  }
+
+  // Checks whether any input port of the Diagram feeds directly through to the
+  // given @p output_port_id.
+  bool HasDirectFeedthroughFromAnyInput(
+      const PortIdentifier& output_port_id) const {
+    // TODO(david-german-tri, bradking): This can be made less conservative
+    // once the sparsity matrix is available.
+
+    // If the system producing output_port_id has no direct-feedthrough, then
+    // there is definitely no direct-feedthrough to output_port_id.
+    const System<T>* system = output_port_id.first;
+    if (!system->has_any_direct_feedthrough()) {
+      return false;
+    }
+
+    // Otherwise, we need to check each of the system's input ports.
+    for (int i = 0; i < system->get_num_input_ports(); ++i) {
+      PortIdentifier input_port_id{system, i};
+
+      // If input_port_id is an input port of the entire Diagram,
+      // there may be direct-feedthrough to output_port_id. Since we don't have
+      // a full sparsity matrix yet, we err on the side of caution and report
+      // direct-feedthrough.
+      //
+      // TODO(david-german-tri): This should be an O(1) lookup, not O(N).
+      for (const PortIdentifier& diagram_input_id : input_port_ids_) {
+        if (diagram_input_id == input_port_id) {
+          return true;
+        }
+      }
+
+      // If input_port_id is connected to some other System's output port,
+      // there is direct feedthrough to output_port_id if there is
+      // direct-feedthrough to the upstream output port. Check recursively.
+      auto upstream_it = dependency_graph_.find(input_port_id);
+      if (upstream_it != dependency_graph_.end()) {
+        const PortIdentifier& upstream_port = upstream_it->second;
+        if (HasDirectFeedthroughFromAnyInput(upstream_port)) {
+          return true;
+        }
+      }
+    }
+
+    // If none of the system's input ports create a direct-feedthrough path
+    // back to an input of the Diagram, there is no direct-feedthrough to
+    // output_port_id.
+    return false;
   }
 
   // Diagram objects are neither copyable nor moveable.

@@ -3,7 +3,7 @@
 #include "drake/common/drake_assert.h"
 #include "drake/drakeSystemFramework_export.h"
 #include "drake/systems/framework/basic_vector.h"
-#include "drake/systems/framework/context.h"
+#include "drake/systems/framework/leaf_context.h"
 
 namespace drake {
 namespace systems {
@@ -17,7 +17,7 @@ ConstantVectorSource<T>::ConstantVectorSource(
 }
 
 template <typename T>
-void ConstantVectorSource<T>::EvalOutput(const ContextBase<T>& context,
+void ConstantVectorSource<T>::EvalOutput(const Context<T>& context,
                                          SystemOutput<T>* output) const {
   DRAKE_ASSERT_VOID(System<T>::CheckValidOutput(output));
   DRAKE_ASSERT_VOID(System<T>::CheckValidContext(context));

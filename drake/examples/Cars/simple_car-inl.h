@@ -13,8 +13,10 @@
 #include <Eigen/Geometry>
 
 #include "drake/common/drake_assert.h"
+#include "drake/systems/framework/vector_base.h"
 
 namespace drake {
+namespace cars {
 
 template <typename ScalarType>
 SimpleCar1::StateVector<ScalarType> SimpleCar1::dynamics(
@@ -80,9 +82,9 @@ bool SimpleCar<T>::has_any_direct_feedthrough() const {
 namespace detail {
 template <typename T>
 std::pair<SimpleCarState1<T>, DrivingCommand1<T>> ConvertContextToSystem1(
-    const systems::ContextBase<T>& context) {
+    const systems::Context<T>& context) {
   // Convert the state into System1 data.
-  const systems::StateVector<T>& context_state =
+  const systems::VectorBase<T>& context_state =
       context.get_state().continuous_state->get_state();
   const SimpleCarState<T>* const simple_car_state =
       dynamic_cast<const SimpleCarState<T>*>(&context_state);
@@ -104,7 +106,7 @@ std::pair<SimpleCarState1<T>, DrivingCommand1<T>> ConvertContextToSystem1(
 }  // namespace detail
 
 template <typename T>
-void SimpleCar<T>::EvalOutput(const systems::ContextBase<T>& context,
+void SimpleCar<T>::EvalOutput(const systems::Context<T>& context,
                               systems::SystemOutput<T>* output) const {
   DRAKE_ASSERT_VOID(systems::System<T>::CheckValidContext(context));
   DRAKE_ASSERT_VOID(systems::System<T>::CheckValidOutput(output));
@@ -115,7 +117,8 @@ void SimpleCar<T>::EvalOutput(const systems::ContextBase<T>& context,
   std::tie(state, input) = detail::ConvertContextToSystem1(context);
 
   // Obtain the structure we need to write into.
-  systems::VectorBase<T>* const output_vector = output->GetMutableVectorData(0);
+  systems::BasicVector<T>* const output_vector =
+      output->GetMutableVectorData(0);
   DRAKE_ASSERT(output_vector != nullptr);
 
   // Delegate to the System1 version of this block.
@@ -125,7 +128,7 @@ void SimpleCar<T>::EvalOutput(const systems::ContextBase<T>& context,
 
 template <typename T>
 void SimpleCar<T>::EvalTimeDerivatives(
-    const systems::ContextBase<T>& context,
+    const systems::Context<T>& context,
     systems::ContinuousState<T>* derivatives) const {
   DRAKE_ASSERT_VOID(systems::System<T>::CheckValidContext(context));
 
@@ -136,7 +139,7 @@ void SimpleCar<T>::EvalTimeDerivatives(
 
   // Obtain the structure we need to write into.
   DRAKE_ASSERT(derivatives != nullptr);
-  systems::StateVector<T>* const derivatives_state =
+  systems::VectorBase<T>* const derivatives_state =
       derivatives->get_mutable_state();
   DRAKE_ASSERT(derivatives_state != nullptr);
   SimpleCarState<T>* const simple_car_derivatives =
@@ -156,9 +159,10 @@ SimpleCar<T>::AllocateContinuousState() const {
 }
 
 template <typename T>
-std::unique_ptr<systems::VectorBase<T>> SimpleCar<T>::AllocateOutputVector(
+std::unique_ptr<systems::BasicVector<T>> SimpleCar<T>::AllocateOutputVector(
     const systems::SystemPortDescriptor<T>& descriptor) const {
   return std::make_unique<SimpleCarState<T>>();
 }
 
+}  // namespace cars
 }  // namespace drake

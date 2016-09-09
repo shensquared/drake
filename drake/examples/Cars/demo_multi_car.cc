@@ -16,15 +16,11 @@
 #include "drake/examples/Cars/car_simulation.h"
 #include "drake/examples/Cars/trajectory_car.h"
 
-using drake::AffineSystem;
-using drake::BotVisualizer;
-using drake::NullVector;
-using drake::cascade;
-
 namespace drake {
-namespace examples {
 namespace cars {
 namespace {
+
+using drake::systems::plants::joints::kRollPitchYaw;
 
 int DoMain(int argc, const char* argv[]) {
   int num_cars = 100;
@@ -55,7 +51,7 @@ int DoMain(int argc, const char* argv[]) {
   // BotVisualizer:
   //  U: [(xy-position, heading, velocity), ...] per SimpleCarState
   //  X: ()
-  //  Y: [(x, y, z, roll, pitch, yaw), ...] per DrakeJoint::ROLLPITCHYAW per car
+  //  Y: [(x, y, z, roll, pitch, yaw), ...] per kRollPitchYaw per car
   auto cars_vis_adapter = std::make_shared<
     NArySystem<decltype(car_vis_adapter)::element_type>>();
   // NB:  One could compose the other way as well (i.e., individually cascade
@@ -66,7 +62,7 @@ int DoMain(int argc, const char* argv[]) {
   for (int i = 0; i < num_cars; ++i) {
     // Add the visualization entity.
     drake::parsers::urdf::AddModelInstanceFromUrdfFile(
-        (i % 5) ? kSedanUrdf : kBreadtruckUrdf, DrakeJoint::ROLLPITCHYAW,
+        (i % 5) ? kSedanUrdf : kBreadtruckUrdf, kRollPitchYaw,
         nullptr /* weld_to_frame */, world_tree.get());
 
     // Add the trajectory car, and its visualization adapter.
@@ -97,9 +93,8 @@ int DoMain(int argc, const char* argv[]) {
 
 }  // namespace
 }  // namespace cars
-}  // namespace examples
 }  // namespace drake
 
 int main(int argc, const char* argv[]) {
-  return drake::examples::cars::DoMain(argc, argv);
+  return drake::cars::DoMain(argc, argv);
 }

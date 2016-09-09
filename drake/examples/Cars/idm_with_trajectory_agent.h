@@ -4,6 +4,7 @@
 #include "drake/systems/framework/leaf_system.h"
 
 namespace drake {
+namespace cars {
 
 /// IdmWithTrajectoryAgent -- model a car using IDM[1], following an idealized
 /// agent car that is decelerating. The implementation here follows closely the
@@ -27,18 +28,19 @@ class IdmWithTrajectoryAgent : public systems::LeafSystem<T> {
   ~IdmWithTrajectoryAgent() override;
 
   // System<T> overrides
-  void EvalOutput(const systems::ContextBase<T>& context,
+  void EvalOutput(const systems::Context<T>& context,
                   systems::SystemOutput<T>* output) const override;
   void EvalTimeDerivatives(
-      const systems::ContextBase<T>& context,
+      const systems::Context<T>& context,
       systems::ContinuousState<T>* derivatives) const override;
 
  protected:
   // LeafSystem<T> overrides
   std::unique_ptr<systems::ContinuousState<T>> AllocateContinuousState()
       const override;
-  std::unique_ptr<systems::VectorBase<T>> AllocateOutputVector(
+  std::unique_ptr<systems::BasicVector<T>> AllocateOutputVector(
       const systems::SystemPortDescriptor<T>& descriptor) const override;
 };
 
+}  // namespace cars
 }  // namespace drake

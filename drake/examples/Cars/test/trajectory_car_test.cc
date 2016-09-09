@@ -8,9 +8,7 @@
 #include "drake/examples/Cars/curve2.h"
 
 namespace drake {
-namespace examples {
 namespace cars {
-namespace test {
 namespace {
 
 typedef Curve2<double> Curve2d;
@@ -74,7 +72,7 @@ GTEST_TEST(TrajectoryCarTest, SegmentTest) {
     const TrajectoryCar<double> car_dut{curve, it.speed, it.start_time};
 
     // The test inputs (time) and outputs.
-    std::unique_ptr<systems::ContextBase<double>> context =
+    std::unique_ptr<systems::Context<double>> context =
         car_dut.CreateDefaultContext();
     std::unique_ptr<systems::SystemOutput<double>> all_output =
         car_dut.AllocateOutput(*context);
@@ -111,7 +109,5 @@ GTEST_TEST(TrajectoryCarTest, SegmentTest) {
 }
 
 }  // namespace
-}  // namespace test
 }  // namespace cars
-}  // namespace examples
 }  // namespace drake

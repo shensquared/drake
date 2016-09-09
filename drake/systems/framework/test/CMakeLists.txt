@@ -7,18 +7,6 @@ target_link_libraries(basic_vector_test drakeSystemFramework drakeCommon
   ${GTEST_BOTH_LIBRARIES})
 add_test(NAME basic_vector_test COMMAND basic_vector_test)
 
-add_executable(basic_state_vector_test basic_state_vector_test.cc)
-target_link_libraries(basic_state_vector_test drakeSystemFramework
-                      ${GTEST_BOTH_LIBRARIES})
-add_test(NAME basic_state_vector_test COMMAND basic_state_vector_test)
-
-add_executable(basic_state_and_output_vector_test
-  basic_state_and_output_vector_test.cc)
-target_link_libraries(basic_state_and_output_vector_test drakeSystemFramework
-  ${GTEST_BOTH_LIBRARIES})
-add_test(NAME basic_state_and_output_vector_test
-  COMMAND basic_state_and_output_vector_test)
-
 add_executable(state_subvector_test state_subvector_test.cc)
 target_link_libraries(state_subvector_test drakeSystemFramework
                       ${GTEST_BOTH_LIBRARIES})
@@ -49,10 +37,10 @@ target_link_libraries(system_output_test drakeSystemFramework
                       ${GTEST_BOTH_LIBRARIES})
 add_test(NAME system_output_test COMMAND system_output_test)
 
-add_executable(context_test context_test.cc)
-target_link_libraries(context_test drakeSystemFramework
+add_executable(leaf_context_test leaf_context_test.cc)
+target_link_libraries(leaf_context_test drakeSystemFramework
                       ${GTEST_BOTH_LIBRARIES})
-add_test(NAME context_test COMMAND context_test)
+add_test(NAME leaf_context_test COMMAND leaf_context_test)
 
 add_executable(diagram_test diagram_test.cc)
 target_link_libraries(diagram_test

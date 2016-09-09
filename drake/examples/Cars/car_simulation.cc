@@ -4,19 +4,21 @@
 
 #include "drake/examples/Cars/curve2.h"
 #include "drake/examples/Cars/trajectory_car.h"
+#include "drake/systems/plants/joints/floating_base_types.h"
 #include "drake/systems/plants/parser_model_instance_id_table.h"
 
-using drake::AffineSystem;
-using drake::NullVector;
-using drake::parsers::ModelInstanceIdTable;
+namespace drake {
+namespace cars {
 
 using Eigen::Matrix;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-namespace drake {
-namespace examples {
-namespace cars {
+using drake::AffineSystem;
+using drake::NullVector;
+using drake::parsers::ModelInstanceIdTable;
+using drake::systems::plants::joints::kFixed;
+using drake::systems::plants::joints::kQuaternion;
 
 const char kDurationFlag[] = "--duration";
 
@@ -32,14 +34,14 @@ void PrintUsageInstructions(const std::string& executable_name) {
     << std::endl
     << "    the vehicle model(s) and are thus attached to the world via"
     << std::endl
-    << "    DrakeJoint::QUATERNION joints."
+    << "    kQuaternion joints."
     << std::endl
     << std::endl
     << "  - world_model_files is a space-separated list of paths to URDF or"
     << std::endl
     << "    SDF files. This list can be of length zero or more. The models"
     << std::endl
-    << "    within these files are connected to the world via DrakeJoint::FIXED"
+    << "    within these files are connected to the world via kFixed"
     << std::endl
     << "    joints."
     << std::endl
@@ -65,7 +67,7 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   // Adds a model instance.
   ModelInstanceIdTable vehicle_instance_id_table =
       rigid_body_sys->AddModelInstanceFromFile(argv[1],
-          DrakeJoint::QUATERNION);
+          kQuaternion);
 
   // Verifies that only one vehicle was added to the world.
   if (vehicle_instance_id_table.size() != 1) {
@@ -93,7 +95,7 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
         *duration = atof(argv[ii]);
     } else {
       ModelInstanceIdTable world_instance_id_table =
-          rigid_body_sys->AddModelInstanceFromFile(argv[ii], DrakeJoint::FIXED);
+          rigid_body_sys->AddModelInstanceFromFile(argv[ii], kFixed);
       drake::parsers::AddModelInstancesToTable(world_instance_id_table,
           model_instance_id_table);
     }
@@ -454,5 +456,4 @@ VectorXd GetInitialState(const RigidBodySystem& rigid_body_sys) {
 }
 
 }  // namespace cars
-}  // namespace examples
 }  // namespace drake

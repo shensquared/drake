@@ -32,10 +32,10 @@ namespace ros {
 namespace cars {
 namespace {
 
-using drake::examples::cars::CreateVehicleSystem;
-using drake::examples::cars::GetCarSimulationDefaultOptions;
-using drake::examples::cars::ParseDuration;
-using drake::examples::cars::SetRigidBodySystemParameters;
+using drake::cars::CreateVehicleSystem;
+using drake::cars::GetCarSimulationDefaultOptions;
+using drake::cars::ParseDuration;
+using drake::cars::SetRigidBodySystemParameters;
 
 using drake::parsers::ModelInstanceIdTable;
 
