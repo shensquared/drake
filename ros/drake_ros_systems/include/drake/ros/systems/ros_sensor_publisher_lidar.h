@@ -43,7 +43,7 @@ struct LidarSensorStruct {
  * enables other systems to be cascaded after this system.
  */
 template <template <typename> class RobotStateVector>
-class SensorPublisherLidar {
+class RosSensorPublisherLidar {
  private:
   // Specifies the minimum period at which to publish LIDAR messages.
   static constexpr double kMinTransmitPeriod_ = 0.05;
@@ -69,7 +69,7 @@ class SensorPublisherLidar {
    * the `sensor_msgs::LaserScan` messages, which is necessary for RViz to
    * simultaneously visualize the sensors belonging to multiple models.
    */
-  explicit SensorPublisherLidar(
+  explicit RosSensorPublisherLidar(
       std::shared_ptr<RigidBodySystem> rigid_body_system,
       const std::map<int, std::string>& model_instance_names)
       : rigid_body_system_(rigid_body_system) {
@@ -111,7 +111,7 @@ class SensorPublisherLidar {
         // Throws an error if it cannot.
         if (model_instance_names.find(model_instance_id) ==
             model_instance_names.end()) {
-          throw std::runtime_error("SensorPublisherLidar: ERROR: Unable to "
+          throw std::runtime_error("RosSensorPublisherLidar: ERROR: Unable to "
               "determine model instance name of model with instance ID " +
               std::to_string(model_instance_id) + ".");
         }

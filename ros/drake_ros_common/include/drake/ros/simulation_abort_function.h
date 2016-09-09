@@ -15,21 +15,8 @@ namespace ros {
  * abort based on a call to ros::ok(), and (2) publishes a clock message so
  * other systems within ROS can be time synchronized with simulation time.
  */
-void AddAbortFunction(drake::SimulationOptions* options,
-    ::ros::Publisher* clock_publisher) {
-  options->should_stop = [clock_publisher](double sim_time) {
-    // Computes the whole-second portion and the fractional-second portion of
-    // sim_time.
-    double whole_part, fractional_part;
-    fractional_part = modf(sim_time, &whole_part);
-
-    // Saves the time in the clock message.
-    rosgraph_msgs::Clock clock_msg;
-    clock_msg.clock.sec = static_cast<int>(whole_part);
-    clock_msg.clock.nsec = static_cast<int>(fractional_part * 1e9);
-    clock_publisher->publish(clock_msg);
-
-    // Publishes the clock message.
+void AddAbortFunction(drake::SimulationOptions* options) {
+  options->should_stop = [](double sim_time) {
     return !::ros::ok();
   };
 }

@@ -8,6 +8,12 @@
       <pose>0 0 0.378326 0 0 0</pose>
       <inertial>
        <pose>0 0 0 0 0 0</pose>
+       <!-- This is the actual mass -->
+       <!-- <mass>1360</mass> -->
+
+       <!-- These are lower masses used for debugging purposes. -->
+       <!-- <mass>120</mass> -->
+
         <mass>57.833</mass>
         <inertia>
           <ixx>2.71553</ixx>

@@ -10,10 +10,30 @@ To run it:
   <include file="$(find drake_cars_examples)/launch/single_car_in_stata_garage_desc.xml" />
   <include file="$(find drake_cars_examples)/launch/single_car_in_stata_garage_rviz.xml" />
 
-  <node name="single_car_in_stata_garage" pkg="drake_cars_examples"
-    type="single_car_in_stata_garage" output="screen"
-    args="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf $(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf"
-    ns="drake"/>
+  <group ns="drake">
+    <param name="penetration_stiffness" type="double" value="7500" />
+    <param name="penetration_damping" type="double" value="750" />
+    <param name="steering_kp" type="double" value="1000" />
+    <param name="steering_kd" type="double" value="250" />
+    <param name="throttle_k" type="double" value="100" />
+    <param name="initial_step_size" type="double" value="5e-3" />
+
+    <param
+        name="car_filename"
+        type="string"
+        value="$(find drake)/drake/examples/Cars/models/prius/prius_with_lidar.sdf" />
+    <param
+        name="world_filename"
+        type="string"
+        value="$(find drake)/drake/examples/Cars/models/stata_garage_p1.sdf" />
+
+    <node
+        name="single_car_in_stata_garage"
+        pkg="drake_cars_examples"
+        type="single_car_in_stata_garage"
+        output="screen"
+    />
+  </group>
 
   <!-- <include file="$(find drake_cars_examples)/launch/golfcart_adapter.launch" /> -->
 </launch>

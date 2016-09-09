@@ -4,11 +4,12 @@
 #include "drake/examples/Cars/gen/driving_command.h"
 #include "drake/ros/parameter_server.h"
 #include "drake/ros/simulation_abort_function.h"
-#include "drake/ros/systems/ros_tf_publisher.h"
+#include "drake/ros/systems/ros_clock_publisher.h"
 #include "drake/ros/systems/ros_multi_vehicle_system.h"
 #include "drake/ros/systems/ros_sensor_publisher_joint_state.h"
 #include "drake/ros/systems/ros_sensor_publisher_lidar.h"
 #include "drake/ros/systems/ros_sensor_publisher_odometry.h"
+#include "drake/ros/systems/ros_tf_publisher.h"
 #include "drake/systems/LCMSystem.h"
 #include "drake/systems/LinearSystem.h"
 #include "drake/systems/pd_control_system.h"
@@ -35,11 +36,13 @@ using drake::examples::cars::GetCarSimulationDefaultOptions;
 
 using drake::parsers::ModelInstanceIdTable;
 
-using drake::ros::systems::DrakeRosTfPublisher;
+using drake::ros::systems::RosTfPublisher;
+using drake::ros::systems::RosClockPublisher;
+using drake::ros::systems::RosSensorPublisherJointState;
+using drake::ros::systems::RosSensorPublisherLidar;
+using drake::ros::systems::RosSensorPublisherOdometry;
+
 using drake::ros::systems::run_ros_vehicle_sim;
-using drake::ros::systems::SensorPublisherJointState;
-using drake::ros::systems::SensorPublisherLidar;
-using drake::ros::systems::SensorPublisherOdometry;
 
 /**
  * Sits in a loop periodically publishing an identity transform for the
@@ -117,6 +120,14 @@ int DoMain(int argc, const char* argv[]) {
   // Initializes the rigid body system.
   auto rigid_body_sys = std::allocate_shared<RigidBodySystem>(
       Eigen::aligned_allocator<RigidBodySystem>());
+
+  // Sets the desired contact penetration stiffness and damping in the
+  // RigidBodySystem.
+  rigid_body_sys->penetration_stiffness =
+      GetROSParameter<double>(node_handle, "penetration_stiffness");
+
+  rigid_body_sys->penetration_damping =
+      GetROSParameter<double>(node_handle, "penetration_damping");
 
   // Instantiates a map from model instance IDs to model instance names.
   std::map<int, std::string> model_instance_name_table;
@@ -204,6 +215,11 @@ int DoMain(int argc, const char* argv[]) {
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
+  // Obtains the gains to be used by the steering and throttle controllers.
+  double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
+  double steering_kd = GetROSParameter<double>(node_handle, "steering_kd");
+  double throttle_k = GetROSParameter<double>(node_handle, "throttle_k");
+
   // Initializes and cascades all of the other systems.
   // There are five vehicles each with the following three actuators:
   //
@@ -213,26 +229,29 @@ int DoMain(int argc, const char* argv[]) {
   //
   // Thus, there is a total of 3 * 5 = 15 actuators.
   auto vehicle_sys = CreateMultiVehicleSystem(rigid_body_sys,
-      &vehicle_model_instance_name_table);
+      &vehicle_model_instance_name_table, steering_kp, steering_kd, throttle_k);
 
   auto bot_visualizer_publisher =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);
 
   auto lidar_publisher = std::make_shared<
-      SensorPublisherLidar<RigidBodySystem::StateVector>>(
+      RosSensorPublisherLidar<RigidBodySystem::StateVector>>(
           rigid_body_sys, model_instance_name_table);
 
   auto odometry_publisher = std::make_shared<
-      SensorPublisherOdometry<RigidBodySystem::StateVector>>(
+      RosSensorPublisherOdometry<RigidBodySystem::StateVector>>(
           rigid_body_sys, model_instance_name_table);
 
   auto tf_publisher = std::make_shared<
-      DrakeRosTfPublisher<RigidBodySystem::StateVector>>(
+      RosTfPublisher<RigidBodySystem::StateVector>>(
           tree, model_instance_name_table);
 
   auto joint_state_publisher = std::make_shared<
-      SensorPublisherJointState<RigidBodySystem::StateVector>>(
+      RosSensorPublisherJointState<RigidBodySystem::StateVector>>(
               rigid_body_sys, model_instance_name_table);
+
+  auto clock_publisher =
+      std::make_shared<RosClockPublisher<RigidBodySystem::StateVector>>();
 
   auto sys =
       cascade(
@@ -240,21 +259,38 @@ int DoMain(int argc, const char* argv[]) {
           cascade(
             cascade(
               cascade(
-                vehicle_sys,
-                bot_visualizer_publisher),
-              tf_publisher),
-            joint_state_publisher),
-          lidar_publisher),
-        odometry_publisher);
+                cascade(
+                  vehicle_sys,
+                  bot_visualizer_publisher),
+                tf_publisher),
+              joint_state_publisher),
+            lidar_publisher),
+          odometry_publisher),
+        clock_publisher);
 
   // Instantiates a ROS topic publisher for publishing clock information. For
   // more information, see: http://wiki.ros.org/Clock.
-  ::ros::Publisher clock_publisher =
-      node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
+  // ::ros::Publisher clock_publisher =
+  //     node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
 
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
-  AddAbortFunction(&options, &clock_publisher);
+  AddAbortFunction(&options);
+  options.initial_step_size =
+    GetROSParameter<double>(node_handle, "initial_step_size");
+
+  ROS_INFO_STREAM("Using:" << std::endl
+      << " - penetration_stiffness = " << rigid_body_sys->penetration_stiffness
+      << std::endl
+      << " - penetration_damping = " << rigid_body_sys->penetration_damping
+      << std::endl
+      << "  - steering_kp = " << steering_kp
+      << std::endl
+      << "  - steering_kd = " << steering_kd
+      << std::endl
+      << "  - throttle_k = " << throttle_k
+      << std::endl
+      << "  - initial_step_size = " << options.initial_step_size);
 
   // Obtains a valid zero configuration for the vehicle.
   VectorXd x0 = VectorXd::Zero(rigid_body_sys->getNumStates());
