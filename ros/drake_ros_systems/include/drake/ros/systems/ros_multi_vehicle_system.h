@@ -22,7 +22,7 @@ namespace systems {
 // Decodes @p msg into @p x.
 bool decode(int model_instance_index,
             const ackermann_msgs::AckermannDriveStamped& msg,
-            drake::MultiDrivingCommand<double>& x) {
+            drake::cars::MultiDrivingCommand<double>& x) {
   x.set_steering_angle(model_instance_index, msg.drive.steering_angle);
   if (msg.drive.speed > 0) {
     x.set_throttle(model_instance_index, msg.drive.speed);

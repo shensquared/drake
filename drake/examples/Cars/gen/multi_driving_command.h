@@ -11,14 +11,15 @@
 
 #include "drake/drakeCars_export.h"
 #include "drake/examples/Cars/gen/driving_command.h"
-#include "drake/systems/framework/basic_state_and_output_vector.h"
+#include "drake/systems/framework/basic_vector.h"
 #include "lcmtypes/drake/lcmt_driving_command_t.hpp"
 
 namespace drake {
+namespace cars {
 
 /// Specializes BasicStateAndOutputVector with specific getters and setters.
 template <typename T>
-class MultiDrivingCommand : public systems::BasicStateAndOutputVector<T> {
+class MultiDrivingCommand : public systems::BasicVector<T> {
  public:
   // An abbreviation for our row index constants.
   typedef DrivingCommandIndices K;
@@ -27,7 +28,7 @@ class MultiDrivingCommand : public systems::BasicStateAndOutputVector<T> {
   static constexpr int kNumVehicles = 5;
 
   /// Default constructor.  Sets all rows to zero.
-  MultiDrivingCommand() : systems::BasicStateAndOutputVector<T>(
+  MultiDrivingCommand() : systems::BasicVector<T>(
       K::kNumCoordinates * kNumVehicles) {
     this->SetFromVector(VectorX<T>::Zero(K::kNumCoordinates * kNumVehicles));
   }
@@ -95,4 +96,5 @@ bool decode(int model_instance_index, const drake::lcmt_driving_command_t& msg,
   return true;
 }
 
+}  // namespace cars
 }  // namespace drake

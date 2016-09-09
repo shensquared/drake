@@ -30,9 +30,9 @@ namespace ros {
 namespace cars {
 namespace {
 
-using drake::examples::cars::CreateRigidBodySystem;
-using drake::examples::cars::CreateMultiVehicleSystem;
-using drake::examples::cars::GetCarSimulationDefaultOptions;
+using drake::cars::CreateRigidBodySystem;
+using drake::cars::CreateMultiVehicleSystem;
+using drake::cars::GetCarSimulationDefaultOptions;
 
 using drake::parsers::ModelInstanceIdTable;
 
@@ -43,6 +43,9 @@ using drake::ros::systems::RosSensorPublisherLidar;
 using drake::ros::systems::RosSensorPublisherOdometry;
 
 using drake::ros::systems::run_ros_vehicle_sim;
+
+using drake::systems::plants::joints::kFixed;
+using drake::systems::plants::joints::kQuaternion;
 
 /**
  * Sits in a loop periodically publishing an identity transform for the
@@ -170,7 +173,7 @@ int DoMain(int argc, const char* argv[]) {
             rpy));
     ModelInstanceIdTable model_instance_id_table =
         rigid_body_sys->AddModelInstancesFromString(model_description,
-            DrakeJoint::QUATERNION, weld_to_frame);
+            kQuaternion, weld_to_frame);
 
     // The model description contains a single model. Get its model instance ID,
     // assign it a model instance name, and save both in
@@ -202,7 +205,7 @@ int DoMain(int argc, const char* argv[]) {
       "world_description");
   ModelInstanceIdTable world_instance_id_table =
       rigid_body_sys->AddModelInstancesFromString(world_description,
-          DrakeJoint::FIXED);
+          kFixed);
   int world_instance_id = world_instance_id_table[kWorldModelName];
   model_instance_name_table[world_instance_id] = kWorldModelName;
 
@@ -300,7 +303,7 @@ int DoMain(int argc, const char* argv[]) {
   const double kStartTime = 0;
   double duration = std::numeric_limits<double>::infinity();
 
-  drake::examples::cars::SetRigidBodySystemParameters(rigid_body_sys.get());
+  drake::cars::SetRigidBodySystemParameters(rigid_body_sys.get());
 
   // Starts the main simulation loop.
   run_ros_vehicle_sim(sys, kStartTime, duration, x0,

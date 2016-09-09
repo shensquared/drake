@@ -47,6 +47,10 @@ using drake::ros::systems::RosSensorPublisherOdometry;
 
 using drake::ros::systems::run_ros_vehicle_sim;
 
+using drake::systems::plants::joints::kFixed;
+using drake::systems::plants::joints::kQuaternion;
+
+
 // Initializes the RigidBodySystem by setting the collision gains, adding the
 // vehicle model, and adding the world model to @p rigid_body_system.
 ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
@@ -65,7 +69,7 @@ ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
 
   ModelInstanceIdTable vehicle_instance_id_table =
       rigid_body_system->AddModelInstanceFromFile(vehicle_filename,
-          DrakeJoint::QUATERNION);
+          kQuaternion);
 
   // Verifies that only one vehicle was added to the world.
   if (vehicle_instance_id_table.size() != 1) {
@@ -83,7 +87,7 @@ ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
         "world_filename");
   ModelInstanceIdTable world_instance_id_table =
       rigid_body_system->AddModelInstanceFromFile(world_filename,
-          DrakeJoint::FIXED);
+          kFixed);
   drake::parsers::AddModelInstancesToTable(world_instance_id_table,
       &model_instance_id_table);
 
