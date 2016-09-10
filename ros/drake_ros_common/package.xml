@@ -5,7 +5,7 @@
   <version>0.0.0</version>
 
   <description>
-    Contains software that is used by numerous other ROS packages that integrate
+    Contains software that is of general use to other packages that integrate
     Drake with ROS.
   </description>
 
