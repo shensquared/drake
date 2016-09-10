@@ -80,7 +80,7 @@ class DRAKEJOINTS_EXPORT DrakeJoint {
   /**
    * Returns whether this joint is fixed.
    */
-  virtual bool is_fixed() const { return false; }
+  bool is_fixed() const { return num_positions == 0; }
 
   virtual Eigen::VectorXd zeroConfiguration() const = 0;
 
