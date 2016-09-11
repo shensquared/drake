@@ -5,8 +5,8 @@ This README provides details about and instructions on how to run Drake's car
 demonstrations. It assumes you have [installed Drake within a ROS Catkin
 workspace](http://drake.mit.edu/from_source_ros.html).
 
-Demo 1: Single Car in State Garage
-==================================
+Demo 1: Single Car in MIT Stata Garage
+======================================
 
 To run this demo, open two termainals. In the first terminal, execute the
 following command to launch Drake and RViz. The simulation runs in
@@ -27,7 +27,7 @@ You can now type arrow keys in your second terminal to issue driving commands to
 the simulated vehicle.
 
 Demo 2: Five Cars on a Plane
-================================
+============================
 
 To run this demo, open six terminals. In the first terminal, execute the
 following command to launch Drake and RViz. The simulation runs in

@@ -16,7 +16,7 @@ To run it:
     <param name="steering_kp" type="double" value="1000" />
     <param name="steering_kd" type="double" value="250" />
     <param name="throttle_k" type="double" value="100" />
-    <param name="initial_step_size" type="double" value="5e-3" />
+    <param name="initial_step_size" type="double" value="0.006" />
 
     <param
         name="car_filename"

@@ -14,7 +14,7 @@
        <!-- These are lower masses used for debugging purposes. -->
        <!-- <mass>120</mass> -->
 
-        <mass>57.833</mass>
+<!--         <mass>57.833</mass>
         <inertia>
           <ixx>2.71553</ixx>
           <ixy>0</ixy>
@@ -22,6 +22,15 @@
           <iyy>68.9</iyy>
           <iyz>0</iyz>
           <izz>71.6063</izz>
+        </inertia> -->
+      <mass>70</mass>
+        <inertia>
+          <ixx>3.28682729807</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>48.3895772981</iyy>
+          <iyz>0</iyz>
+          <izz>51.66525</izz>
         </inertia>
       </inertial>
       <visual name='main'>
