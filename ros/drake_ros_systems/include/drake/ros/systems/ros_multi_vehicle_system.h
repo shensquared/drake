@@ -56,7 +56,7 @@ class RosMultiAckermannCommandReceiverSystem {
 
     // TODO(liang.fok): Generalize this class to support a variable number of
     // vehicles.
-    DRAKE_ABORT_UNLESS(model_instance_name_table.size() == 5);
+    DRAKE_DEMAND(model_instance_name_table.size() == 5);
 
     subscriber0_ =
         nh.subscribe(
