@@ -53,19 +53,17 @@ using drake::systems::plants::joints::kQuaternion;
 
 // Initializes the RigidBodySystem by setting the collision gains, adding the
 // vehicle model, and adding the world model to @p rigid_body_system.
-ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
-    RigidBodySystem* rigid_body_system) {
+ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
   // Sets the desired contact penetration stiffness and damping in the
   // RigidBodySystem.
   rigid_body_system->penetration_stiffness =
-      GetROSParameter<double>(node_handle, "penetration_stiffness");
+      GetROSParameter<double>("penetration_stiffness");
 
   rigid_body_system->penetration_damping =
-      GetROSParameter<double>(node_handle, "penetration_damping");
+      GetROSParameter<double>("penetration_damping");
 
   // Adds the vehicle model instance to the RigidBodySystem.
-  std::string vehicle_filename = GetROSParameter<std::string>(node_handle,
-        "car_filename");
+  std::string vehicle_filename = GetROSParameter<std::string>("car_filename");
 
   ModelInstanceIdTable vehicle_instance_id_table =
       rigid_body_system->AddModelInstanceFromFile(vehicle_filename,
@@ -83,8 +81,7 @@ ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
 
   // Adds the world to the RigidBodySystem. Updates model_instance_id_table
   // with the ID of the world model.
-  std::string world_filename = GetROSParameter<std::string>(node_handle,
-        "world_filename");
+  std::string world_filename = GetROSParameter<std::string>("world_filename");
   ModelInstanceIdTable world_instance_id_table =
       rigid_body_system->AddModelInstanceFromFile(world_filename,
           kFixed);
@@ -100,10 +97,7 @@ ModelInstanceIdTable InitRigidBodySystem(const ::ros::NodeHandle& node_handle,
 // resides within the Stata garage.
 int DoMain(int argc, const char* argv[]) {
   ::ros::init(argc, const_cast<char**>(argv), "single_car_in_stata_garage");
-
-  // Instantiates a ROS node handle. For more information, see:
-  // http://wiki.ros.org/roscpp/Overview/NodeHandles.
-  ::ros::NodeHandle node_handle;
+  ::ros::start();
 
   // Sets the log level to be INFO.
   if(::ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
@@ -123,7 +117,7 @@ int DoMain(int argc, const char* argv[]) {
       Eigen::aligned_allocator<RigidBodySystem>());
 
   ModelInstanceIdTable model_instance_id_table =
-      InitRigidBodySystem(node_handle, rigid_body_sys.get());
+      InitRigidBodySystem(rigid_body_sys.get());
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
@@ -145,9 +139,9 @@ int DoMain(int argc, const char* argv[]) {
       = "prius";
 
   // Obtains the gains to be used by the steering and throttle controllers.
-  double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
-  double steering_kd = GetROSParameter<double>(node_handle, "steering_kd");
-  double throttle_k = GetROSParameter<double>(node_handle, "throttle_k");
+  double steering_kp = GetROSParameter<double>("steering_kp");
+  double steering_kd = GetROSParameter<double>("steering_kd");
+  double throttle_k = GetROSParameter<double>("throttle_k");
 
   // Initializes and cascades all of the other systems.
 
@@ -194,17 +188,11 @@ int DoMain(int argc, const char* argv[]) {
           joint_state_publisher),
         clock_publisher);
 
-  // Instantiates a ROS topic publisher for publishing clock information. For
-  // more information, see: http://wiki.ros.org/Clock.
-  // ::ros::Publisher clock_publisher =
-  //     node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
-
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
   AddAbortFunction(&options);
 
-  options.initial_step_size =
-      GetROSParameter<double>(node_handle, "initial_step_size");
+  options.initial_step_size = GetROSParameter<double>("initial_step_size");
 
   ROS_INFO_STREAM("Using:" << std::endl
       << " - penetration_stiffness = " << rigid_body_sys->penetration_stiffness

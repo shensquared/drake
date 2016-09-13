@@ -112,10 +112,7 @@ int DoMain(int argc, const char* argv[]) {
 
   // Initializes ROS.
   ::ros::init(argc, const_cast<char**>(argv), "multi_cars_on_plane");
-
-  // Instantiates a ROS node handle. For more information, see:
-  // http://wiki.ros.org/roscpp/Overview/NodeHandles.
-  ::ros::NodeHandle node_handle;
+  ::ros::start();
 
   // Initializes the LCM communication layer.
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
@@ -127,38 +124,38 @@ int DoMain(int argc, const char* argv[]) {
   // Sets the desired contact penetration stiffness and damping in the
   // RigidBodySystem.
   rigid_body_sys->penetration_stiffness =
-      GetROSParameter<double>(node_handle, "penetration_stiffness");
+      GetROSParameter<double>("penetration_stiffness");
 
   rigid_body_sys->penetration_damping =
-      GetROSParameter<double>(node_handle, "penetration_damping");
+      GetROSParameter<double>("penetration_damping");
 
   // Instantiates a map from model instance IDs to model instance names.
   std::map<int, std::string> model_instance_name_table;
 
   // Obtains the number of vehicles to simulate.
-  int num_vehicles = GetROSParameter<int>(node_handle, "car_count");
+  int num_vehicles = GetROSParameter<int>("car_count");
 
   // Adds the vehicles to the rigid body system.
   for (int i = 0; i < num_vehicles; ++i) {
     const std::string description_parameter_name =
         std::string("car_description_") + std::to_string(i + 1) + "_drake";
 
-    std::string model_description = GetROSParameter<std::string>(node_handle,
+    std::string model_description = GetROSParameter<std::string>(
         description_parameter_name);
 
-    double world_x = GetROSParameter<double>(node_handle,
+    double world_x = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) + "_drake_x");
-    double world_y = GetROSParameter<double>(node_handle,
+    double world_y = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) + "_drake_y");
-    double world_z = GetROSParameter<double>(node_handle,
+    double world_z = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) + "_drake_z");
-    double world_roll = GetROSParameter<double>(node_handle,
+    double world_roll = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) +
         "_drake_roll");
-    double world_pitch = GetROSParameter<double>(node_handle,
+    double world_pitch = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) +
         "_drake_pitch");
-    double world_yaw = GetROSParameter<double>(node_handle,
+    double world_yaw = GetROSParameter<double>(
         std::string("car_description_") + std::to_string(i + 1) +
         "_drake_yaw");
 
@@ -201,7 +198,7 @@ int DoMain(int argc, const char* argv[]) {
 
   // Obtains and adds the world model to the RigidBodyTree. Then stores its
   // model instance ID and name in model_instance_name_table.
-  std::string world_description = GetROSParameter<std::string>(node_handle,
+  std::string world_description = GetROSParameter<std::string>(
       "world_description");
   ModelInstanceIdTable world_instance_id_table =
       rigid_body_sys->AddModelInstancesFromString(world_description,
@@ -219,9 +216,9 @@ int DoMain(int argc, const char* argv[]) {
   auto const& tree = rigid_body_sys->getRigidBodyTree();
 
   // Obtains the gains to be used by the steering and throttle controllers.
-  double steering_kp = GetROSParameter<double>(node_handle, "steering_kp");
-  double steering_kd = GetROSParameter<double>(node_handle, "steering_kd");
-  double throttle_k = GetROSParameter<double>(node_handle, "throttle_k");
+  double steering_kp = GetROSParameter<double>("steering_kp");
+  double steering_kd = GetROSParameter<double>("steering_kd");
+  double throttle_k = GetROSParameter<double>("throttle_k");
 
   // Initializes and cascades all of the other systems.
   // There are five vehicles each with the following three actuators:
@@ -271,16 +268,11 @@ int DoMain(int argc, const char* argv[]) {
           odometry_publisher),
         clock_publisher);
 
-  // Instantiates a ROS topic publisher for publishing clock information. For
-  // more information, see: http://wiki.ros.org/Clock.
-  // ::ros::Publisher clock_publisher =
-  //     node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
-
   // Initializes the simulation options.
   SimulationOptions options = GetCarSimulationDefaultOptions();
   AddAbortFunction(&options);
   options.initial_step_size =
-    GetROSParameter<double>(node_handle, "initial_step_size");
+    GetROSParameter<double>("initial_step_size");
 
   ROS_INFO_STREAM("Using:" << std::endl
       << " - penetration_stiffness = " << rigid_body_sys->penetration_stiffness

@@ -72,8 +72,7 @@ class RosTfPublisher {
     // Queries the ROS parameter server for a boolean parameter called
     // "enable_tf_publisher". This parameter is used to control whether
     // this class publishes /tf messages.
-    enable_tf_publisher_ = GetROSParameter<bool>(node_handle,
-        "enable_tf_publisher");
+    enable_tf_publisher_ = GetROSParameter<bool>("enable_tf_publisher");
 
     // Initializes the time stamp of the previous transmission to be zero.
     previous_send_time_.sec = 0;
