@@ -8,8 +8,8 @@
 #include "ros/ros.h"
 #include "ackermann_msgs/AckermannDriveStamped.h"
 
+#include "drake/automotive/gen/multi_driving_command.h"
 #include "drake/common/drake_assert.h"
-#include "drake/examples/Cars/gen/multi_driving_command.h"
 #include "drake/systems/Simulation.h"
 #include "drake/systems/simulation_options.h"
 #include "drake/systems/System.h"

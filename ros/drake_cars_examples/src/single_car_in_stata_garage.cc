@@ -5,8 +5,8 @@
 
 #include "rosgraph_msgs/Clock.h"
 
-#include "drake/examples/Cars/car_simulation.h"
-#include "drake/examples/Cars/gen/driving_command.h"
+#include "drake/automotive/car_simulation.h"
+#include "drake/automotive/gen/driving_command.h"
 #include "drake/ros/simulation_abort_function.h"
 #include "drake/ros/systems/ros_clock_publisher.h"
 #include "drake/ros/systems/ros_sensor_publisher_joint_state.h"
