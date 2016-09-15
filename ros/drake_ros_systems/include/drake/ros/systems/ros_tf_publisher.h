@@ -201,8 +201,8 @@ class RosTfPublisher {
    * parent link.
    */
   bool ShouldPublishTfForRigidBody(const RigidBody& rigid_body) {
-    // Skips parent-less links. This includes the world.
-    return rigid_body.has_mobilizer_joint();
+    // Skips parent-less bodies. This includes the world.
+    return rigid_body.has_parent_body();
   }
 
   /* Derives a key for obtaining the transform message for @p rigid_body

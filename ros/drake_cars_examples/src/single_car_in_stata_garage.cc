@@ -29,13 +29,13 @@ using Eigen::VectorXd;
 
 namespace drake {
 namespace ros {
-namespace cars {
+namespace automotive {
 namespace {
 
-using drake::cars::CreateVehicleSystem;
-using drake::cars::GetCarSimulationDefaultOptions;
-using drake::cars::ParseDuration;
-using drake::cars::SetRigidBodySystemParameters;
+using drake::automotive::CreateVehicleSystem;
+using drake::automotive::GetCarSimulationDefaultOptions;
+using drake::automotive::ParseDuration;
+using drake::automotive::SetRigidBodySystemParameters;
 
 using drake::parsers::ModelInstanceIdTable;
 
@@ -95,7 +95,7 @@ ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
 
 // This implements the main method of the single car simulation. The vehicle
 // resides within the Stata garage.
-int DoMain(int argc, const char* argv[]) {
+int do_main(int argc, const char* argv[]) {
   ::ros::init(argc, const_cast<char**>(argv), "single_car_in_stata_garage");
   ::ros::start();
 
@@ -221,10 +221,10 @@ int DoMain(int argc, const char* argv[]) {
 }
 
 }  // namespace
-}  // namespace cars
+}  // namespace automotive
 }  // namespace ros
 }  // namespace drake
 
 int main(int argc, const char* argv[]) {
-  return drake::ros::cars::DoMain(argc, argv);
+  return drake::ros::automotive::do_main(argc, argv);
 }
