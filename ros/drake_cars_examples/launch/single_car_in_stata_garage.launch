@@ -13,6 +13,7 @@ To run it:
   <group ns="drake">
     <param name="penetration_stiffness" type="double" value="7500" />
     <param name="penetration_damping" type="double" value="750" />
+    <param name="friction_coefficient" type="double" value="10.0" />
     <param name="steering_kp" type="double" value="1000" />
     <param name="steering_kd" type="double" value="250" />
     <param name="throttle_k" type="double" value="100" />

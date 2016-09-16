@@ -62,6 +62,10 @@ ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
   rigid_body_system->penetration_damping =
       GetROSParameter<double>("penetration_damping");
 
+  rigid_body_system->friction_coefficient =
+      GetROSParameter<double>("friction_coefficient");    
+
+
   // Adds the vehicle model instance to the RigidBodySystem.
   std::string vehicle_filename = GetROSParameter<std::string>("car_filename");
 
@@ -149,8 +153,8 @@ int do_main(int argc, const char* argv[]) {
   // controllers for each actuator within the RigidBodySystem. It then cascades
   // the PD control system block behind a gain block and returns the resulting
   // cascade.
-  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, steering_kp,
-      steering_kd, throttle_k);
+  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, penetration_stiffness,penetration_damping, friction_coefficient, 
+    steering_kp, steering_kd, throttle_k);
 
   auto visualizer =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);

@@ -109,17 +109,17 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   }
 
   // Sets various simulation parameters.
-  SetRigidBodySystemParameters(rigid_body_sys.get());
+  // SetRigidBodySystemParameters(rigid_body_sys.get());
 
   return rigid_body_sys;
 }
 
-void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
-  rigid_body_sys->penetration_stiffness = 5000.0;
-  rigid_body_sys->penetration_damping =
-    rigid_body_sys->penetration_stiffness / 10.0;
-  rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
-}
+// void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
+//   rigid_body_sys->penetration_stiffness = 5000.0;
+//   rigid_body_sys->penetration_damping =
+//     rigid_body_sys->penetration_stiffness / 10.0;
+//   rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
+// }
 
 double ParseDuration(int argc, const char* argv[]) {
   for (int ii = 1; ii < argc; ++ii) {
@@ -159,6 +159,7 @@ std::shared_ptr<CascadeSystem<
     Gain<DrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
 CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
+    double penetration_stiffness, double penetration_damping, double friction_coefficient,
     double steering_kp, double steering_kd, double throttle_k) {
   const auto& tree = rigid_body_sys->getRigidBodyTree();
 
