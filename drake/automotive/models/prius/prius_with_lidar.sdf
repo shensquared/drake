@@ -1,14 +1,20 @@
 <?xml version='1.0' ?>
 
 <sdf version='1.6'>
-  <model name='prius_1'>
+  <model name='Prius'>
     <pose>0 0 0 0 0 0</pose>
 
     <link name='chassis_floor'>
       <pose>0 0 0.378326 0 0 0</pose>
       <inertial>
        <pose>0 0 0 0 0 0</pose>
-        <mass>57.833</mass>
+       <!-- This is the actual mass -->
+       <!-- <mass>1360</mass> -->
+
+       <!-- These are lower masses used for debugging purposes. -->
+       <!-- <mass>120</mass> -->
+
+<!--         <mass>57.833</mass>
         <inertia>
           <ixx>2.71553</ixx>
           <ixy>0</ixy>
@@ -16,6 +22,15 @@
           <iyy>68.9</iyy>
           <iyz>0</iyz>
           <izz>71.6063</izz>
+        </inertia> -->
+      <mass>70</mass>
+        <inertia>
+          <ixx>3.28682729807</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>48.3895772981</iyy>
+          <iyz>0</iyz>
+          <izz>51.66525</izz>
         </inertia>
       </inertial>
       <visual name='main'>
@@ -417,7 +432,7 @@
         <geometry>
           <mesh>
             <!-- <uri>prius.dae</uri> -->
-            <uri>prius.dae</uri>
+            <uri>package://drake/drake/examples/Cars/models/prius/prius.dae</uri>
           </mesh>
         </geometry>
         <material>

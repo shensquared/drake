@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<!--
+This launch file starts Drake's multi_car_on_plane and loads the necessary
+parameters onto the ROS parameter server.
+
+To run it, first start RViz:
+    $ cd drake_catkin_workspace
+    $ ./install/bin/drake-visualizer
+
+Then:
+
+    $ roslaunch drake_cars_examples multi_cars_on_plane_drake.launch
+-->
+<launch>
+  <group ns="drake">
+    <include file="$(find drake_cars_examples)/launch/multi_cars_on_plane_description.xml" />
+    <param name="enable_tf_publisher" type="bool" value="true" />
+    <param name="penetration_stiffness" type="double" value="7500" />
+    <param name="penetration_damping" type="double" value="750" />
+    <param name="steering_kp" type="double" value="400" />
+    <param name="steering_kd" type="double" value="80" />
+    <param name="throttle_k" type="double" value="100" />
+    <param name="initial_step_size" type="double" value="5e-3" />
+
+    <node
+        name="multi_cars_on_plane"
+        pkg="drake_cars_examples"
+        type="multi_cars_on_plane"
+        output="screen" />
+  </group>
+</launch>

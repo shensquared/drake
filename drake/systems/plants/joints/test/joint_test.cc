@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include  <memory>
 
 #include "drake/systems/plants/joints/FixedJoint.h"

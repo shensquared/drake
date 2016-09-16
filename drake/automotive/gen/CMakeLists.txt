@@ -4,6 +4,7 @@ if(lcm_FOUND)
     driving_command_translator.h
     euler_floating_joint_state.h
     euler_floating_joint_state_translator.h
+    multi_driving_command.h
     simple_car_state.h
     simple_car_state_translator.h
     )
