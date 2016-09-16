@@ -9,7 +9,13 @@
       <inertial>
        <pose>0 0 0 0 0 0</pose>
        <!-- This is the actual mass -->
-       <!-- <mass>1360</mass> -->
+       <mass>1360</mass>
+       
+    <inertial>
+      <mass value="1360"/>
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="63.5" ixy="0" ixz="0" iyy="1617" iyz="0" izz="1665"/>
+    </inertial>
 
        <!-- These are lower masses used for debugging purposes. -->
        <!-- <mass>120</mass> -->
@@ -23,7 +29,9 @@
           <iyz>0</iyz>
           <izz>71.6063</izz>
         </inertia> -->
-      <mass>70</mass>
+
+
+   <!--    <mass>70</mass>
         <inertia>
           <ixx>3.28682729807</ixx>
           <ixy>0</ixy>
@@ -31,7 +39,7 @@
           <iyy>48.3895772981</iyy>
           <iyz>0</iyz>
           <izz>51.66525</izz>
-        </inertia>
+        </inertia> -->
       </inertial>
       <visual name='main'>
         <pose>0 0 0 0 0 0</pose>
