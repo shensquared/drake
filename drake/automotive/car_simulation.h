@@ -191,7 +191,7 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
  *
  * @return The resulting vehicle system.
  */
-DRAKECARS_EXPORT
+DRAKEAUTOMOTIVE_EXPORT
 std::shared_ptr<CascadeSystem<
     Gain<MultiDrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>

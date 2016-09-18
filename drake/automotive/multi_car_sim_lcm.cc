@@ -54,7 +54,7 @@ int do_main(int argc, const char* argv[]) {
       drake::systems::plants::joints::kQuaternion, car_offset);
   }
 
-  SetRigidBodySystemParameters(rigid_body_sys.get());
+  // SetRigidBodySystemParameters(rigid_body_sys.get());
 
   double duration = ParseDuration(argc, argv);
 

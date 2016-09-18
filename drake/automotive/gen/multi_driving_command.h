@@ -9,13 +9,13 @@
 
 #include <Eigen/Core>
 
-#include "drake/drakeCars_export.h"
+#include "drake/drakeAutomotive_export.h"
 #include "drake/automotive/gen/driving_command.h"
 #include "drake/systems/framework/basic_vector.h"
 #include "lcmtypes/drake/lcmt_driving_command_t.hpp"
 
 namespace drake {
-namespace cars {
+namespace automotive {
 
 /// Specializes BasicStateAndOutputVector with specific getters and setters.
 template <typename T>
