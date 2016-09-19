@@ -54,7 +54,10 @@ void PrintUsageInstructions(const std::string& executable_name) {
 
 std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     int argc, const char* argv[], double* duration,
-    ModelInstanceIdTable* model_instance_id_table) {
+    ModelInstanceIdTable* model_instance_id_table,
+    double* penetration_stiffness,
+    double* penetration_damping,
+    double* friction_coefficient) {
   if (argc < 2) {
     PrintUsageInstructions(argv[0]);
     exit(EXIT_FAILURE);
@@ -83,8 +86,9 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     *duration = std::numeric_limits<double>::infinity();
   }
 
+  if (argc>3){
   // Adds the environment.
-  for (int ii = 2; ii < argc; ++ii) {
+  for (int ii = 2; ii < argc-3; ++ii) {
     if (std::string(argv[ii]) == "--duration") {
       if (++ii == argc) {
         throw std::runtime_error(
@@ -101,6 +105,12 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     }
   }
 
+  rigid_body_sys->penetration_stiffness = atof(argv[argc-3]);
+  rigid_body_sys->penetration_damping = atof(argv[argc-2]);
+  rigid_body_sys->friction_coefficient = atof(argv[argc-1]); 
+    // SetRigidBodySystemParameters(rigid_body_sys, atof(argv[argc-3]),atof(argv[argc-2]),atof(argv[argc-1]));
+}
+
   // Adds a flat terrain if no environment is specified.
   if (argc < 3) {
     const std::shared_ptr<RigidBodyTree>& tree =
@@ -109,16 +119,16 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   }
 
   // Sets various simulation parameters.
-  // SetRigidBodySystemParameters(rigid_body_sys.get());
+
 
   return rigid_body_sys;
 }
 
-void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
-  rigid_body_sys->penetration_stiffness = 5000.0;
-  rigid_body_sys->penetration_damping =
-    rigid_body_sys->penetration_stiffness / 10.0;
-  rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
+void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys, double penetration_stiffness,
+  double penetration_damping, double friction_coefficient) {
+  rigid_body_sys->penetration_stiffness = penetration_stiffness;
+  rigid_body_sys->penetration_damping = penetration_damping;
+  rigid_body_sys->friction_coefficient = friction_coefficient;  // essentially infinite friction
 }
 
 double ParseDuration(int argc, const char* argv[]) {

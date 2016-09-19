@@ -60,7 +60,10 @@ void PrintUsageInstructions(const std::string& executable_name);
 DRAKEAUTOMOTIVE_EXPORT
 std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     int argc, const char* argv[], double* duration,
-    drake::parsers::ModelInstanceIdTable* model_instance_id_table);
+    drake::parsers::ModelInstanceIdTable* model_instance_id_table,
+    double* penetration_stiffness,
+    double* penetration_damping,
+    double* friction_coefficient);
 
 /**
  * Checks the command line arguments looking for a "--duration" flag followed
@@ -83,7 +86,9 @@ double ParseDuration(int argc, const char* argv[]);
  * @param[in] rigid_body_sys The rigid body system to modify.
  */
 DRAKEAUTOMOTIVE_EXPORT
-void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys);
+void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys,
+     double penetration_stiffness = 750000, double penetration_damping = 75000, 
+    double friction_coefficient =10);
 
 /**
  * Adds a box-shaped terrain to the specified rigid body tree. This directly

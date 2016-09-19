@@ -24,9 +24,15 @@ int do_main(int argc, const char* argv[]) {
 
   drake::parsers::ModelInstanceIdTable model_instances;
 
+  double penetration_stiffness = atof(argv[argc-3]);
+  double penetration_damping = atof(argv[argc-2]);
+  double friction_coefficient = atof(argv[argc-1]); 
+
   // Initializes the rigid body system.
   auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
-      &model_instances);
+      &model_instances, &penetration_stiffness, &penetration_damping,&friction_coefficient);
+
+
 
   // Initializes and cascades all of the other systems.
   auto vehicle_sys = CreateVehicleSystem(rigid_body_sys);
