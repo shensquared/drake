@@ -246,6 +246,7 @@ std::shared_ptr<CascadeSystem<
     PDControlSystem<RigidBodySystem>>>
 CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
     const std::map<int, std::string>* model_instance_name_table,
+    double penetration_stiffness, double penetration_damping, double friction_coefficient,
     double steering_kp, double steering_kd, double throttle_k) {
   const auto& tree = rigid_body_sys->getRigidBodyTree();
 
