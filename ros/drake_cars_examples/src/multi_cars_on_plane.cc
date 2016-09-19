@@ -27,12 +27,12 @@ using Eigen::VectorXd;
 
 namespace drake {
 namespace ros {
-namespace cars {
+namespace automotive {
 namespace {
 
-using drake::cars::CreateRigidBodySystem;
-using drake::cars::CreateMultiVehicleSystem;
-using drake::cars::GetCarSimulationDefaultOptions;
+using drake::automotive::CreateRigidBodySystem;
+using drake::automotive::CreateMultiVehicleSystem;
+using drake::automotive::GetCarSimulationDefaultOptions;
 
 using drake::parsers::ModelInstanceIdTable;
 
@@ -214,6 +214,10 @@ int DoMain(int argc, const char* argv[]) {
   std::thread worldTfPublisherThread(WorldTfPublisher, num_vehicles);
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
+  double penetration_stiffness = GetROSParameter<double>("penetration_stiffness");
+  double penetration_damping = GetROSParameter<double>("penetration_damping");
+  double friction_coefficient = GetROSParameter<double>("friction_coefficient");
+
 
   // Obtains the gains to be used by the steering and throttle controllers.
   double steering_kp = GetROSParameter<double>("steering_kp");
@@ -229,7 +233,7 @@ int DoMain(int argc, const char* argv[]) {
   //
   // Thus, there is a total of 3 * 5 = 15 actuators.
   auto vehicle_sys = CreateMultiVehicleSystem(rigid_body_sys,
-      &vehicle_model_instance_name_table, steering_kp, steering_kd, throttle_k);
+      &vehicle_model_instance_name_table, penetration_stiffness,penetration_damping, friction_coefficient, steering_kp, steering_kd, throttle_k);
 
   auto bot_visualizer_publisher =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);
@@ -295,7 +299,7 @@ int DoMain(int argc, const char* argv[]) {
   const double kStartTime = 0;
   double duration = std::numeric_limits<double>::infinity();
 
-  drake::cars::SetRigidBodySystemParameters(rigid_body_sys.get());
+  drake::automotive::SetRigidBodySystemParameters(rigid_body_sys.get());
 
   // Starts the main simulation loop.
   run_ros_vehicle_sim(sys, kStartTime, duration, x0,
@@ -306,10 +310,10 @@ int DoMain(int argc, const char* argv[]) {
 }
 
 }  // namespace
-}  // namespace cars
+}  // namespace automotive
 }  // namespace ros
 }  // namespace drake
 
 int main(int argc, const char* argv[]) {
-  return drake::ros::cars::DoMain(argc, argv);
+  return drake::ros::automotive:ubunt::DoMain(argc, argv);
 }

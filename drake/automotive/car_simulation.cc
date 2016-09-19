@@ -114,12 +114,12 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   return rigid_body_sys;
 }
 
-// void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
-//   rigid_body_sys->penetration_stiffness = 5000.0;
-//   rigid_body_sys->penetration_damping =
-//     rigid_body_sys->penetration_stiffness / 10.0;
-//   rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
-// }
+void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
+  rigid_body_sys->penetration_stiffness = 5000.0;
+  rigid_body_sys->penetration_damping =
+    rigid_body_sys->penetration_stiffness / 10.0;
+  rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
+}
 
 double ParseDuration(int argc, const char* argv[]) {
   for (int ii = 1; ii < argc; ++ii) {

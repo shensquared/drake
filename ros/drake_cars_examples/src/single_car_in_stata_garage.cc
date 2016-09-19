@@ -142,6 +142,10 @@ int do_main(int argc, const char* argv[]) {
   model_instance_name_table_odometry[model_instance_id_table["prius_1"]]
       = "prius";
 
+  double penetration_stiffness = GetROSParameter<double>("penetration_stiffness");
+  double penetration_damping = GetROSParameter<double>("penetration_damping");
+  double friction_coefficient = GetROSParameter<double>("friction_coefficient");
+
   // Obtains the gains to be used by the steering and throttle controllers.
   double steering_kp = GetROSParameter<double>("steering_kp");
   double steering_kd = GetROSParameter<double>("steering_kd");
