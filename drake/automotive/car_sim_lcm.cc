@@ -32,8 +32,6 @@ int do_main(int argc, const char* argv[]) {
   auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
       &model_instances, &penetration_stiffness, &penetration_damping,&friction_coefficient);
 
-
-
   // Initializes and cascades all of the other systems.
   auto vehicle_sys = CreateVehicleSystem(rigid_body_sys);
 

@@ -233,7 +233,9 @@ int DoMain(int argc, const char* argv[]) {
   //
   // Thus, there is a total of 3 * 5 = 15 actuators.
   auto vehicle_sys = CreateMultiVehicleSystem(rigid_body_sys,
-      &vehicle_model_instance_name_table, penetration_stiffness,penetration_damping, friction_coefficient, steering_kp, steering_kd, throttle_k);
+      &vehicle_model_instance_name_table, 
+      // penetration_stiffness, penetration_damping, friction_coefficient, 
+      steering_kp, steering_kd, throttle_k);
 
   auto bot_visualizer_publisher =
       std::make_shared<BotVisualizer<RigidBodySystem::StateVector>>(lcm, tree);

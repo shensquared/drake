@@ -157,7 +157,8 @@ int do_main(int argc, const char* argv[]) {
   // controllers for each actuator within the RigidBodySystem. It then cascades
   // the PD control system block behind a gain block and returns the resulting
   // cascade.
-  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, penetration_stiffness,penetration_damping, friction_coefficient, 
+  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, 
+    // penetration_stiffness,penetration_damping, friction_coefficient, 
     steering_kp, steering_kd, throttle_k);
 
   auto visualizer =

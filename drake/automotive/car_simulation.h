@@ -153,8 +153,8 @@ std::shared_ptr<CascadeSystem<
     Gain<DrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
 CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
-    double penetration_stiffness = 750000, double penetration_damping = 75000, 
-    double friction_coefficient =10,
+    // double penetration_stiffness = 750000, double penetration_damping = 75000, 
+    // double friction_coefficient =10,
     double steering_kp = 400, double steering_kd = 80, double throttle_k = 100);
 
 /**
@@ -202,8 +202,8 @@ std::shared_ptr<CascadeSystem<
     PDControlSystem<RigidBodySystem>>>
 CreateMultiVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
     const std::map<int, std::string>* model_instance_name_table,
-    double penetration_stiffness = 750000, double penetration_damping = 75000, 
-    double friction_coefficient =10,
+    // double penetration_stiffness = 750000, double penetration_damping = 75000, 
+    // double friction_coefficient =10,
     double steering_kp = 400, double steering_kd = 80, double throttle_k = 100);
 
 /**
