@@ -55,9 +55,9 @@ void PrintUsageInstructions(const std::string& executable_name) {
 std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     int argc, const char* argv[], double* duration,
     ModelInstanceIdTable* model_instance_id_table,
-    double* penetration_stiffness,
-    double* penetration_damping,
-    double* friction_coefficient) {
+    double penetration_stiffness,
+    double penetration_damping,
+    double friction_coefficient) {
   if (argc < 2) {
     PrintUsageInstructions(argv[0]);
     exit(EXIT_FAILURE);

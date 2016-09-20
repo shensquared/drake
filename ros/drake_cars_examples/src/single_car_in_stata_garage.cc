@@ -54,18 +54,7 @@ using drake::systems::plants::joints::kQuaternion;
 // Initializes the RigidBodySystem by setting the collision gains, adding the
 // vehicle model, and adding the world model to @p rigid_body_system.
 ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
-  // Sets the desired contact penetration stiffness and damping in the
-  // RigidBodySystem.
-  rigid_body_system->penetration_stiffness =
-      GetROSParameter<double>("penetration_stiffness");
-
-  rigid_body_system->penetration_damping =
-      GetROSParameter<double>("penetration_damping");
-
-  rigid_body_system->friction_coefficient =
-      GetROSParameter<double>("friction_coefficient");    
-
-
+  
   // Adds the vehicle model instance to the RigidBodySystem.
   std::string vehicle_filename = GetROSParameter<std::string>("car_filename");
 
@@ -92,7 +81,19 @@ ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
   drake::parsers::AddModelInstancesToTable(world_instance_id_table,
       &model_instance_id_table);
 
-  SetRigidBodySystemParameters(rigid_body_system);
+  // SetRigidBodySystemParameters(rigid_body_system);
+
+    // Sets the desired contact penetration stiffness and damping in the
+  // RigidBodySystem.
+  rigid_body_system->penetration_stiffness =
+      GetROSParameter<double>("penetration_stiffness");
+
+  rigid_body_system->penetration_damping =
+      GetROSParameter<double>("penetration_damping");
+
+  rigid_body_system->friction_coefficient =
+      GetROSParameter<double>("friction_coefficient");  
+      
 
   return model_instance_id_table;
 }
@@ -142,9 +143,9 @@ int do_main(int argc, const char* argv[]) {
   model_instance_name_table_odometry[model_instance_id_table["prius_1"]]
       = "prius";
 
-  double penetration_stiffness = GetROSParameter<double>("penetration_stiffness");
-  double penetration_damping = GetROSParameter<double>("penetration_damping");
-  double friction_coefficient = GetROSParameter<double>("friction_coefficient");
+  // double penetration_stiffness = GetROSParameter<double>("penetration_stiffness");
+  // double penetration_damping = GetROSParameter<double>("penetration_damping");
+  // double friction_coefficient = GetROSParameter<double>("friction_coefficient");
 
   // Obtains the gains to be used by the steering and throttle controllers.
   double steering_kp = GetROSParameter<double>("steering_kp");
