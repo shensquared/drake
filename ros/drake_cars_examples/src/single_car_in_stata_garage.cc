@@ -81,7 +81,7 @@ ModelInstanceIdTable InitRigidBodySystem(RigidBodySystem* rigid_body_system) {
   drake::parsers::AddModelInstancesToTable(world_instance_id_table,
       &model_instance_id_table);
 
-  // SetRigidBodySystemParameters(rigid_body_system);
+  SetRigidBodySystemParameters(rigid_body_system);
 
     // Sets the desired contact penetration stiffness and damping in the
   // RigidBodySystem.

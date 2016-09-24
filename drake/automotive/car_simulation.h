@@ -61,8 +61,8 @@ DRAKEAUTOMOTIVE_EXPORT
 std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
     int argc, const char* argv[], double* duration,
     drake::parsers::ModelInstanceIdTable* model_instance_id_table,
-    double penetration_stiffness=75000.0,
-    double penetration_damping=7500.0,
+    double penetration_stiffness=750000.0,
+    double penetration_damping=750.0,
     double friction_coefficient=10.0);
 
 /**
@@ -152,6 +152,7 @@ DRAKEAUTOMOTIVE_EXPORT
 std::shared_ptr<CascadeSystem<
     Gain<DrivingCommand1, PDControlSystem<RigidBodySystem>::InputVector>,
     PDControlSystem<RigidBodySystem>>>
+    
 CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
     // double penetration_stiffness = 750000, double penetration_damping = 75000, 
     // double friction_coefficient =10,

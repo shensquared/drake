@@ -24,16 +24,22 @@ int do_main(int argc, const char* argv[]) {
 
   drake::parsers::ModelInstanceIdTable model_instances;
 
-  double penetration_stiffness = atof(argv[argc-3]);
-  double penetration_damping = atof(argv[argc-2]);
-  double friction_coefficient = atof(argv[argc-1]); 
+  double penetration_stiffness = atof(argv[argc-6]);
+  double penetration_damping = atof(argv[argc-5]);
+  double friction_coefficient = atof(argv[argc-4]); 
 
   // Initializes the rigid body system.
   auto rigid_body_sys = CreateRigidBodySystem(argc, argv, &duration,
       &model_instances, penetration_stiffness, penetration_damping, friction_coefficient);
 
   // Initializes and cascades all of the other systems.
-  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys);
+
+  double steering_kp = atof(argv[argc-3]);
+  double steering_kd = atof(argv[argc-2]);
+  double throttle_k = atof(argv[argc-1]); 
+
+
+  auto vehicle_sys = CreateVehicleSystem(rigid_body_sys, steering_kp, steering_kd, throttle_k);
 
   auto const& tree = rigid_body_sys->getRigidBodyTree();
   auto visualizer =

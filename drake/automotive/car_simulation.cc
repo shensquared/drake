@@ -87,7 +87,41 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   }
 
   if (argc>3){
-  // Adds the environment.
+    if (argc>6){
+
+        // Adds the environment.
+  for (int ii = 2; ii < argc-6; ++ii) {
+    if (std::string(argv[ii]) == "--duration") {
+      if (++ii == argc) {
+        throw std::runtime_error(
+            "ERROR: Command line option \"--duration\" is not followed by a "
+            "value!");
+      }
+      if (duration != nullptr)
+        *duration = atof(argv[ii]);
+    } else {
+      ModelInstanceIdTable world_instance_id_table =
+          rigid_body_sys->AddModelInstanceFromFile(argv[ii], kFixed);
+      drake::parsers::AddModelInstancesToTable(world_instance_id_table,
+          model_instance_id_table);
+    }
+  }
+
+  rigid_body_sys->penetration_stiffness = atof(argv[argc-6]);
+  rigid_body_sys->penetration_damping = atof(argv[argc-5]);
+  rigid_body_sys->friction_coefficient = atof(argv[argc-4]); 
+    // SetRigidBodySystemParameters(rigid_body_sys, atof(argv[argc-3]),atof(argv[argc-2]),atof(argv[argc-1]));
+
+
+
+
+
+
+    }
+
+    else{
+
+        // Adds the environment.
   for (int ii = 2; ii < argc-3; ++ii) {
     if (std::string(argv[ii]) == "--duration") {
       if (++ii == argc) {
@@ -109,6 +143,10 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
   rigid_body_sys->penetration_damping = atof(argv[argc-2]);
   rigid_body_sys->friction_coefficient = atof(argv[argc-1]); 
     // SetRigidBodySystemParameters(rigid_body_sys, atof(argv[argc-3]),atof(argv[argc-2]),atof(argv[argc-1]));
+
+    }
+
+
 }
 
   // Adds a flat terrain if no environment is specified.
@@ -117,12 +155,10 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
         rigid_body_sys->getRigidBodyTree();
     AddFlatTerrainToWorld(tree);
   }
-
   // Sets various simulation parameters.
-
-
   return rigid_body_sys;
 }
+
 
 void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys, double penetration_stiffness,
   double penetration_damping, double friction_coefficient) {
