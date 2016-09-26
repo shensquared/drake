@@ -1,0 +1,17 @@
+#!/bin/sh
+CLASSPATH=`PKG_CONFIG_PATH=PKG_CONFIG_PATH:/Users/shenshen/drake/build/install/lib/pkgconfig pkg-config --variable=classpath lcm-java`
+for d in . .. ../.. ../../.. ../../../.. "/Users/shenshen/drake/build/install"; do
+  if [ -d $d/share/java ]; then
+    jd=$d/share/java
+    echo Checking $jd
+    for f in $jd/lcmtypes_*.jar $jd/lcmspy_plugins_*.jar; do
+      if [ -e $f ]; then
+        echo "   Found $f"
+        CLASSPATH=$CLASSPATH:$f
+      fi
+    done
+  fi
+done
+
+java -server -Djava.net.preferIPv4Stack=true -Xincgc -Xmx128m -Xms64m -ea -cp `ls ../../../build/install/share/java/*.jar | xargs echo | perl -pe 's# #:#g;'` lcm.spy.Spy &
+exec java -ea -cp $CLASSPATH lcm.spy.Spy $*
