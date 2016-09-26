@@ -30,8 +30,8 @@ to your ``.bash_profile`` or ``.bashrc``.
 
 Download the external dependencies::
 
-    cd drake-distro
-    make options  # use the GUI to choose which externals you want, then press 'c' to configure, then 'g' to generate makefiles and exit
-    make download-all
+    cd drake-distro/build
+    cmake ..
+    make
 
 When you are done with these platform-specific steps, return to :doc:`from_source` to complete and test your installation.

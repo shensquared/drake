@@ -7,8 +7,12 @@
 #include "drake/systems/plants/RigidBodySystem.h"
 #include "drake/util/drakeAppUtil.h"
 #include "lcmtypes/drake/lcmt_driving_command_t.hpp"
+#include <lcm/lcm.h>
+#include <bot_lcmgl_client/lcmgl.h>
 
 using Eigen::VectorXd;
+// bot_lcmgl_t *lcmgl;
+
 
 namespace drake {
 namespace automotive {
@@ -59,7 +63,24 @@ int do_main(int argc, const char* argv[]) {
                 GetInitialState(*(rigid_body_sys.get())),
                 options);
 
+  // visulize contact forces and friction forces
+
+  // lcm_t *lcm;
+  // lcm = lcm_create(nullptr);
+  // if (!lcm) return 1;
+
+  // lcmgl = bot_lcmgl_init(lcm, "zmp-based CoM estimate");
+  // drake_lcmt_zmp_com_observer_state_subscribe(lcm, "ZMP_COM_OBSERVER_STATE",
+  //                                             &handleMessage, nullptr);
+
+  // while (true) lcm_handle(lcm);
+
+  // bot_lcmgl_destroy(lcmgl);
+  // lcm_destroy(lcm);
+
   return 0;
+
+
 }
 
 }  // namespace
@@ -69,3 +90,34 @@ int do_main(int argc, const char* argv[]) {
 int main(int argc, const char* argv[]) {
   return drake::automotive::do_main(argc, argv);
 }
+
+// static void handleMessage(const lcm_recv_buf_t *rbuf, const char *channel,
+//                           const drake_lcmt_zmp_com_observer_state *msg,
+//                           void *user) {
+
+
+//   bot_lcmgl_color3f(lcmgl, 1.0, 0.0, 0.0);          // red
+//   double v0 = 
+//   double v1 = 
+//   bot_lcmgl_vertex2d(lcmgl, v0, v1)
+//   bot_lcmgl_switch_buffer(lcmgl);
+// }
+
+
+// drake_lcmt_zmp_com_observer_state_subscription_t* drake_lcmt_zmp_com_observer_state_subscribe (lcm_t *lcm,
+//                     const char *channel,
+//                     drake_lcmt_zmp_com_observer_state_handler_t f, void *userdata)
+// {
+//     drake_lcmt_zmp_com_observer_state_subscription_t *n = (drake_lcmt_zmp_com_observer_state_subscription_t*)
+//                        malloc(sizeof(drake_lcmt_zmp_com_observer_state_subscription_t));
+//     n->user_handler = f;
+//     n->userdata = userdata;
+//     n->lc_h = lcm_subscribe (lcm, channel,
+//                                  drake_lcmt_zmp_com_observer_state_handler_stub, n);
+//     if (n->lc_h == NULL) {
+//         fprintf (stderr,"couldn't reg drake_lcmt_zmp_com_observer_state LCM handler!\n");
+//         free (n);
+//         return NULL;
+//     }
+//     return n;
+// }
