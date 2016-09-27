@@ -6,10 +6,12 @@
     <origin rpy="0 0 0" xyz="0 0 0.378326"/>
     <parent link="world"/>
     <child link="chassis_floor"/>
+<!--     <dynamics damping="0.1" friction="0"/>
+ -->
   </joint>
 
   <link name="chassis_floor">
-<!-- more realistic mass and inertia -->
+    <!-- more realistic mass and inertia -->
 
     <inertial>
       <mass value="1360"/>
@@ -204,7 +206,7 @@
       <geometry>
         <cylinder length="0.215" radius="0.323342"/>
       </geometry>
-       <material name="gray">
+      <material name="gray">
         <color rgba="0.2 0.2 0.2 1" />
       </material>
     </visual>
@@ -344,6 +346,7 @@
   <joint name="steering" type="revolute">
     <parent link="front_axle"/>
     <child link="left_tie_rod_arm"/>
+    <dynamics damping="0.1" friction="0"/>
     <origin rpy="0 0 0" xyz="0 0.49473 -0.03092"/>
     <axis xyz="0 0 1"/>
     <limit effort="0.0" lower="-0.401426" upper="0.5" velocity="0.0"/>
@@ -358,6 +361,7 @@
   <joint name="left_pin" type="revolute">
     <parent link="left_tie_rod_arm"/>
     <child link="tie_rod"/>
+    <dynamics damping="0.1" friction="0"/>
     <origin rpy="0 0 0" xyz="-0.17246 -0.08623  0.03092"/>
     <axis xyz="0 0 1"/>
     <limit effort="0" lower="-1.5" upper="1.5" velocity="0"/>
@@ -365,6 +369,8 @@
   <joint name="left_wheel_joint" type="continuous">
     <parent link="left_hub"/>
     <child link="left_wheel"/>
+        <dynamics damping="0.1" friction="0"/>
+
     <origin rpy="0 0 0" xyz="0 0 -0.183582999999999940676787"/>
     <axis xyz="0 0 -1"/>
     <limit effort="10000" velocity="10000"/>
@@ -372,6 +378,7 @@
   <joint name="axle_tie_rod_arm" type="revolute">
     <parent link="front_axle"/>
     <child link="right_tie_rod_arm"/>
+    <dynamics damping="0.1" friction="0"/>
     <origin rpy="0 0 0" xyz="0 -0.49473 -0.03092"/>
     <axis xyz="0 0 1"/>
     <limit effort="0.0" lower="-0.401426" upper="0.5" velocity="0.0"/>
@@ -385,7 +392,9 @@
   </joint>
   <joint name="right_wheel_joint" type="continuous">
     <parent link="right_hub"/>
-    <child link="right_wheel"/>
+    <child link="right_wheel"/>    
+    <dynamics damping="0.1" friction="0"/>
+
     <origin rpy="0 0 0" xyz="0 0 0.18357"/>
     <axis xyz="0 0 -1"/>
     <limit effort="10000" velocity="10000"/>
@@ -400,6 +409,8 @@
   <joint name="rear_left_wheel_joint" type="continuous">
     <parent link="rear_axle"/>
     <child link="left_wheel_rear"/>
+        <dynamics damping="0.1" friction="0"/>
+
     <origin rpy="1.570796326794896557998982  0 0" xyz="0 0.80199  0"/>
     <axis xyz="0  0 -1"/>
     <limit effort="10000" velocity="10000"/>
@@ -407,6 +418,8 @@
   <joint name="rear_right_wheel_joint" type="continuous">
     <parent link="rear_axle"/>
     <child link="right_wheel_rear"/>
+        <dynamics damping="0.1" friction="0"/>
+
     <origin rpy="1.570796326794896557998982 0 0" xyz="0 -0.80199  0"/>
     <axis xyz="0  0 -1"/>
     <limit effort="10000" velocity="10000"/>

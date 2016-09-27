@@ -13,5 +13,5 @@ for d in . .. ../.. ../../.. ../../../.. "/Users/shenshen/drake/build/install"; 
   fi
 done
 
-java -server -Djava.net.preferIPv4Stack=true -Xincgc -Xmx128m -Xms64m -ea -cp `ls ../../../build/install/share/java/*.jar | xargs echo | perl -pe 's# #:#g;'` lcm.spy.Spy &
+java -server -Djava.net.preferIPv4Stack=true -Xincgc -Xmx128m -Xms64m -ea -cp `ls ../../build/install/share/java/*.jar | xargs echo | perl -pe 's# #:#g;'` lcm.spy.Spy &
 exec java -ea -cp $CLASSPATH lcm.spy.Spy $*
