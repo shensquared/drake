@@ -19,11 +19,11 @@ namespace {
 class AdderTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    adder_.reset(new Adder<double>(2 /* inputs */, 3 /* length */));
+    adder_.reset(new Adder<double>(2 /* inputs */, 3 /* size */));
     context_ = adder_->CreateDefaultContext();
     output_ = adder_->AllocateOutput(*context_);
-    input0_.reset(new BasicVector<double>(3 /* length */));
-    input1_.reset(new BasicVector<double>(3 /* length */));
+    input0_.reset(new BasicVector<double>(3 /* size */));
+    input1_.reset(new BasicVector<double>(3 /* size */));
   }
 
   static std::unique_ptr<FreestandingInputPort> MakeInput(
@@ -69,8 +69,7 @@ TEST_F(AdderTest, AddTwoVectors) {
   adder_->EvalOutput(*context_, output_.get());
 
   ASSERT_EQ(1, output_->get_num_ports());
-  const BasicVector<double>* output_port =
-      dynamic_cast<const BasicVector<double>*>(output_->get_vector_data(0));
+  const BasicVector<double>* output_port = output_->get_vector_data(0);
   ASSERT_NE(nullptr, output_port);
   Eigen::Vector3d expected;
   expected << 5, 7, 9;
@@ -79,7 +78,7 @@ TEST_F(AdderTest, AddTwoVectors) {
 
 // Tests that Adder allocates no state variables in the context_.
 TEST_F(AdderTest, AdderIsStateless) {
-  EXPECT_EQ(nullptr, context_->get_state().continuous_state);
+  EXPECT_EQ(nullptr, context_->get_continuous_state());
 }
 
 // Asserts that adders are systems with direct feedthrough inputs.

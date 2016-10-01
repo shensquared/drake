@@ -24,7 +24,7 @@ constexpr int kMiscContinuousStateSize = 1;
 
 constexpr double kTime = 12.0;
 
-class ContextTest : public ::testing::Test {
+class LeafContextTest : public ::testing::Test {
  protected:
   void SetUp() override {
     context_.set_time(kTime);
@@ -41,51 +41,85 @@ class ContextTest : public ::testing::Test {
     auto state = std::make_unique<BasicVector<double>>(kStateSize);
     state->get_mutable_value() << 1.0, 2.0, 3.0, 5.0, 8.0;
 
-    context_.get_mutable_state()->continuous_state.reset(
-        new ContinuousState<double>(
-            std::move(state),
-            kGeneralizedPositionSize, kGeneralizedVelocitySize,
-            kMiscContinuousStateSize));
+    context_.set_continuous_state(std::make_unique<ContinuousState<double>>(
+        std::move(state),
+        kGeneralizedPositionSize, kGeneralizedVelocitySize,
+        kMiscContinuousStateSize));
+  }
+
+  std::unique_ptr<AbstractValue> PackValue(int value) {
+    return std::unique_ptr<AbstractValue>(new Value<int>(value));
+  }
+
+  int UnpackValue(const AbstractValue* value) {
+    return dynamic_cast<const Value<int>*>(value)->get_value();
+  }
+
+  // Mocks up a descriptor that's sufficient to read a FreestandingInputPort
+  // connected to @p context at @p index.
+  static const BasicVector<double>* ReadVectorInputPort(
+      const Context<double>& context, int index) {
+    SystemPortDescriptor<double> descriptor(
+        nullptr, kInputPort, index, kVectorValued, 0, kInheritedSampling);
+    return context.EvalVectorInput(nullptr, descriptor);
+  }
+
+  // Mocks up a descriptor that's sufficient to read a FreestandingInputPort
+  // connected to @p context at @p index.
+  static const std::string* ReadStringInputPort(
+      const Context<double>& context, int index) {
+    SystemPortDescriptor<double> descriptor(
+        nullptr, kInputPort, index, kAbstractValued, 0, kInheritedSampling);
+    return context.EvalInputValue<std::string>(nullptr, descriptor);
+  }
+
+  // Mocks up a descriptor that's sufficient to read a FreestandingInputPort
+  // connected to @p context at @p index.
+  static const AbstractValue* ReadAbstractInputPort(
+      const Context<double>& context, int index) {
+    SystemPortDescriptor<double> descriptor(
+        nullptr, kInputPort, index, kAbstractValued, 0, kInheritedSampling);
+    return context.EvalAbstractInput(nullptr, descriptor);
   }
 
   LeafContext<double> context_;
 };
 
-TEST_F(ContextTest, GetNumInputPorts) {
+TEST_F(LeafContextTest, GetNumInputPorts) {
   ASSERT_EQ(kNumInputPorts, context_.get_num_input_ports());
 }
 
-TEST_F(ContextTest, ClearInputPorts) {
+TEST_F(LeafContextTest, ClearInputPorts) {
   context_.ClearInputPorts();
   EXPECT_EQ(0, context_.get_num_input_ports());
 }
 
-TEST_F(ContextTest, SetOutOfBoundsInputPort) {
+TEST_F(LeafContextTest, SetOutOfBoundsInputPort) {
   EXPECT_THROW(context_.SetInputPort(3, nullptr), std::out_of_range);
 }
 
-TEST_F(ContextTest, GetVectorInput) {
-  LeafContext<int> context;
+TEST_F(LeafContextTest, GetVectorInput) {
+  LeafContext<double> context;
   context.SetNumInputPorts(2);
 
   // Add input port 0 to the context, but leave input port 1 uninitialized.
-  std::unique_ptr<BasicVector<int>> vec(new BasicVector<int>(2));
+  std::unique_ptr<BasicVector<double>> vec(new BasicVector<double>(2));
   vec->get_mutable_value() << 5, 6;
   std::unique_ptr<FreestandingInputPort> port(
       new FreestandingInputPort(std::move(vec)));
   context.SetInputPort(0, std::move(port));
 
   // Test that port 0 is retrievable.
-  VectorX<int> expected(2);
+  VectorX<double> expected(2);
   expected << 5, 6;
-  EXPECT_EQ(expected, context.get_vector_input(0)->get_value());
+  EXPECT_EQ(expected, ReadVectorInputPort(context, 0)->get_value());
 
   // Test that port 1 is nullptr.
-  EXPECT_EQ(nullptr, context.get_vector_input(1));
+  EXPECT_EQ(nullptr, ReadVectorInputPort(context, 1));
 }
 
-TEST_F(ContextTest, GetAbstractInput) {
-  LeafContext<int> context;
+TEST_F(LeafContextTest, GetAbstractInput) {
+  LeafContext<double> context;
   context.SetNumInputPorts(2);
 
   // Add input port 0 to the context, but leave input port 1 uninitialized.
@@ -95,15 +129,27 @@ TEST_F(ContextTest, GetAbstractInput) {
   context.SetInputPort(0, std::move(port));
 
   // Test that port 0 is retrievable.
-  EXPECT_EQ("foo", *context.get_input_value<std::string>(0));
+  EXPECT_EQ("foo", *ReadStringInputPort(context, 0));
 
   // Test that port 1 is nullptr.
-  EXPECT_EQ(nullptr, context.get_abstract_input(1));
+  EXPECT_EQ(nullptr, ReadAbstractInputPort(context, 1));
 }
 
-TEST_F(ContextTest, Clone) {
-  std::unique_ptr<Context<double>> clone = context_.Clone();
+// Tests that items can be stored and retrieved in the cache, even when
+// the LeafContext is const.
+TEST_F(LeafContextTest, SetAndGetCache) {
+  const LeafContext<double>& ctx = context_;
+  CacheTicket ticket = ctx.CreateCacheEntry({});
+  ctx.InitCachedValue(ticket, PackValue(42));
+  const AbstractValue* value = ctx.GetCachedValue(ticket);
+  EXPECT_EQ(42, UnpackValue(value));
 
+  ctx.SetCachedValue<int>(ticket, 43);
+  EXPECT_EQ(43, UnpackValue(ctx.GetCachedValue(ticket)));
+}
+
+TEST_F(LeafContextTest, Clone) {
+  std::unique_ptr<Context<double>> clone = context_.Clone();
   // Verify that the time was copied.
   EXPECT_EQ(kTime, clone->get_time());
 
@@ -111,15 +157,16 @@ TEST_F(ContextTest, Clone) {
   // but are different pointers.
   EXPECT_EQ(kNumInputPorts, clone->get_num_input_ports());
   for (int i = 0; i < kNumInputPorts; ++i) {
-    EXPECT_NE(context_.get_vector_input(i), clone->get_vector_input(i));
-    EXPECT_TRUE(CompareMatrices(context_.get_vector_input(i)->get_value(),
-                                clone->get_vector_input(i)->get_value(), 1e-8,
+    const BasicVector<double>* context_port = ReadVectorInputPort(context_, i);
+    const BasicVector<double>* clone_port = ReadVectorInputPort(*clone, i);
+    EXPECT_NE(context_port, clone_port);
+    EXPECT_TRUE(CompareMatrices(context_port->get_value(),
+                                clone_port->get_value(), 1e-8,
                                 MatrixCompareType::absolute));
   }
 
   // Verify that the state was copied.
-  ContinuousState<double>* xc =
-      clone->get_mutable_state()->continuous_state.get();
+  ContinuousState<double>* xc = clone->get_mutable_continuous_state();
   VectorX<double> contents = xc->get_state().CopyToVector();
   VectorX<double> expected(kStateSize);
   expected << 1.0, 2.0, 3.0, 5.0, 8.0;
@@ -146,8 +193,7 @@ TEST_F(ContextTest, Clone) {
   // Verify that changes to the cloned state do not affect the original state.
   xc->get_mutable_generalized_velocity()->SetAtIndex(1, 42.0);
   EXPECT_EQ(42.0, xc_data->GetAtIndex(3));
-  EXPECT_EQ(5.0,
-            context_.get_state().continuous_state->get_state().GetAtIndex(3));
+  EXPECT_EQ(5.0, context_.get_continuous_state()->get_state().GetAtIndex(3));
 }
 
 }  // namespace systems

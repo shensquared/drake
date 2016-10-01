@@ -6,6 +6,7 @@
 #include "drake/systems/framework/basic_vector.h"
 #include "drake/systems/framework/context.h"
 #include "drake/systems/framework/cache.h"
+#include "drake/systems/framework/input_port_evaluator_interface.h"
 #include "drake/systems/framework/state.h"
 #include "drake/systems/framework/system_input.h"
 #include "drake/systems/framework/vector_base.h"
@@ -27,6 +28,13 @@ class LeafContext : public Context<T> {
  public:
   LeafContext() {}
   virtual ~LeafContext() {}
+
+  const InputPort* GetInputPort(int index) const override {
+    if (index < 0 || index >= get_num_input_ports()) {
+      throw std::out_of_range("Input port out of range.");
+    }
+    return inputs_[index].get();
+  }
 
   void SetInputPort(int index, std::unique_ptr<InputPort> port) override {
     if (index < 0 || index >= get_num_input_ports()) {
@@ -51,35 +59,54 @@ class LeafContext : public Context<T> {
     return static_cast<int>(inputs_.size());
   }
 
-  const BasicVector<T>* get_vector_input(int index) const override {
-    DRAKE_DEMAND(index >= 0 && index < get_num_input_ports());
-    if (inputs_[index] == nullptr) {
-      return nullptr;
-    }
-    return inputs_[index]->template get_vector_data<T>();
-  }
-
-  const AbstractValue* get_abstract_input(int index) const override {
-    DRAKE_DEMAND(index >= 0 && index < get_num_input_ports());
-    if (inputs_[index] == nullptr) {
-      return nullptr;
-    }
-    return inputs_[index]->get_abstract_data();
-  }
-
   const State<T>& get_state() const override { return state_; }
 
   State<T>* get_mutable_state() override { return &state_; }
 
-  /// Returns a const reference to the Cache, which is expected to contain
-  /// precalculated values of interest. Use this only to access known-valid
-  /// cache entries; use `get_mutable_cache()` if computations may be needed.
-  const Cache<T>& get_cache() const { return cache_; }
+  /// Reserves a cache entry with the given @p prerequisites on which it
+  /// depends. Returns a ticket to identify the entry.
+  CacheTicket CreateCacheEntry(
+      const std::set<CacheTicket>& prerequisites) const {
+    // TODO(david-german-tri): Provide a notation for specifying context
+    // dependencies as well, and provide automatic invalidation when the
+    // context dependencies change.
+    return cache_.MakeCacheTicket(prerequisites);
+  }
 
-  /// Access to the cache is always read-write, and is permitted even on
-  /// const references to the Context. No invalidation of downstream dependents
-  /// occurs until mutable access is requested for a particular cache entry.
-  Cache<T>* get_mutable_cache() const { return &cache_; }
+  /// Stores the given @p value in the cache entry for the given @p ticket,
+  /// and returns a bare pointer to @p value.  That pointer will be invalidated
+  /// whenever any of the @p ticket's declared prerequisites change, and
+  /// possibly also at other times which are not defined.
+  ///
+  /// Systems MUST NOT depend on a particular value being present or valid
+  /// in the Cache, and MUST check the validity of cached values using
+  /// the GetCachedValue interface.
+  //
+  /// The Cache is useful to avoid recomputing expensive intermediate data. It
+  /// is not a scratch space for arbitrary state. If you cannot derive a value
+  /// from other fields in the Context, do not put that value in the Cache.
+  /// If you violate this rule, you may be devoured by a horror from another
+  /// universe, and forced to fill out paperwork in triplicate for all eternity.
+  /// You have been warned.
+  AbstractValue* InitCachedValue(CacheTicket ticket,
+                                 std::unique_ptr<AbstractValue> value) const {
+    return cache_.Init(ticket, std::move(value));
+  }
+
+  /// Copies the given @p value into the cache entry for the given @p ticket.
+  /// May throw std::bad_cast if the type of the existing value is not V.
+  ///
+  /// @tparam V The type of the value to store.
+  template <typename V>
+  void SetCachedValue(CacheTicket ticket, const V& value) const {
+    cache_.Set<V>(ticket, value);
+  }
+
+  // Returns the cached value for the given @p ticket, or nullptr if the
+  // cache entry has been invalidated.
+  const AbstractValue* GetCachedValue(CacheTicket ticket) const {
+    return cache_.Get(ticket);
+  }
 
  protected:
   /// The caller owns the returned memory.
@@ -87,15 +114,15 @@ class LeafContext : public Context<T> {
     LeafContext<T>* context = new LeafContext<T>();
 
     // Make a deep copy of the state using BasicVector::Clone().
-    if (this->get_state().continuous_state != nullptr) {
-      const ContinuousState<T>& xc = *this->get_state().continuous_state;
+    if (this->get_continuous_state() != nullptr) {
+      const ContinuousState<T>& xc = *this->get_continuous_state();
       const int num_q = xc.get_generalized_position().size();
       const int num_v = xc.get_generalized_velocity().size();
       const int num_z = xc.get_misc_continuous_state().size();
       const BasicVector<T>& xc_vector =
           dynamic_cast<const BasicVector<T>&>(xc.get_state());
-      context->get_mutable_state()->continuous_state.reset(
-          new ContinuousState<T>(xc_vector.Clone(), num_q, num_v, num_z));
+      context->set_continuous_state(std::make_unique<ContinuousState<T>>(
+          xc_vector.Clone(), num_q, num_v, num_z));
     }
 
     // Make deep copies of the inputs into FreestandingInputPorts.
@@ -111,7 +138,7 @@ class LeafContext : public Context<T> {
 
     // Make deep copies of everything else using the default copy constructors.
     *context->get_mutable_step_info() = this->get_step_info();
-    *context->get_mutable_cache() = this->get_cache();
+    context->cache_ = this->cache_;
     return context;
   }
 
@@ -129,8 +156,8 @@ class LeafContext : public Context<T> {
   State<T> state_;
 
   // The cache. The System may insert arbitrary key-value pairs, and configure
-  // invalidation on a per-line basis.
-  mutable Cache<T> cache_;
+  // invalidation on a per-entry basis.
+  mutable Cache cache_;
 };
 
 }  // namespace systems

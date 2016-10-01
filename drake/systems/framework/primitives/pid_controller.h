@@ -23,19 +23,23 @@ namespace systems {
 /// of the error signal when the derivative constant is non-zero.
 ///
 /// @tparam T The vector element type, which must be a valid Eigen scalar.
+///
+/// Instantiated templates for the following kinds of T's are provided:
+/// - double
+/// - AutoDiffXd
+///
+/// They are already available to link against in libdrakeSystemFramework.
+/// No other values for T are currently supported.
 /// @ingroup systems
-
 template <typename T>
 class PidController : public Diagram<T> {
  public:
-  /// Constructs a PID controller with proportional constant @p Kp,
-  /// integral constant @p Ki and derivative constant @p Kd.
-  /// Input/output ports are limited to have size @p length.
+  /// Constructs a %PidController system.
   /// @param Kp the proportional constant.
   /// @param Ki the integral constant.
   /// @param Kd the derivative constant.
-  /// @param length is the size of the signal to be processed.
-  PidController(const T& Kp, const T& Ki, const T& Kd, int length);
+  /// @param size number of elements in the signal to be processed.
+  PidController(const T& Kp, const T& Ki, const T& Kd, int size);
 
   ~PidController() override {}
 
@@ -69,13 +73,16 @@ class PidController : public Diagram<T> {
   /// Returns the input port to the time derivative or rate of the error signal.
   const SystemPortDescriptor<T>& get_error_derivative_port() const;
 
+  /// Returns the output port to the control output.
+  const SystemPortDescriptor<T>& get_control_output_port() const;
+
  private:
-  std::unique_ptr<Adder<T>> adder_;
-  std::unique_ptr<Integrator<T>> integrator_;
-  std::unique_ptr<PassThrough<T>> pass_through_;
-  std::unique_ptr<Gain<T>> proportional_gain_;
-  std::unique_ptr<Gain<T>> integral_gain_;
-  std::unique_ptr<Gain<T>> derivative_gain_;
+  Adder<T>* adder_ = nullptr;
+  Integrator<T>* integrator_ = nullptr;
+  PassThrough<T>* pass_through_ = nullptr;
+  Gain<T>* proportional_gain_ = nullptr;
+  Gain<T>* integral_gain_ = nullptr;
+  Gain<T>* derivative_gain_ = nullptr;
 };
 
 }  // namespace systems

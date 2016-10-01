@@ -2,8 +2,6 @@
 
 #include <cstdlib>
 
-#include "drake/automotive/curve2.h"
-#include "drake/automotive/trajectory_car.h"
 #include "drake/systems/plants/joints/floating_base_types.h"
 #include "drake/systems/plants/parser_model_instance_id_table.h"
 
@@ -163,14 +161,14 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
   // Sets up PD controllers for throttle and steering.
   const double kpSteering = 400, kdSteering = 80, kThrottle = 100;
 
-  MatrixXd Kp(getNumInputs(*rigid_body_sys), tree->number_of_positions());
+  MatrixXd Kp(getNumInputs(*rigid_body_sys), tree->get_num_positions());
   Kp.setZero();
 
-  MatrixXd Kd(getNumInputs(*rigid_body_sys), tree->number_of_velocities());
+  MatrixXd Kd(getNumInputs(*rigid_body_sys), tree->get_num_velocities());
   Kd.setZero();
 
   Matrix<double, Eigen::Dynamic, 3> map_driving_cmd_to_x_d(
-      tree->number_of_positions() + tree->number_of_velocities(), 3);
+      tree->get_num_positions() + tree->get_num_velocities(), 3);
   map_driving_cmd_to_x_d.setZero();
 
   for (int actuator_idx = 0;
@@ -203,12 +201,12 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
 
       // Saves the mapping between the driving command and the throttle command.
       map_driving_cmd_to_x_d(
-          tree->number_of_positions() + rigid_body->get_velocity_start_index(),
+          tree->get_num_positions() + rigid_body->get_velocity_start_index(),
           DrivingCommandIndices::kThrottle) = 20;
 
       // Saves the mapping between the driving command and the braking command.
       map_driving_cmd_to_x_d(
-          tree->number_of_positions() + rigid_body->get_velocity_start_index(),
+          tree->get_num_positions() + rigid_body->get_velocity_start_index(),
           DrivingCommandIndices::kBrake) = -20;
     }
   }
@@ -229,69 +227,6 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
   return vehicle_sys;
 }
 
-namespace {
-// A figure-eight.  One loop has a radius of @p radius - @p inset,
-// the other loop has a radius of @p radius + @p inset.
-Curve2<double> MakeCurve(double radius, double inset) {
-  // TODO(jwnimmer-tri) This function will be rewritten once we have
-  // proper splines.  Don't try too hard to understand it.  Run the
-  // demo to see it first, and only then try to understand the code.
-
-  typedef Curve2<double>::Point2 Point2d;
-  std::vector<Point2d> waypoints;
-
-  // Start (0, +i).
-  // Straight right to (+r, +i).
-  // Loop around (+i, +r).
-  // Straight back to (+i, 0).
-  waypoints.push_back({0.0, inset});
-  for (int theta_deg = -90; theta_deg <= 180; ++theta_deg) {
-    const Point2d center{radius, radius};
-    const double theta = theta_deg * M_PI / 180.0;
-    const Point2d direction{std::cos(theta), std::sin(theta)};
-    waypoints.push_back(center + (direction * (radius - inset)));
-  }
-  waypoints.push_back({inset, 0.0});
-
-  // Start (+i, 0).
-  // Straight down to (+i, -r).
-  // Loop around (-r, +i).
-  // Straight back to start (implicitly via segment to waypoints[0]).
-  for (int theta_deg = 0; theta_deg >= -270; --theta_deg) {
-    const Point2d center{-radius, -radius};
-    const double theta = theta_deg * M_PI / 180.0;
-    const Point2d direction{std::cos(theta), std::sin(theta)};
-    waypoints.push_back(center + (direction * (radius + inset)));
-  }
-
-  // Many copies.
-  const int kNumCopies = 100;
-  std::vector<Point2d> looped_waypoints;
-  for (int copies = 0; copies < kNumCopies; ++copies) {
-    std::copy(waypoints.begin(), waypoints.end(),
-              std::back_inserter(looped_waypoints));
-  }
-  looped_waypoints.push_back(waypoints.front());
-
-  return Curve2<double>(looped_waypoints);
-}
-}  // namespace anonymous
-
-std::unique_ptr<TrajectoryCar<double>> CreateTrajectoryCarSystem(int index) {
-  // The possible curves to trace (lanes).
-  const std::vector<Curve2<double>> curves{
-    MakeCurve(40.0, 0.0),  // BR
-    MakeCurve(40.0, 4.0),  // BR
-    MakeCurve(40.0, 8.0),
-  };
-
-  // Magic car placement to make a good visual demo.
-  const auto& curve = curves[index % curves.size()];
-  const double start_time = (index / curves.size()) * 0.8;
-  const double kSpeed = 8.0;
-  return std::make_unique<TrajectoryCar<double>>(curve, kSpeed, start_time);
-}
-
 SimulationOptions GetCarSimulationDefaultOptions() {
   SimulationOptions result;
   result.initial_step_size = 5e-3;
@@ -303,7 +238,7 @@ VectorXd GetInitialState(const RigidBodySystem& rigid_body_sys) {
   const auto& tree = rigid_body_sys.getRigidBodyTree();
 
   VectorXd x0 = VectorXd::Zero(rigid_body_sys.getNumStates());
-  x0.head(tree->number_of_positions()) = tree->getZeroConfiguration();
+  x0.head(tree->get_num_positions()) = tree->getZeroConfiguration();
   return x0;
 }
 

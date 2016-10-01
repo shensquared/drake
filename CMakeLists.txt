@@ -33,7 +33,7 @@ else()
   option(WITH_DIRECTOR "vtk-based visualization tool and robot user interface" ON) # not win32 yet.  it builds on windows, but requires manually installation of vtk, etc.  perhaps make a precompiled director pod (a bit like snopt)
   option(WITH_LIBBOT "simple open-gl visualizer + lcmgl for director" ON) # there is hope, but i spent a long time cleaning up c/c++ language errors trying to make msvc happy.. and still had a long way to go.
   option(WITH_NLOPT "nonlinear optimization solver" ON)
-  option(WITH_DREAL "nonlinear SMT solver" ON)
+  option(WITH_DREAL "nonlinear SMT solver" OFF)
   option(WITH_MOSEK "convex optimization solver; free for academics" OFF)
   # IPOPT is currently disabled on Mac due to MATLAB compatibility
   # issues: https://github.com/RobotLocomotion/drake/issues/2578
@@ -106,19 +106,16 @@ endif()
 # BEGIN external projects
 
 # External projects in order of dependencies; 'trivial' ones first
-drake_add_external(bertini)
+drake_add_external(bertini CMAKE)
 drake_add_external(eigen PUBLIC CMAKE)
-drake_add_external(gloptipoly)
+drake_add_external(gloptipoly CMAKE)
 drake_add_external(gurobi)
-drake_add_external(meshconverters PUBLIC)
+drake_add_external(meshconverters PUBLIC CMAKE)
 drake_add_external(mosek PUBLIC)
-drake_add_external(octomap PUBLIC)
-drake_add_external(sedumi)
 drake_add_external(snopt CMAKE)
 drake_add_external(spdlog PUBLIC CMAKE)
-drake_add_external(spotless PUBLIC CMAKE)
 drake_add_external(swigmake PUBLIC CMAKE)
-drake_add_external(yalmip PUBLIC)
+drake_add_external(yalmip PUBLIC CMAKE)
 
 # avl
 # The Ninja generator does not support Fortran.
@@ -146,11 +143,6 @@ drake_add_external(bullet PUBLIC CMAKE
     -DUSE_DOUBLE_PRECISION=ON
     ${BULLET_EXTRA_CMAKE_ARGS})
 
-# cmake
-drake_add_external(cmake PUBLIC ALWAYS
-  BUILD_COMMAND :
-  SOURCE_DIR ${PROJECT_SOURCE_DIR}/drake/cmake)
-
 # dreal
 drake_add_external(dreal PUBLIC CMAKE
   CMAKE_ARGS -DUSE_NLOPT=OFF
@@ -167,7 +159,7 @@ else()
   drake_add_external(gflags PUBLIC CMAKE
     CMAKE_ARGS -DBUILD_SHARED_LIBS=ON)
 endif()
-  
+
 # googletest
 drake_add_external(googletest PUBLIC CMAKE
   CMAKE_ARGS
@@ -193,18 +185,26 @@ drake_add_external(ipopt PUBLIC
   INSTALL_COMMAND ${MAKE_COMMAND} install)
 
 # nlopt
-drake_add_external(nlopt PUBLIC
-  PATCH_COMMAND ./autogen.sh --no-configure
-  CONFIGURE_COMMAND ./configure
-    --without-matlab
-    --without-python
-    --without-octave
-    --without-guile
-    --enable-maintainer-mode
-    --enable-shared
-    --prefix=${CMAKE_INSTALL_PREFIX}
-    --includedir=${CMAKE_INSTALL_PREFIX}/include/nlopt
-  INSTALL_COMMAND ${MAKE_COMMAND} install)
+drake_add_external(nlopt PUBLIC CMAKE
+  CMAKE_ARGS
+    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_PYTHON=OFF
+    -DBUILD_OCTAVE=OFF
+    -DBUILD_MATLAB=OFF
+    -DBUILD_GUILE=OFF
+    -DUSE_SWIG=OFF)
+
+# sedumi
+drake_add_external(sedumi CMAKE
+  CMAKE_ARGS -DMatlab_ROOT_DIR=${MATLAB_ROOT_DIR})
+
+# spotless
+drake_add_external(spotless PUBLIC CMAKE
+  CMAKE_ARGS -DMatlab_ROOT_DIR=${MATLAB_ROOT_DIR})
+
+# octomap
+drake_add_external(octomap PUBLIC CMAKE
+  SOURCE_SUBDIR octomap)
 
 # swig_matlab
 drake_add_external(swig_matlab PUBLIC
@@ -323,7 +323,6 @@ drake_add_external(drake LOCAL PUBLIC CMAKE ALWAYS
     bertini
     bot_core_lcmtypes
     bullet
-    cmake
     director
     dreal
     eigen
