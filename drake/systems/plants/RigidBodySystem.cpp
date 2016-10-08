@@ -96,6 +96,8 @@ RigidBodySystem::StateVector<double> RigidBodySystem::dynamics(
   auto q = x.topRows(nq);
   auto v = x.bottomRows(nv);
   auto kinsol = tree->doKinematics(q, v);
+//    std::cout << "kinsol" << std::endl;
+//    std::cout << kinsol << std::endl;
 
   // todo: preallocate the optimization problem and constraints, and simply
   // update them then solve on each function eval.
@@ -106,6 +108,8 @@ RigidBodySystem::StateVector<double> RigidBodySystem::dynamics(
   auto const& vdot = prog.AddContinuousVariables(nv, "vdot");
 
   auto H = tree->massMatrix(kinsol);
+    std::cout << "H" << std::endl;
+    std::cout << H << std::endl;
   Eigen::MatrixXd H_and_neg_JT = H;
 
   const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
@@ -250,6 +254,8 @@ RigidBodySystem::StateVector<double> RigidBodySystem::dynamics(
                  nq, nq)) *
              v,
       vdot.value();
+    std::cout <<"dot" << std::endl;
+    std::cout <<dot << std::endl;
   return dot;
 }
 

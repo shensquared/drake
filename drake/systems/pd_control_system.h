@@ -55,6 +55,8 @@ class PDControlSystem {
         Kp_ * (toEigen(u).head(Kp_.cols()) - toEigen(x).head(Kp_.cols())) +
         Kd_ * (toEigen(u).tail(Kd_.cols()) - toEigen(x).tail(Kd_.cols()));
     return sys_->dynamics(t, x, system_u);
+    std::cout <<"state dynamics"<<std::endl;
+    std::cout <<sys_->dynamics(t, x, system_u)<<std::endl;
   }
 
   template <typename ScalarType>

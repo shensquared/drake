@@ -7,17 +7,17 @@
     <parent link="world"/>
     <child link="chassis_floor"/>
 <!--     <dynamics damping="0.1" friction="0"/>
- -->
-  </joint>
+-->
+</joint>
 
-  <link name="chassis_floor">
-    <!-- more realistic mass and inertia -->
+<link name="chassis_floor">
+  <!-- more realistic mass and inertia -->
 
-    <inertial>
-      <mass value="1360"/>
-      <origin rpy="0 0 0" xyz="0 0 0" />
-      <inertia ixx="63.5" ixy="0" ixz="0" iyy="1617" iyz="0" izz="1665"/>
-    </inertial>
+  <inertial>
+    <mass value="1360"/>
+    <origin rpy="0 0 0" xyz="0 0 0" />
+    <inertia ixx="63.5" ixy="0" ixz="0" iyy="1617" iyz="0" izz="1665"/>
+  </inertial>
 
 
 <!--     <inertial>
@@ -369,7 +369,7 @@
   <joint name="left_wheel_joint" type="continuous">
     <parent link="left_hub"/>
     <child link="left_wheel"/>
-        <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
 
     <origin rpy="0 0 0" xyz="0 0 -0.183582999999999940676787"/>
     <axis xyz="0 0 -1"/>
@@ -409,7 +409,7 @@
   <joint name="rear_left_wheel_joint" type="continuous">
     <parent link="rear_axle"/>
     <child link="left_wheel_rear"/>
-        <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
 
     <origin rpy="1.570796326794896557998982  0 0" xyz="0 0.80199  0"/>
     <axis xyz="0  0 -1"/>
@@ -418,7 +418,7 @@
   <joint name="rear_right_wheel_joint" type="continuous">
     <parent link="rear_axle"/>
     <child link="right_wheel_rear"/>
-        <dynamics damping="0.1" friction="0"/>
+    <dynamics damping="0.1" friction="0"/>
 
     <origin rpy="1.570796326794896557998982 0 0" xyz="0 -0.80199  0"/>
     <axis xyz="0  0 -1"/>
