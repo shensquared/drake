@@ -217,6 +217,7 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys,
   //      2            gain of Brake
   //
   Matrix<double, Eigen::Dynamic, 3> map_driving_cmd_to_x_d(length_of_x_d, 3);
+  // map_driving_cmd_to_x_d size ((14+13) by 3)
   map_driving_cmd_to_x_d.setZero();
 
   for (int actuator_idx = 0;

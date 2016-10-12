@@ -7,8 +7,8 @@
 #include "drake/systems/plants/RigidBodySystem.h"
 #include "drake/util/drakeAppUtil.h"
 #include "lcmtypes/drake/lcmt_driving_command_t.hpp"
-#include <lcm/lcm.h>
-#include <bot_lcmgl_client/lcmgl.h>
+// #include <lcm/lcm.h>
+// #include <bot_lcmgl_client/lcmgl.h>
 
 using Eigen::VectorXd;
 // bot_lcmgl_t *lcmgl;
@@ -21,6 +21,9 @@ namespace {
 int do_main(int argc, const char* argv[]) {
   // Initializes the communication layer.
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
+
+
+  lcmt_driving_command_t lcm_msg;
 
   // Instantiates a duration variable that will be set by the call to
   // CreateRigidBodySystem() below.
@@ -58,7 +61,10 @@ int do_main(int argc, const char* argv[]) {
   // Defines the start time of the simulation.
   const double kStartTime = 0;
 
-  // Starts the simulation.
+  std::string channel= "DRIVING_COMMAND";
+  lcm_msg.throttle=4;
+  // lcm->publish(channel, lcm_msg.encode());
+          // Starts the simulation.
   drake::runLCM(sys, lcm, kStartTime, duration,
                 GetInitialState(*(rigid_body_sys.get())),
                 options);

@@ -108,8 +108,8 @@ RigidBodySystem::StateVector<double> RigidBodySystem::dynamics(
   auto const& vdot = prog.AddContinuousVariables(nv, "vdot");
 
   auto H = tree->massMatrix(kinsol);
-    std::cout << "H" << std::endl;
-    std::cout << H << std::endl;
+    // std::cout << "H" << std::endl;
+    // std::cout << H << std::endl;
   Eigen::MatrixXd H_and_neg_JT = H;
 
   const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
@@ -254,8 +254,8 @@ RigidBodySystem::StateVector<double> RigidBodySystem::dynamics(
                  nq, nq)) *
              v,
       vdot.value();
-    std::cout <<"dot" << std::endl;
-    std::cout <<dot << std::endl;
+    // std::cout <<"dot" << std::endl;
+    // std::cout <<dot << std::endl;
   return dot;
 }
 

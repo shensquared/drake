@@ -5,7 +5,7 @@
 
 #include <stdexcept>
 #include <string>
-
+#include <iostream>
 #include <Eigen/Core>
 
 #include "drake/drakeAutomotive_export.h"
