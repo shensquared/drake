@@ -521,6 +521,7 @@ bool RigidBodyTree::collisionDetect(
     bodyB_idx.push_back(elementB->get_body()->get_body_index());
   }
   return points_found;
+
 }
 
 bool RigidBodyTree::collisionDetect(

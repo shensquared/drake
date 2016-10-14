@@ -473,7 +473,7 @@ CreateSimpleCarVisualizationAdapter() {
 
 SimulationOptions GetCarSimulationDefaultOptions() {
   SimulationOptions result;
-  result.initial_step_size = 5e-3;
+  result.initial_step_size = 1e-3;
   result.timeout_seconds = std::numeric_limits<double>::infinity();
   return result;
 }
