@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vector>
+
 #include "drake/systems/framework/continuous_state.h"
+#include "drake/systems/framework/difference_state.h"
+#include "drake/systems/framework/modal_state.h"
 
 namespace drake {
 namespace systems {
@@ -14,10 +18,14 @@ namespace systems {
 template <typename T>
 class State {
  public:
-  State() {}
+  State()
+      : continuous_state_(std::make_unique<ContinuousState<T>>()),
+        difference_state_(std::make_unique<DifferenceState<T>>()),
+        modal_state_(std::make_unique<ModalState>()) {}
   virtual ~State() {}
 
   void set_continuous_state(std::unique_ptr<ContinuousState<T>> xc) {
+    DRAKE_DEMAND(xc != nullptr);
     continuous_state_ = std::move(xc);
   }
 
@@ -29,6 +37,32 @@ class State {
     return continuous_state_.get();
   }
 
+  void set_difference_state(std::unique_ptr<DifferenceState<T>> xd) {
+    DRAKE_DEMAND(xd != nullptr);
+    difference_state_ = std::move(xd);
+  }
+
+  const DifferenceState<T>* get_difference_state() const {
+    return difference_state_.get();
+  }
+
+  DifferenceState<T>* get_mutable_difference_state() {
+    return difference_state_.get();
+  }
+
+  void set_modal_state(std::unique_ptr<ModalState> xm) {
+    DRAKE_DEMAND(xm != nullptr);
+    modal_state_ = std::move(xm);
+  }
+
+  const ModalState* get_modal_state() const {
+    return modal_state_.get();
+  }
+
+  ModalState* get_mutable_modal_state() {
+    return modal_state_.get();
+  }
+
   // State is not copyable or moveable.
   State(const State& other) = delete;
   State& operator=(const State& other) = delete;
@@ -37,7 +71,8 @@ class State {
 
  private:
   std::unique_ptr<ContinuousState<T>> continuous_state_;
-  // TODO(david-german-tri): Add discrete state variables.
+  std::unique_ptr<DifferenceState<T>> difference_state_;
+  std::unique_ptr<ModalState> modal_state_;
 };
 
 }  // namespace systems

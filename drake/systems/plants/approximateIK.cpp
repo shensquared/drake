@@ -6,7 +6,10 @@
 #include <set>
 #include <gurobi_c++.h>
 
+// TODO(jwnimmer-tri) Someone with gurobi needs to fix these.
+// NOLINTNEXTLINE(build/namespaces)
 using namespace std;
+// NOLINTNEXTLINE(build/namespaces)
 using namespace Eigen;
 
 template <typename DerivedA, typename DerivedB, typename DerivedC>
@@ -208,13 +211,13 @@ void approximateIK(RigidBodyTree* model, const MatrixBase<DerivedA>& q_seed,
   return;
 }
 
-template DRAKEIK_EXPORT void approximateIK(
+template DRAKE_EXPORT void approximateIK(
   RigidBodyTree*, const MatrixBase<Map<VectorXd>>& ,
   const MatrixBase<Map<VectorXd>>& , const int,
   const RigidBodyConstraint* const*,
   const IKoptions&, MatrixBase<Map<VectorXd>>*, int*);
 
-template DRAKEIK_EXPORT void approximateIK(
+template DRAKE_EXPORT void approximateIK(
   RigidBodyTree*, const MatrixBase<VectorXd>& ,
   const MatrixBase<VectorXd>& , const int,
   const RigidBodyConstraint* const*,

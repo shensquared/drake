@@ -13,6 +13,12 @@ target_link_libraries(supervector_test drakeSystemFramework)
 drake_add_cc_test(continuous_state_test)
 target_link_libraries(continuous_state_test drakeSystemFramework)
 
+drake_add_cc_test(difference_state_test)
+target_link_libraries(difference_state_test drakeSystemFramework)
+
+drake_add_cc_test(modal_state_test)
+target_link_libraries(modal_state_test drakeSystemFramework)
+
 drake_add_cc_test(system_test)
 target_link_libraries(system_test drakeSystemFramework)
 
@@ -36,3 +42,6 @@ target_link_libraries(diagram_context_test drakeSystemFramework)
 
 drake_add_cc_test(cache_test)
 target_link_libraries(cache_test drakeSystemFramework)
+
+drake_add_cc_test(leaf_system_test)
+target_link_libraries(leaf_system_test drakeSystemFramework)

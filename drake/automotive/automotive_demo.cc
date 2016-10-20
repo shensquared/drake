@@ -3,6 +3,7 @@
 
 #include <gflags/gflags.h>
 
+#include "drake/common/text_logging_gflags.h"
 #include "drake/automotive/automotive_simulator.h"
 #include "drake/automotive/create_trajectory_params.h"
 
@@ -13,8 +14,9 @@ namespace drake {
 namespace automotive {
 namespace {
 
-int do_main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+  logging::HandleSpdlogGflags();
 
   // TODO(jwnimmer-tri) Allow for multiple simple cars.
   if (FLAGS_num_simple_car > 1) {
@@ -49,5 +51,5 @@ int do_main(int argc, char* argv[]) {
 }  // namespace drake
 
 int main(int argc, char* argv[]) {
-  return drake::automotive::do_main(argc, argv);
+  return drake::automotive::main(argc, argv);
 }

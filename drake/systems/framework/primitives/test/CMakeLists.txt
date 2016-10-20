@@ -22,9 +22,6 @@ target_link_libraries(gain_test drakeSystemFramework)
 drake_add_cc_test(gain_scalartype_test)
 target_link_libraries(gain_scalartype_test drakeSystemFramework)
 
-drake_add_cc_test(pid_controller_test)
-target_link_libraries(pid_controller_test drakeSystemFramework)
-
 drake_add_cc_test(demultiplexer_test)
 target_link_libraries(demultiplexer_test drakeSystemFramework)
 
@@ -33,3 +30,6 @@ target_link_libraries(multiplexer_test drakeSystemFramework)
 
 drake_add_cc_test(time_varying_polynomial_source_test)
 target_link_libraries(time_varying_polynomial_source_test drakeSystemFramework)
+
+drake_add_cc_test(zero_order_hold_test)
+target_link_libraries(zero_order_hold_test drakeSystemFramework)

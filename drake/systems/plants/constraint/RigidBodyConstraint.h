@@ -7,13 +7,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
-#include "drake/drakeRigidBodyConstraint_export.h"
+#include "drake/common/drake_export.h"
 #include "drake/systems/plants/KinematicsCache.h"
 
 class RigidBodyTree;
 
 namespace DrakeRigidBodyConstraint {
-extern DRAKERIGIDBODYCONSTRAINT_EXPORT Eigen::Vector2d default_tspan;
+extern DRAKE_EXPORT Eigen::Vector2d default_tspan;
 }
 
 /**
@@ -22,7 +22,7 @@ extern DRAKERIGIDBODYCONSTRAINT_EXPORT Eigen::Vector2d default_tspan;
  * RigidBodyConstraint. There are 6 main categories of the RigidBodyConstraint,
  * each category has its own interface
  */
-class DRAKERIGIDBODYCONSTRAINT_EXPORT RigidBodyConstraint {
+class DRAKE_EXPORT RigidBodyConstraint {
  public:
   /* In each category, constraint classes share the same function interface, this
    * value needs to be in consistent with that in MATLAB*/
@@ -112,7 +112,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT RigidBodyConstraint {
  * body[i]
  */
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT QuasiStaticConstraint
+class DRAKE_EXPORT QuasiStaticConstraint
     : public RigidBodyConstraint {
  public:
   QuasiStaticConstraint(
@@ -132,6 +132,11 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT QuasiStaticConstraint
   int getNumWeights() const { return num_pts_; }
   void addContact(int num_new_bodies, const int* body,
                   const Eigen::Matrix3Xd* body_pts);
+
+  void addContact(std::vector<int> body, const Eigen::Matrix3Xd& body_pts) {
+    addContact(body.size(), body.data(), &body_pts);
+  }
+
   void setShrinkFactor(double factor);
   void setActive(bool flag) { active_ = flag; }
   void updateRobot(RigidBodyTree* robot);
@@ -162,7 +167,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT QuasiStaticConstraint
  *   @param lb         lb[i] is the lower bound of the joint joint_idx[i]
  *   @param ub         ub[i] is the upper bound of the joint joint_idx[i]
  */
-class DRAKERIGIDBODYCONSTRAINT_EXPORT PostureConstraint
+class DRAKE_EXPORT PostureConstraint
     : public RigidBodyConstraint {
  public:
   PostureConstraint(
@@ -208,7 +213,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT PostureConstraint
  * matrix
  *   @return A        The value of the non-zero entries in the gradient matrix
  */
-class DRAKERIGIDBODYCONSTRAINT_EXPORT MultipleTimeLinearPostureConstraint
+class DRAKE_EXPORT MultipleTimeLinearPostureConstraint
     : public RigidBodyConstraint {
  public:
   MultipleTimeLinearPostureConstraint(
@@ -264,7 +269,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT MultipleTimeLinearPostureConstraint
  * matrix
  *   @return A        The value of the non-zero entries in the gradient matrix
  */
-class DRAKERIGIDBODYCONSTRAINT_EXPORT SingleTimeLinearPostureConstraint
+class DRAKE_EXPORT SingleTimeLinearPostureConstraint
     : public RigidBodyConstraint {
  public:
   SingleTimeLinearPostureConstraint(
@@ -299,7 +304,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT SingleTimeLinearPostureConstraint
  * kinematics of the robot at individual time. Need to call doKinematics first
  * for the robot and then evaulate this constraint.
  */
-class DRAKERIGIDBODYCONSTRAINT_EXPORT SingleTimeKinematicConstraint
+class DRAKE_EXPORT SingleTimeKinematicConstraint
     : public RigidBodyConstraint {
  public:
   SingleTimeKinematicConstraint(
@@ -325,7 +330,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT SingleTimeKinematicConstraint
   int num_constraint_{};
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT MultipleTimeKinematicConstraint
+class DRAKE_EXPORT MultipleTimeKinematicConstraint
     : public RigidBodyConstraint {
  public:
   MultipleTimeKinematicConstraint(
@@ -349,7 +354,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT MultipleTimeKinematicConstraint
   int numValidTime(const double* t, int n_breaks) const;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT PositionConstraint
+class DRAKE_EXPORT PositionConstraint
     : public SingleTimeKinematicConstraint {
  public:
   PositionConstraint(
@@ -380,7 +385,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT PositionConstraint
   int n_pts_{};
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldPositionConstraint
+class DRAKE_EXPORT WorldPositionConstraint
     : public PositionConstraint {
  public:
   WorldPositionConstraint(
@@ -402,7 +407,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldPositionConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldCoMConstraint
+class DRAKE_EXPORT WorldCoMConstraint
     : public PositionConstraint {
  public:
   WorldCoMConstraint(
@@ -425,7 +430,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldCoMConstraint
   std::set<int> m_model_instance_id_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativePositionConstraint
+class DRAKE_EXPORT RelativePositionConstraint
     : public PositionConstraint {
  public:
   RelativePositionConstraint(RigidBodyTree* model, const Eigen::Matrix3Xd& pts,
@@ -450,7 +455,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativePositionConstraint
   Eigen::Isometry3d bpTb_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT QuatConstraint
+class DRAKE_EXPORT QuatConstraint
     : public SingleTimeKinematicConstraint {
  public:
   QuatConstraint(
@@ -470,7 +475,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT QuatConstraint
   double tol_{};
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldQuatConstraint
+class DRAKE_EXPORT WorldQuatConstraint
     : public QuatConstraint {
  public:
   WorldQuatConstraint(
@@ -495,7 +500,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldQuatConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeQuatConstraint
+class DRAKE_EXPORT RelativeQuatConstraint
     : public QuatConstraint {
  public:
   RelativeQuatConstraint(
@@ -522,7 +527,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeQuatConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT EulerConstraint
+class DRAKE_EXPORT EulerConstraint
     : public SingleTimeKinematicConstraint {
  public:
   EulerConstraint(
@@ -547,7 +552,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT EulerConstraint
   Eigen::VectorXd avg_rpy_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldEulerConstraint
+class DRAKE_EXPORT WorldEulerConstraint
     : public EulerConstraint {
  public:
   WorldEulerConstraint(
@@ -566,7 +571,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldEulerConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeConstraint
+class DRAKE_EXPORT GazeConstraint
     : public SingleTimeKinematicConstraint {
  public:
   GazeConstraint(
@@ -589,7 +594,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeOrientConstraint
+class DRAKE_EXPORT GazeOrientConstraint
     : public GazeConstraint {
  public:
   GazeOrientConstraint(
@@ -616,7 +621,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeOrientConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeOrientConstraint
+class DRAKE_EXPORT WorldGazeOrientConstraint
     : public GazeOrientConstraint {
  public:
   WorldGazeOrientConstraint(
@@ -635,7 +640,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeOrientConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeDirConstraint
+class DRAKE_EXPORT GazeDirConstraint
     : public GazeConstraint {
  public:
   GazeDirConstraint(
@@ -658,7 +663,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeDirConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeDirConstraint
+class DRAKE_EXPORT WorldGazeDirConstraint
     : public GazeDirConstraint {
  public:
   WorldGazeDirConstraint(
@@ -675,7 +680,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeDirConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeTargetConstraint
+class DRAKE_EXPORT GazeTargetConstraint
     : public GazeConstraint {
  public:
   GazeTargetConstraint(
@@ -701,7 +706,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT GazeTargetConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeTargetConstraint
+class DRAKE_EXPORT WorldGazeTargetConstraint
     : public GazeTargetConstraint {
  public:
   WorldGazeTargetConstraint(
@@ -719,7 +724,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldGazeTargetConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeGazeTargetConstraint
+class DRAKE_EXPORT RelativeGazeTargetConstraint
     : public GazeTargetConstraint {
  public:
   RelativeGazeTargetConstraint(
@@ -739,7 +744,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeGazeTargetConstraint
   std::string bodyB_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeGazeDirConstraint
+class DRAKE_EXPORT RelativeGazeDirConstraint
     : public GazeDirConstraint {
  public:
   RelativeGazeDirConstraint(
@@ -759,7 +764,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT RelativeGazeDirConstraint
   std::string bodyB_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT Point2PointDistanceConstraint
+class DRAKE_EXPORT Point2PointDistanceConstraint
     : public SingleTimeKinematicConstraint {
  public:
   Point2PointDistanceConstraint(
@@ -783,7 +788,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT Point2PointDistanceConstraint
   Eigen::VectorXd dist_ub_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT Point2LineSegDistConstraint
+class DRAKE_EXPORT Point2LineSegDistConstraint
     : public SingleTimeKinematicConstraint {
  public:
   Point2LineSegDistConstraint(
@@ -812,7 +817,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT Point2LineSegDistConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedPositionConstraint
+class DRAKE_EXPORT WorldFixedPositionConstraint
     : public MultipleTimeKinematicConstraint {
  public:
   WorldFixedPositionConstraint(
@@ -834,7 +839,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedPositionConstraint
   Eigen::Matrix3Xd pts_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedOrientConstraint
+class DRAKE_EXPORT WorldFixedOrientConstraint
     : public MultipleTimeKinematicConstraint {
  public:
   WorldFixedOrientConstraint(
@@ -855,7 +860,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedOrientConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedBodyPoseConstraint
+class DRAKE_EXPORT WorldFixedBodyPoseConstraint
     : public MultipleTimeKinematicConstraint {
  public:
   WorldFixedBodyPoseConstraint(
@@ -876,7 +881,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldFixedBodyPoseConstraint
   std::string body_name_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT AllBodiesClosestDistanceConstraint
+class DRAKE_EXPORT AllBodiesClosestDistanceConstraint
     : public SingleTimeKinematicConstraint {
  public:
   AllBodiesClosestDistanceConstraint(
@@ -899,7 +904,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT AllBodiesClosestDistanceConstraint
   std::set<std::string> active_group_names_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT MinDistanceConstraint
+class DRAKE_EXPORT MinDistanceConstraint
     : public SingleTimeKinematicConstraint {
  public:
   MinDistanceConstraint(
@@ -924,7 +929,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT MinDistanceConstraint
   std::set<std::string> active_group_names_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldPositionInFrameConstraint
+class DRAKE_EXPORT WorldPositionInFrameConstraint
     : public WorldPositionConstraint {
  public:
   WorldPositionInFrameConstraint(
@@ -949,7 +954,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT WorldPositionInFrameConstraint
 #endif
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT PostureChangeConstraint
+class DRAKE_EXPORT PostureChangeConstraint
     : public MultipleTimeLinearPostureConstraint {
  public:
   PostureChangeConstraint(
@@ -978,7 +983,7 @@ class DRAKERIGIDBODYCONSTRAINT_EXPORT PostureChangeConstraint
   Eigen::VectorXd ub_change_;
 };
 
-class DRAKERIGIDBODYCONSTRAINT_EXPORT GravityCompensationTorqueConstraint
+class DRAKE_EXPORT GravityCompensationTorqueConstraint
     : public SingleTimeKinematicConstraint {
  public:
   GravityCompensationTorqueConstraint(

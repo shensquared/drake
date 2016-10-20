@@ -1,36 +1,35 @@
+
+drake_add_cc_test(NAME testConvexHull EXTENSION cpp)
+target_link_libraries(testConvexHull drakeConvexHull)
+
+drake_add_cc_test(NAME testDrakeGeometryUtil EXTENSION cpp)
+target_link_libraries(testDrakeGeometryUtil drakeGeometryUtil)
+
+drake_add_cc_test(NAME testDrakeGradientUtil EXTENSION cpp SIZE medium)
+target_link_libraries(testDrakeGradientUtil drakeGeometryUtil)
+
+if(lcm_FOUND)
+  drake_add_cc_test(NAME testLCMUtil EXTENSION cpp)
+  target_link_libraries(testLCMUtil drakeLCMUtil drakeMath)
+endif()
+
+# ==== Below this line is MATLAB-specific code ====
+
 # tk 20141113 debugMexTest causes compilation errors on Ubuntu 32 bit
 # See https://github.com/RobotLocomotion/drake/issues/553
 # debugMexTester.m and debugMexTest.cpp were moved to dev
-# add_mex(debugMexTest debugMexTest.cpp)
+# drake_add_mex(debugMexTest debugMexTest.cpp)
 
-add_executable(testDrakeGradientUtil testDrakeGradientUtil.cpp)
-target_link_libraries(testDrakeGradientUtil drakeGeometryUtil)
-drake_add_test(NAME testDrakeGradientUtil COMMAND testDrakeGradientUtil SIZE medium)
-
-if(MATLAB_FOUND)
-  add_mex(testQuatmex testQuatmex.cpp)
+if(Matlab_FOUND)
+  drake_add_mex(testQuatmex testQuatmex.cpp)
   target_link_libraries(testQuatmex drakeGeometryUtil)
 
-  add_mex(testGeometryGradientsmex testGeometryGradientsmex.cpp)
+  drake_add_mex(testGeometryGradientsmex testGeometryGradientsmex.cpp)
   target_link_libraries(testGeometryGradientsmex drakeGeometryUtil drakeMexUtil)
 
-  add_mex(testGeometryConversionFunctionsmex testGeometryConversionFunctionsmex.cpp)
+  drake_add_mex(testGeometryConversionFunctionsmex testGeometryConversionFunctionsmex.cpp)
   target_link_libraries(testGeometryConversionFunctionsmex drakeGeometryUtil drakeMexUtil)
 endif()
-
-if(lcm_FOUND)
-add_executable(testLCMUtil testLCMUtil.cpp)
-target_link_libraries(testLCMUtil drakeLCMUtil drakeMath ${GTEST_BOTH_LIBRARIES})
-add_test(NAME testLCMUtil COMMAND testLCMUtil)
-endif()
-
-add_executable(testConvexHull testConvexHull.cpp)
-target_link_libraries(testConvexHull drakeConvexHull ${GTEST_BOTH_LIBRARIES})
-drake_add_test(NAME testConvexHull COMMAND testConvexHull)
-
-add_executable(testDrakeGeometryUtil testDrakeGeometryUtil.cpp)
-target_link_libraries(testDrakeGeometryUtil drakeGeometryUtil ${GTEST_BOTH_LIBRARIES})
-drake_add_test(NAME testDrakeGeometryUtil COMMAND testDrakeGeometryUtil)
 
 drake_add_matlab_test(NAME util/test/PassByValueMapTest COMMAND PassByValueMapTest)
 drake_add_matlab_test(NAME util/test/angleDiffTest COMMAND angleDiffTest)
@@ -93,3 +92,6 @@ drake_add_matlab_test(NAME util/test/testqpSpline COMMAND testqpSpline)
 drake_add_matlab_test(NAME util/test/trigPolySinTest REQUIRES spotless COMMAND trigPolySinTest)
 drake_add_matlab_test(NAME util/test/trigPolyTest REQUIRES spotless OPTIONAL lcm COMMAND trigPolyTest)
 drake_add_matlab_test(NAME util/test/tvsumtest COMMAND tvsumtest)
+
+# ==== Below this line is C++ and MATLAB shared code ====
+

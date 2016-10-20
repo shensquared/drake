@@ -144,13 +144,6 @@ TEST_F(DiagramContextTest, SetAndGetInputPorts) {
   EXPECT_EQ(256, ReadVectorInputPort(*context_, 1)->get_value()[0]);
 }
 
-// Tests that an exception is thrown when setting or getting input ports that
-// don't exist.
-TEST_F(DiagramContextTest, InvalidInputPorts) {
-  EXPECT_THROW(context_->SetInputPort(2, nullptr), std::out_of_range);
-  EXPECT_THROW(ReadVectorInputPort(*context_, 2), std::out_of_range);
-}
-
 TEST_F(DiagramContextTest, Clone) {
   context_->Connect({0 /* adder0_ */, 0 /* port 0 */},
                     {1 /* adder1_ */, 1 /* port 1 */});
@@ -179,19 +172,6 @@ TEST_F(DiagramContextTest, Clone) {
     EXPECT_TRUE(CompareMatrices(orig_port->get_value(), clone_port->get_value(),
                                 1e-8, MatrixCompareType::absolute));
   }
-
-  // Verify that the graph structure was preserved: the VectorBase in
-  // sys0 output port 0 should be pointer-equal to the VectorBase in
-  // sys1 input port 1.
-  //
-  // This assertion abuses the GetInputPort implementation detail to fish out
-  // a pointer to the input vector without triggering an evaluation.
-  // An evaluation is not possible in this test fixture because there is no
-  // Diagram for context_ that can be asked to eval the input.
-  auto sys1_context = clone->GetSubsystemContext(1);
-  auto sys0_output = clone->GetSubsystemOutput(0);
-  EXPECT_EQ(sys1_context->GetInputPort(1)->get_vector_data<double>(),
-            sys0_output->get_vector_data(0));
 }
 
 }  // namespace
