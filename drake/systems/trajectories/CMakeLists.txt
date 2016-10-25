@@ -1,7 +1,11 @@
-add_library_with_exports(LIB_NAME drakeTrajectories SOURCE_FILES PiecewiseFunction.cpp PiecewisePolynomialBase.cpp PiecewisePolynomial.cpp ExponentialPlusPiecewisePolynomial.cpp)
+add_library_with_exports(LIB_NAME drakeTrajectories SOURCE_FILES
+  PiecewiseFunction.cpp PiecewisePolynomialBase.cpp
+  PiecewisePolynomial.cpp ExponentialPlusPiecewisePolynomial.cpp)
 target_link_libraries(drakeTrajectories drakeCommon)
 pods_install_libraries(drakeTrajectories)
-drake_install_headers(PiecewiseFunction.h PiecewisePolynomial.h PiecewisePolynomialBase.h ExponentialPlusPiecewisePolynomial.h)
+drake_install_headers(PiecewiseFunction.h PiecewisePolynomial.h trajectory.h
+  piecewise_polynomial_trajectory.h
+  PiecewisePolynomialBase.h ExponentialPlusPiecewisePolynomial.h)
 pods_install_pkg_config_file(drake-trajectories
   LIBS -ldrakeTrajectories
   REQUIRES
@@ -14,11 +18,11 @@ if(Matlab_FOUND)
   drake_add_mex(ExpPlusPPTrajectoryEvalmex ExpPlusPPTrajectoryEvalmex.cpp)
 endif()
 
-find_package(Bullet)
+drake_find_package(Bullet MODULE)
 
-if(BULLET_FOUND AND Matlab_FOUND)
-  find_package(BLAS)
-  find_package(snopt_c)
+if(Bullet_FOUND AND Matlab_FOUND)
+  find_package(BLAS MODULE)
+  drake_find_package(snopt_c CONFIG)
 
   if(BLAS_FOUND AND snopt_c_FOUND)
     drake_add_mex(replanFunnels_mex replanFunnels_mex.cpp)

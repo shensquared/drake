@@ -16,7 +16,7 @@
 #include <drake/systems/plants/ConstraintWrappers.h>
 #include <drake/systems/plants/IKoptions.h>
 #include <drake/systems/plants/RigidBodyTree.h>
-#include <drake/systems/vector.h>
+#include <drake/system1/vector.h>
 
 #include "ik_trajectory_helper.h"
 
@@ -288,7 +288,9 @@ class IKInbetweenConstraint : public drake::solvers::Constraint {
       for (int j = 0; j < nT; j++) {
         mtkc_dc_dx.block(0, j * nq, nc, nq) =
             mtkc_dc.block(0, mtkc_dc_off * nq, nc, nq);
-        mtkc_dc_off += 1 + t_inbetween[j].size();
+        if (j != nT - 1) {
+          mtkc_dc_off += 1 + t_inbetween[j].size();
+        }
       }
 
       // Iterate over each intermediate timestamp again, integrating
