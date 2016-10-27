@@ -309,7 +309,8 @@ class Simulator(object):
     def setNumpyRandomSeed(self, seed=1):
         np.random.seed(seed)
 
-    def runMultiCarSimulation(self, num_cars = 2, dt=0.05)
+    def runMultiCarSimulation(self, num_cars = 2, dt=0.05):
+        pass
 
     def runBatchSimulation(self, endTime=None, dt=0.05):
 

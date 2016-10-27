@@ -3,9 +3,6 @@ Multiple Vehicle Simulation
 
 This README file provides instructions on how to run Drake's car simulations.
 
-The instructions are written for Ubuntu Linux and OS X users. Windows users will
-need to adjust the instructions slightly. See the notes at the end of this
-section.
  
 Start the Drake Visualizer
 --------------------------
@@ -19,14 +16,12 @@ To run the Drake Visualizer, open a terminal and execute the following commands:
 
 ```
 $ cd [drake-distro]/drake/automotive/ss-multi-vehicle
-$ ../../../build/install/bin/directorPython runMultiDemo.py
+$ ../../../build/install/bin/directorPython Obs.py
 ``` 
+There are several python package dependencies; most of them are actually non-essential for the demo to run and I'll need to clean things up. For the moment, it might be the easist to follow the error and pip install the dependencies. 
 
-
-Testing Different Controller
+Testing Different Controllers
 --------------------------
-Change the controller.py file, and update the controller mode in the simulation
-start-up python script
-
+Add the controller as a method in the controller.py file, and update the controller mode in the simulation launch python script
 
 Use Ctrl-C in your terminal to stop and close the demo.
