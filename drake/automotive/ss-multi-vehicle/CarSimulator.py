@@ -702,8 +702,6 @@ class Simulator(object):
         return sim
 
 
-
-
 if __name__ == "__main__":
     # main(sys.argv[1:])
     parser = argparse.ArgumentParser(description='interpret simulation parameters')
@@ -712,7 +710,8 @@ if __name__ == "__main__":
     parser.add_argument('--nonRandomWorld', action='store_true', default=False)
     parser.add_argument('--circleRadius', type=float, nargs=1, default=0.7)
     parser.add_argument('--worldScale', type=float, nargs=1, default=1.0)
-    
+    parser.add_argument('--numCars', type=int, nargs=1, default=1)
+
     argNamespace = parser.parse_args()
     percentObsDensity = argNamespace.percentObsDensity[0]
     endTime = argNamespace.endTime[0]
