@@ -34,7 +34,7 @@ TURN_RIGHT_SIGN = -1.0
 # target velocity 100mph, i.e. ~26.8224m/s
 MAX_VELOCITY = 26.8224 
 
-THROTTLE_SCALE = MAX_VELOCITY / 200.0
+THROTTLE_SCALE = MAX_VELOCITY / 500.0
 BRAKE_SCALE = 1.0
 
 
@@ -58,7 +58,7 @@ class KeyboardEventProcessor:
 
     def processEvent(self, event, last_msg):
         new_msg = copy.copy(last_msg)
-        if event.key == pygame.K_UP:
+        if (event.key == pygame.K_UP) and (event.type == pygame.KEYDOWN):
             new_msg.throttle = _limit_throttle(
                 last_msg.throttle + (
                     (event.type == pygame.KEYDOWN) * THROTTLE_SCALE))
