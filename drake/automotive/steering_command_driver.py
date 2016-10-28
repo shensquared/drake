@@ -31,7 +31,7 @@ STEERING_BUTTON_STEP_ANGLE = MAX_STEERING_ANGLE / 100.0
 TURN_LEFT_SIGN = 1.0
 TURN_RIGHT_SIGN = -1.0
 
-# target velocity 100mph, i.e. ~26.8224m/s
+# target velocity 60mph, i.e. ~26.8224m/s
 MAX_VELOCITY = 26.8224 
 
 THROTTLE_SCALE = MAX_VELOCITY / 500.0
@@ -44,7 +44,7 @@ def _limit_steering(requested_value):
     else:
         return math.copysign(MAX_STEERING_ANGLE, requested_value)
 
-def _limit_throttle(requested_value):
+def _limit_throttle_step(requested_value):
     if abs(requested_value) <= MAX_VELOCITY:
         return requested_value
     else:
@@ -59,7 +59,7 @@ class KeyboardEventProcessor:
     def processEvent(self, event, last_msg):
         new_msg = copy.copy(last_msg)
         if (event.key == pygame.K_UP) and (event.type == pygame.KEYDOWN):
-            new_msg.throttle = _limit_throttle(
+            new_msg.throttle = _limit_throttle_step(
                 last_msg.throttle + (
                     (event.type == pygame.KEYDOWN) * THROTTLE_SCALE))
         elif event.key == pygame.K_DOWN:
