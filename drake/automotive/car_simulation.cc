@@ -201,6 +201,8 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
       Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kThrottle;
 
       // Saves the mapping between the driving command and the throttle command.
+      // Converts rad/s to m/s by scaling the velocity with 1/(wheel radius), 
+      // which is described in the urdf. 
       map_driving_cmd_to_x_d(
           tree->get_num_positions() + rigid_body->get_velocity_start_index(),
           DrivingCommandIndices::kThrottle) = 1/0.323342;
