@@ -112,9 +112,8 @@ std::shared_ptr<RigidBodySystem> CreateRigidBodySystem(
 }
 
 void SetRigidBodySystemParameters(RigidBodySystem* rigid_body_sys) {
-  rigid_body_sys->penetration_stiffness = 5000.0;
-  rigid_body_sys->penetration_damping =
-    rigid_body_sys->penetration_stiffness / 10.0;
+  rigid_body_sys->penetration_stiffness = 750000.0;
+  rigid_body_sys->penetration_damping = 20000.0;
   rigid_body_sys->friction_coefficient = 10.0;  // essentially infinite friction
 }
 
@@ -159,7 +158,8 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
   const auto& tree = rigid_body_sys->getRigidBodyTree();
 
   // Sets up PD controllers for throttle and steering.
-  const double kpSteering = 400, kdSteering = 80, kThrottle = 100;
+
+  const double kpSteering = 1000, kdSteering = 800, kThrottle = 2000;
 
   MatrixXd Kp(getNumInputs(*rigid_body_sys), tree->get_num_positions());
   Kp.setZero();
@@ -176,7 +176,8 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
        actuator_idx++) {
     const std::string& actuator_name = tree->actuators[actuator_idx].name_;
 
-    if (actuator_name == "steering") {
+    if (actuator_name == "left_steering" ||
+        actuator_name == "right_steering") {
       // Obtains the rigid body to which the actuator is attached.
       const auto& rigid_body = tree->actuators[actuator_idx].body_;
 
@@ -200,14 +201,16 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
       Kd(actuator_idx, rigid_body->get_velocity_start_index()) = kThrottle;
 
       // Saves the mapping between the driving command and the throttle command.
+      // Converts rad/s to m/s by scaling the velocity with 1/(wheel radius), 
+      // which is described in the urdf. 
       map_driving_cmd_to_x_d(
           tree->get_num_positions() + rigid_body->get_velocity_start_index(),
-          DrivingCommandIndices::kThrottle) = 20;
+          DrivingCommandIndices::kThrottle) = 1/0.323342;
 
       // Saves the mapping between the driving command and the braking command.
       map_driving_cmd_to_x_d(
           tree->get_num_positions() + rigid_body->get_velocity_start_index(),
-          DrivingCommandIndices::kBrake) = -20;
+          DrivingCommandIndices::kBrake) = -1/0.323342;
     }
   }
 
@@ -229,7 +232,7 @@ CreateVehicleSystem(std::shared_ptr<RigidBodySystem> rigid_body_sys) {
 
 SimulationOptions GetCarSimulationDefaultOptions() {
   SimulationOptions result;
-  result.initial_step_size = 5e-3;
+  result.initial_step_size = 2e-3;
   result.timeout_seconds = std::numeric_limits<double>::infinity();
   return result;
 }
