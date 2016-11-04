@@ -138,7 +138,6 @@ class Simulator(object):
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
             self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-            self.Controller_2 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)  
         else:
             print 'simulator mode error'
         
@@ -148,19 +147,16 @@ class Simulator(object):
         self.EgoCarController.initializeVelocity(self.EgoCar.v)
 
 
-        if numCars>1:
-            for i in 
-
-        self.Car_2 = CarPlant(controller=self.Controller_2,
-                            velocity=self.options['Car']['velocity'])
-        self.Controller_2.addingCar(self.Car_2)
-        self.Controller_2.initializeVelocity(self.Car_2.v)
-
+        if self.numCars>1:
+            # implement agent cars 
+            pass
 
         # create the things needed for simulation
         om.removeFromObjectModel(om.findObjectByName('robot'))
 
         self.robot, self.frame = World.buildRobot()
+
+
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
         self.frame = self.robot.getChildFrame()
@@ -200,12 +196,6 @@ class Simulator(object):
             x = self.stateOverTime[idx,0]
             y = self.stateOverTime[idx,1]
             theta = self.stateOverTime[idx,2]
-            # if self.mode=='Goal':
-            #     currentAngleState=self.EgoCar.setAngles()
-            #     print currentAngleState
-
-            
-
 
             self.setRobotFrameState(x,y,theta)
             currentRaycast = self.Sensor.raycastAll(self.frame)
@@ -287,20 +277,15 @@ class Simulator(object):
     def setNumpyRandomSeed(self, seed=1):
         np.random.seed(seed)
 
-    def runMultiCarSimulation(self, num_cars = 2, dt=0.05):
-        pass
-
     def runBatchSimulation(self, endTime=None, dt=0.05):
-
         # for use in playback
         self.dt = self.options['dt']
-
         self.endTime = self.defaultControllerTime # used to be the sum of the other times as well
-
         self.t = np.arange(0.0, self.endTime, dt)
         maxNumTimesteps = np.size(self.t)
         self.stateOverTime = np.zeros((maxNumTimesteps+1, 3))
         self.angleOverTime = np.zeros((maxNumTimesteps+1, 3))
+        
         self.raycastData = np.zeros((maxNumTimesteps+1, self.Sensor.numRays))
         self.controlInputData = np.zeros(maxNumTimesteps+1)
         self.numTimesteps = maxNumTimesteps
@@ -449,7 +434,7 @@ class Simulator(object):
             camera.SetFocalPoint(robot_center)
             panel = screengrabberpanel.ScreenGrabberPanel(self.view)
             panel.widget.show()
-            robot = om.findObjectByName('robot') # or whatever you need to do to get the object
+            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
             # hacky way to be compatible with director update
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
@@ -587,13 +572,6 @@ class Simulator(object):
         if (time.time() - self.playTime) > self.endTime:
             self.playTimer.stop()
 
-    def tick2(self):
-        newtime = time.time() - self.playTime
-        print time.time() - self.playTime
-        x = np.sin(newtime)
-        y = np.cos(newtime)
-        self.setRobotFrameState(x,y,0.0)
-
     # just increment the slider, stop the timer if we get to the end
     def playTimerCallback(self):
         self.sliderMovedByPlayTimer = True
@@ -607,7 +585,6 @@ class Simulator(object):
     def onSliderChanged(self, value):
         if not self.sliderMovedByPlayTimer:
             self.playTimer.stop()
-
         numSteps = len(self.stateOverTime)
         idx = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         idx = min(idx, numSteps-1)
@@ -621,11 +598,9 @@ class Simulator(object):
         self.sliderMovedByPlayTimer = False
 
     def onPlayButton(self):
-
         if self.playTimer.isActive():
             self.onPauseButton()
             return
-
         print 'play'
         self.playTimer.start()
         self.playTime = time.time()
@@ -665,6 +640,7 @@ class Simulator(object):
         sim.counter = my_shelf['counter']
         my_shelf.close()
         return sim
+
 if __name__ == "__main__":
     # main(sys.argv[1:])
     parser = argparse.ArgumentParser(description='interpret simulation parameters')

@@ -371,21 +371,22 @@ class World(object):
 
 
     @staticmethod
-    def buildRobot(x=0,y=0):
+    def buildRobot(x=0,y=0,carIndex=0):
         #print "building robot"
         polyData = ioUtils.readPolyData('celica.obj')
-        
         scale = 0.04
         t = vtk.vtkTransform()
         t.RotateZ(90)
         t.Scale(scale, scale, scale)
         polyData = filterUtils.transformPolyData(polyData, t)
-
         #d = DebugData()
         #d.addCone((x,y,0), (1,0,0), height=0.2, radius=0.1)
         #polyData = d.getPolyData()
-
-        obj = vis.showPolyData(polyData, 'robot')
+        if carIndex==0:
+            robotname = 'EgoCar'
+        else:
+            robotname = 'AgentCar' + str(carIndex)
+        obj = vis.showPolyData(polyData, robotname)
         robotFrame = vis.addChildFrame(obj)
         return obj, robotFrame
 
