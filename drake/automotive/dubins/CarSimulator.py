@@ -140,45 +140,33 @@ class Simulator(object):
         self.SensorApproximator = SensorApproximatorObj(numRays=self.options['Sensor']['numRays'], circleRadius=self.options['World']['circleRadius'], )
 
         om.removeFromObjectModel(om.findObjectByName('world'))
-
-        if self.mode=='Goal':
-            self.world, self.goalX, self.goalY = World.buildGoalWorld(percentObsDensity=self.options['World']['percentObsDensity'],
-                                                circleRadius=self.options['World']['circleRadius'],
-                                                nonRandom=self.options['World']['nonRandomWorld'],
-                                                scale=self.options['World']['scale'],
-                                                randomSeed=self.options['World']['randomSeed'],
-                                                obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-            self.Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-
-        elif self.mode=='Obs':
+        if self.mode=='Obs':
             self.world, self.goalX, self.goalY = World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
                                             circleRadius=self.options['World']['circleRadius'],
                                             nonRandom=self.options['World']['nonRandomWorld'],
                                             scale=self.options['World']['scale'],
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-            self.Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-        elif self.mode=='2in1':
-            self.world, self.goalX, self.goalY = World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
-                                            circleRadius=self.options['World']['circleRadius'],
-                                            nonRandom=self.options['World']['nonRandomWorld'],
-                                            scale=self.options['World']['scale'],
-                                            randomSeed=self.options['World']['randomSeed'],
-                                            obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-            self.Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            self.Controller_1 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            self.Controller_2 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
 
         elif self.mode=='singleFree':
             self.world = World.buildSimpleWorld()
-            self.Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            self.Controller_1 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
             
              
         else:
             print 'simulator mode error'
         
-        self.Car = CarPlant(controller=self.Controller,
+        self.Car_1 = CarPlant(controller=self.Controller_1,
                             velocity=self.options['Car']['velocity'])
-        self.Controller.addingCar(self.Car)
-        self.Controller.initializeVelocity(self.Car.v)
+        self.Controller_1.addingCar(self.Car_1)
+        self.Controller_1.initializeVelocity(self.Car_1.v)
+
+        self.Car_2 = CarPlant(controller=self.Controller_2,
+                            velocity=self.options['Car']['velocity'])
+        self.Controller_2.addingCar(self.Car_2)
+        self.Controller_2.initializeVelocity(self.Car_2.v)
 
 
         # create the things needed for simulation
@@ -199,17 +187,17 @@ class Simulator(object):
 
         self.defaultControllerTime = self.options['runTime']['defaultControllerTime']
 
-        self.Car.setFrame(self.frame)
+        self.Car_1.setFrame(self.frame)
         print "Finished initialization"
 
 
     def runSingleSimulation(self, controllerType='default', simulationCutoff=None):
         self.setRandomCollisionFreeInitialState()
 
-        currentCarState = np.copy(self.Car.state)
-        nextCarState = np.copy(self.Car.state)
-        currentAngleState = np.copy(self.Car.angles)
-        nextAngleState=np.copy(self.Car.angles)
+        currentCarState = np.copy(self.Car_1.state)
+        nextCarState = np.copy(self.Car_1.state)
+        currentAngleState = np.copy(self.Car_1.angles)
+        nextAngleState=np.copy(self.Car_1.angles)
         self.setRobotFrameState(currentCarState[0], currentCarState[1], currentCarState[2])
         currentRaycast = self.Sensor.raycastAll(self.frame)
         nextRaycast = np.zeros(self.Sensor.numRays)
@@ -225,7 +213,7 @@ class Simulator(object):
             y = self.stateOverTime[idx,1]
             theta = self.stateOverTime[idx,2]
             # if self.mode=='Goal':
-            #     currentAngleState=self.Car.setAngles()
+            #     currentAngleState=self.Car_1.setAngles()
             #     print currentAngleState
 
             
@@ -243,10 +231,12 @@ class Simulator(object):
 
 
             if controllerType in ["default", "defaultRandom"]:
-                controlInput, controlAngle, controlInputIdx = self.Controller.computeControlInput(currentCarState,
+                controlInput, controlAngle, controlInputIdx = self.Controller_1.computeControlInput(currentCarState,
                                                                             currentTime, self.frame,
                                                                             raycastDistance=currentRaycast,
                                                                             randomize=False)
+
+
 
             self.angleOverTime[idx,:] = controlAngle
 
@@ -257,7 +247,7 @@ class Simulator(object):
 
             self.controlInputData[idx] = controlInput
 
-            nextCarState = self.Car.simulateOneStep(controlInput=controlInput, dt=self.dt)        
+            nextCarState = self.Car_1.simulateOneStep(controlInput=controlInput, dt=self.dt)        
             x = nextCarState[0]
             y = nextCarState[1]
             theta = nextCarState[2]
@@ -271,7 +261,7 @@ class Simulator(object):
             S_next = (nextCarState, nextRaycast)
 
             if controllerType in ["default", "defaultRandom"]:
-                nextControlInput, nextAngle, nextControlInputIdx = self.Controller.computeControlInput(nextCarState,
+                nextControlInput, nextAngle, nextControlInputIdx = self.Controller_1.computeControlInput(nextCarState,
                                                                             currentTime, self.frame,
                                                                             raycastDistance=nextRaycast,
                                                                             randomize=False)
@@ -394,7 +384,7 @@ class Simulator(object):
             y =   -5.0
             theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
             
-            self.Car.setCarState(x,y,theta)
+            self.Car_1.setCarState(x,y,theta)
             self.setRobotFrameState(x,y,theta)
 
             print "In loop"
@@ -414,7 +404,7 @@ class Simulator(object):
             y = np.random.uniform(self.world.Ymin+tol, self.world.Ymax-tol, 1)[0]
             theta = np.random.uniform(0,2*np.pi,1)[0]
             
-            self.Car.setCarState(x,y,theta)
+            self.Car_1.setCarState(x,y,theta)
             self.setRobotFrameState(x,y,theta)
 
             if not self.checkInCollision():
@@ -578,11 +568,9 @@ class Simulator(object):
 
     def getControllerTypeFromCounter(self, counter):
         name = self.controllerTypeOrder[0]
-
         for controllerType in self.controllerTypeOrder[1:]:
             if counter >= self.idxDict[controllerType]:
                 name = controllerType
-
         return name
 
 
@@ -595,9 +583,8 @@ class Simulator(object):
     # returns true if we are in collision
     def checkInCollision(self, raycastDistance=None):
         if raycastDistance is None:
-            self.setRobotFrameState(self.Car.state[0],self.Car.state[1],self.Car.state[2])
+            self.setRobotFrameState(self.Car_1.state[0],self.Car_1.state[1],self.Car_1.state[2])
             raycastDistance = self.Sensor.raycastAll(self.frame)
-
         if np.min(raycastDistance) < self.collisionThreshold:
             return True
         else:
@@ -651,7 +638,6 @@ class Simulator(object):
             else:
                 # print 'ray cast'
                 print ray
-
         self.setRobotFrameState(x,y,theta)
         self.sliderMovedByPlayTimer = False
 
@@ -670,14 +656,10 @@ class Simulator(object):
         self.playTimer.stop()
 
     def saveToFile(self, filename):
-
         # should also save the run data if it is available, i.e. stateOverTime, rewardOverTime
-
         filename = 'data/' + filename + ".txt"
         my_shelf = shelve.open(filename,'n')
-
         my_shelf['options'] = self.options
-
         my_shelf['simulationData'] = self.simulationData
         my_shelf['stateOverTime'] = self.stateOverTime
         my_shelf['raycastData'] = self.raycastData
@@ -686,8 +668,6 @@ class Simulator(object):
         my_shelf['idxDict'] = self.idxDict
         my_shelf['counter'] = self.counter
         my_shelf.close()
-
-
     @staticmethod
     def loadFromFile(filename):
         filename = 'data/' + filename + ".out"
@@ -704,12 +684,8 @@ class Simulator(object):
         sim.numTimesteps = my_shelf['numTimesteps']
         sim.idxDict = my_shelf['idxDict']
         sim.counter = my_shelf['counter']
-
         my_shelf.close()
-
         return sim
-
-
 if __name__ == "__main__":
     # main(sys.argv[1:])
     parser = argparse.ArgumentParser(description='interpret simulation parameters')
