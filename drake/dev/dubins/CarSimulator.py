@@ -49,10 +49,8 @@ class Simulator(object):
         # create the visualizer object
         self.app = ConsoleApp()
         self.view = self.app.createView(useGrid=False)
-
         self.initializeOptions()
         self.initializeColorMap()
-        
         if autoInitialize:
             self.initialize()
 
@@ -103,23 +101,17 @@ class Simulator(object):
         defaultOptions['Car']['velocity'] = 20
 
         defaultOptions['dt'] = 0.05
-
-
         defaultOptions['runTime'] = dict()
         defaultOptions['runTime']['defaultControllerTime'] = 100
-
 
         for k in defaultOptions:
             self.options.setdefault(k, defaultOptions[k])
 
-
         for k in defaultOptions:
             if not isinstance(defaultOptions[k], dict):
                 continue
-
             for j in defaultOptions[k]:
                 self.options[k].setdefault(j, defaultOptions[k][j])
-
 
     def initializeColorMap(self):
         self.colorMap = dict()
@@ -146,13 +138,7 @@ class Simulator(object):
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
             self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-            self.Controller_2 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-
-        elif self.mode=='singleFree':
-            self.world = World.buildSimpleWorld()
-            self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-            
-             
+            self.Controller_2 = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)  
         else:
             print 'simulator mode error'
         
@@ -160,6 +146,10 @@ class Simulator(object):
                             velocity=self.options['Car']['velocity'])
         self.EgoCarController.addingCar(self.EgoCar)
         self.EgoCarController.initializeVelocity(self.EgoCar.v)
+
+
+        if numCars>1:
+            for i in 
 
         self.Car_2 = CarPlant(controller=self.Controller_2,
                             velocity=self.options['Car']['velocity'])
