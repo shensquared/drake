@@ -154,8 +154,7 @@ class Simulator(object):
         # create the things needed for simulation
         om.removeFromObjectModel(om.findObjectByName('robot'))
 
-        self.robot, self.frame = World.buildRobot()
-
+        self.robot, self.frame = World.buildRobot(numCars=self.numCars)
 
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
@@ -434,7 +433,7 @@ class Simulator(object):
             camera.SetFocalPoint(robot_center)
             panel = screengrabberpanel.ScreenGrabberPanel(self.view)
             panel.widget.show()
-            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
             # hacky way to be compatible with director update
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))

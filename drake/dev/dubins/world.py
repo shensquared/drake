@@ -371,7 +371,8 @@ class World(object):
 
 
     @staticmethod
-    def buildRobot(x=0,y=0,carIndex=0):
+    def buildRobot(x=0,y=0,numCars=2):
+        # numCars index 0 should be the ego car the rest being the agen numCars 
         #print "building robot"
         polyData = ioUtils.readPolyData('celica.obj')
         scale = 0.04
@@ -382,10 +383,12 @@ class World(object):
         #d = DebugData()
         #d.addCone((x,y,0), (1,0,0), height=0.2, radius=0.1)
         #polyData = d.getPolyData()
-        if carIndex==0:
-            robotname = 'EgoCar'
-        else:
-            robotname = 'AgentCar' + str(carIndex)
+        for i in xrange(0,numCars):
+            if i==0:
+                robotname = 'EgoCar'
+            else:
+                robotname = 'AgentCar' + str(i)
+                print (robotname)
         obj = vis.showPolyData(polyData, robotname)
         robotFrame = vis.addChildFrame(obj)
         return obj, robotFrame
