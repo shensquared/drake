@@ -38,8 +38,8 @@ classdef MyPendulumCL < PolynomialSystem
       qdhat=x(4);      
       qddhat = (- p.m*p.g*p.lc*sin(qhat) - p.b*qdhat)/p.I;
       xdotopenloop=[qd;qdd;qdhat;qddhat];
-      [K,L]=readPartition(x)
-      xdot=xdotopenloop+[0;K;0;K]+[0;0;L]
+      [K,L]=readPartition(x);
+      xdot=xdotopenloop+[0;K;0;K]+[0;0;L];
       % xdot=xdotopenloop+[0;K;0;K]+[0;0;L];
       % xdot=[fx+K;fxhat-L];
       % fx = [x(2,:).*x(3,:); -x(1,:).*x(3,:); (-p.b.*x(3,:) - p.m*p.g*p.l.*x(1,:)-3)/(p.m*p.l.^2)];

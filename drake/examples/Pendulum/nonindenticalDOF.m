@@ -1,4 +1,4 @@
-function DOF(deg_K,deg_L1_aux,deg_L2_aux)
+function nonindenticalDOF()
 
 doSimulation=true;
 doPlotting=false;
@@ -14,33 +14,6 @@ else
     solver = @spot_sedumi;
 end
 
-deg_K=2;
-deg_L1_aux=0;
-deg_L2_aux=0;
-
-if ~isempty(deg_K)
-    deg_K=deg_K;
-end
-if ~isempty(deg_L1_aux)
-    deg_L1_aux=deg_L1_aux;
-end
-if ~isempty(deg_L2_aux)
-    deg_L2_aux=deg_L2_aux;
-end
-
-% if nargin < 1
-%     options = struct();
-% end
-% if ~isfield(options,'deg_K')
-%     error('need to specify the degree of the controller gain polynomial matrix');
-% end
-% if ~isfield(options,'deg_L1_aux')
-%     error('need to specify the degree of the observer gain polynomial matrix');
-% end
-% if ~isfield(options,'deg_L2_aux')
-%     error('need to specify the degree of the observer gain polynomial matrix');
-% end
-
 p = PendulumPlant();
 n=3;
 prog = spotsosprog;
@@ -49,7 +22,8 @@ h=msspoly('h',n);
 STATE=[x;h];
 % one way of expanding
 A_x=[0, 0, (x(2)-1);0, 0, -x(1); -p.g/p.l, 0, -p.b/(p.m*p.l.^2)];
-A_h=[0, 0, (h(2)-1);0, 0, -h(1); -p.g/p.l, 0, -p.b/(p.m*p.l.^2)];
+% free passive dynamics 
+% A_h=[0, 0, (h(2)-1);0, 0, -h(1); -p.g/p.l, 0, -p.b/(p.m*p.l.^2)];
 B=[0;0;1];
 C=[1,0,0;0,1,0];
 n_B=size(B,2);
@@ -74,18 +48,21 @@ prog = prog.withEqs(subs(V,STATE,S0));  % V(0) = 0
 
 % % % % % %
 % degree of the controller gain
+deg_K =2;
 for i=1:n
     [prog,K_aux(1,i)]=prog.newFreePoly(monomials(h,0:deg_K));
 end
 
+deg_L1_aux=0;
 observed=C*x;
-% observed_hat=C*h;
+% observed_hat=[h(1);h(2)];
 for i=1:n
     for j=1:n_C
         [prog, L1_aux(i,j)]=prog.newFreePoly(monomials([observed;h],0:deg_L1_aux));
     end
 end
 
+deg_L2_aux=0;
 for i=1:n
     for j=1:n
         [prog, L2_aux(i,j)]=prog.newFreePoly(monomials([observed;h],0:deg_L2_aux));
@@ -94,16 +71,16 @@ end
 
 
 % % % % % % % % % % % 
-Vdot = STATE'*([A_x*X+B*K_aux,A_x;L2_aux,Y*A_x+L1_aux*C]+[A_x*X+B*K_aux,A_x;L2_aux,Y*A_x+L1_aux*C]')*STATE;
+Vdot=STATE'*([A_x*X+B*K_aux,A_x;L2_aux,Y*A_x+L1_aux*C]+[A_x*X+B*K_aux,A_x;L2_aux,Y*A_x+L1_aux*C]')*STATE;
 deg_lambda = 4;
 [prog,lambda] = prog.newFreePoly(monomials(x,0:deg_lambda));
 [prog,lambda_hat] = prog.newFreePoly(monomials(h,0:deg_lambda));
 prog = prog.withSOS(-Vdot-lambda*(x(1)^2+(x(2)-1)^2-1)-lambda_hat*(h(1)^2+(h(2)-1)^2-1)...
     -10*epsi*(STATE-S0)'*(STATE-S0));
-prog = prog.withEqs(subs(Vdot,STATE,S0));
+% prog = prog.withEqs(subs(Vdot,STATE,S0));
 options = spot_sdp_default_options();
 options.verbose = 0;
-result = prog.minimize(-t, solver,options);
+result = prog.minimize(det(Y)-det(X), solver,options);
 
 
 X=double(result.eval(X))
@@ -113,9 +90,9 @@ eig(Y);
 new_P=double(result.eval(new_P));
 disp('K_aux');
 K_aux=result.eval(K_aux)
-disp('L1_aux');
+disp('L1_aux')
 L1_aux=result.eval(L1_aux)
-disp('L2_aux');
+disp('L2_aux')
 L2_aux=result.eval(L2_aux)
 
 
@@ -158,7 +135,7 @@ disp('L2_gain');
 L2_gain=inv(N)*((Y*A_x*X+L1_aux*C*X+Y*B*K_aux+N*A_h*M'+N*B*K_aux)-L2_aux)*inv(M')
 
 
-% actual feedback terms, the gain multiplied with the state terms. 
+% actual feedbacks
 K=K_gain*h;
 L1=L1_gain*x;
 L2=L2_gain*h;
@@ -168,17 +145,24 @@ L2=L2_gain*h;
 save('partitionDOF.mat','K','L1','L2');
 
 
-if doPlotting,
-    % for the real V and Vdot 
-    real_V=STATE'*(P)*STATE;
-    real_vdot=STATE'*((P*[A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])+([A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])'*P)*STATE;
-    [Theta,ThetaDot] = meshgrid(-pi:0.1:pi, -8:0.25:8);
-    % hhh=cos(Theta(:)')
-    Vmesh = dmsubs(real_V,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
-    find(Vmesh<=0)
-    Vdotmesh=dmsubs(real_vdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
-    find(Vdotmesh>=0)
+real_V=STATE'*(P)*STATE;
+real_vdot=STATE'*((P*[A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])+([A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])'*P)*STATE;
+pi_times_realVdot=STATE'*(pi_1'*((P*[A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])+([A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])'*P)*pi_1)*STATE;
+SOS_Vdot=result.eval(Vdot);
+[Theta,ThetaDot] = meshgrid(-pi:0.1:pi, -8:0.25:8);
+% hhh=cos(Theta(:)')
+Vmesh = dmsubs(real_V,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
+min(Vmesh)
+Vdotmesh=dmsubs(real_vdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
+max(Vdotmesh)
+pi_times_realVdot_mesh=dmsubs(pi_times_realVdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
+SOS_Vdot_mesh=dmsubs(SOS_Vdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
+ratio=pi_times_realVdot_mesh./SOS_Vdot_mesh;
+find(Vdotmesh>=0)
 
+
+if doPlotting,
+      % for surfs
     figure(1);
     subplot(1,2,1);
     surf(Theta,ThetaDot,reshape(Vmesh,size(Theta)));
@@ -192,27 +176,20 @@ if doPlotting,
     xlabel('$$ theta $$','interpreter','latex','fontsize',15)
     ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
 
-    if (min(Vmesh)<0 | max(Vdotmesh)>0)
-        disp('there is gap between the real V/Vdot and the transformed ones');
-        % for the transformed V and Vdot
-        pi_times_realVdot=STATE'*(pi_1'*((P*[A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])+([A_x, B*K_gain;L1_gain,A_h+B*K_gain-L2_gain])'*P)*pi_1)*STATE;
-        SOS_Vdot=result.eval(Vdot);
-        pi_times_realVdot_mesh=dmsubs(pi_times_realVdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
-        SOS_Vdot_mesh=dmsubs(SOS_Vdot,STATE,[sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)';sin(Theta(:)');cos(Theta(:)')+ones(1,4095);ThetaDot(:)']);
-        ratio=pi_times_realVdot_mesh./SOS_Vdot_mesh;
-        figure(2);
-        subplot(1,2,1);
-        surf(Theta,ThetaDot,reshape(pi_times_realVdot_mesh,size(Theta)));
-        title('$$ pi_times_realVdot $$','interpreter','latex','fontsize',20) 
-        xlabel('$$ theta $$','interpreter','latex','fontsize',15)
-        ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
+    % figure(2);
+    % subplot(1,2,1);
+    % surf(Theta,ThetaDot,reshape(pi_times_realVdot_mesh,size(Theta)));
+    % title('$$ pi_times_realVdot $$','interpreter','latex','fontsize',20) 
+    % xlabel('$$ theta $$','interpreter','latex','fontsize',15)
+    % ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
 
-        subplot(1,2,2);
-        surf(Theta,ThetaDot,reshape(difference_mesh,size(Theta)));
-        title('$$ difference $$','interpreter','latex','fontsize',20) 
-        xlabel('$$ theta $$','interpreter','latex','fontsize',15)
-        ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
-    end
+    % subplot(1,2,2);
+    % surf(Theta,ThetaDot,reshape(difference_mesh,size(Theta)));
+    % title('$$ difference $$','interpreter','latex','fontsize',20) 
+    % xlabel('$$ theta $$','interpreter','latex','fontsize',15)
+    % ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
+
+
 end
 
 
@@ -220,12 +197,11 @@ end
 if doSimulation,
     pv = PendulumVisualizer();
     sys=MyPendulumCL;
-    initial_state=[0;  12.9492];
-    initial_estimate=initial_state;
-    initial_estimate(2)=initial_state(2)+2*randn(1,1);
-    initial_augmented=[initial_state;initial_estimate]
-    [ytraj,xtraj]=simulate(sys,[0,3],initial_augmented);
-    % [ytraj,xtraj]=simulate(sys,[0,3],[0; 12;0;12.9492]);
+    initial_pos=[0;  12.9492];
+    initial_estimate=initial_pos;
+%     initial_estimate(2)=initial_pos(2)+randn(1,1);
+    initial_augmented=[initial_pos;initial_estimate]
+    [ytraj,xtraj]=simulate(sys,[0,50],[0;  12;0;12.9492]);
     pv.playback(ytraj); 
     fnplt(xtraj,1);
 end
