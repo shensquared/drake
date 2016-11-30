@@ -103,8 +103,6 @@ class World(object):
 
         obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
 
-
-
         world = World()
         world.visObj = obj
         world.Xmax = worldXmax
@@ -372,7 +370,8 @@ class World(object):
 
     @staticmethod
     def buildRobot(x=0,y=0,numCars=2):
-        # numCars index 0 should be the ego car the rest being the agen numCars 
+        # numCars index 0 should be the ego car, and the rest are numCars agent 
+        # cars
         #print "building robot"
         polyData = ioUtils.readPolyData('celica.obj')
         scale = 0.04
@@ -383,20 +382,23 @@ class World(object):
         #d = DebugData()
         #d.addCone((x,y,0), (1,0,0), height=0.2, radius=0.1)
         #polyData = d.getPolyData()
+        obj = []
+        robotFrame=[]
         for i in xrange(0,numCars):
             if i==0:
                 robotname = 'EgoCar'
             else:
+                # TODO: perhaps not essential to add the agent car index  
+                # possible to treat them as a whole instead depends on the sim 
+                # need
                 robotname = 'AgentCar' + str(i)
-                print (robotname)
-        obj = vis.showPolyData(polyData, robotname)
-        robotFrame = vis.addChildFrame(obj)
+            obj.append(vis.showPolyData(polyData, robotname))
+            robotFrame.append(vis.addChildFrame(obj[i]))
         return obj, robotFrame
 
     @staticmethod
     def buildCellLocator(polyData):
         #print "buidling cell locator"
-
         loc = vtk.vtkCellLocator()
         loc.SetDataSet(polyData)
         loc.BuildLocator()

@@ -78,7 +78,6 @@ class Simulator(object):
         self.options['runTime'] = dict()
         self.options['runTime']['defaultControllerTime'] = 100
 
-
     def setDefaultOptions(self):
 
         defaultOptions = dict()
@@ -141,20 +140,25 @@ class Simulator(object):
         else:
             print 'simulator mode error'
         
+
         self.EgoCar = CarPlant(controller=self.EgoCarController,
                             velocity=self.options['Car']['velocity'])
         self.EgoCarController.addingCar(self.EgoCar)
         self.EgoCarController.initializeVelocity(self.EgoCar.v)
+        # create the things needed for simulation
+        om.removeFromObjectModel(om.findObjectByName('EgoCar'))
+
+        self.robots, self.frames = World.buildRobot(numCars=self.numCars)
 
 
+# TODO: combine the ego and agent cars into a single array
         if self.numCars>1:
             # implement agent cars 
             pass
 
-        # create the things needed for simulation
-        om.removeFromObjectModel(om.findObjectByName('robot'))
 
-        self.robot, self.frame = World.buildRobot(numCars=self.numCars)
+
+
 
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
