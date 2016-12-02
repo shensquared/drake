@@ -81,9 +81,11 @@ class World(object):
         for i in xrange(0,numCars):
             if i==0:
                 robotname = 'EgoCar'
+                obj.append(vis.showPolyData(polyData, robotname,color=[1,0.6,0.7]))
+
             else:
                 robotname = 'AgentCar' + str(i)
-            obj.append(vis.showPolyData(polyData, robotname,color=[1,0.6,0.7]))
+                obj.append(vis.showPolyData(polyData, robotname,color=[0, 0, 1]))
             robotFrame.append(vis.addChildFrame(obj[i]))
         return obj, robotFrame
 
@@ -98,7 +100,6 @@ class World(object):
     def buildCircleWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
                          obstaclesInnerFraction=1.0):
         #print "building circle world"
-
         if nonRandom:
             np.random.seed(randomSeed)
 

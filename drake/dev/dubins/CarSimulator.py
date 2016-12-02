@@ -28,7 +28,7 @@ from controller import ControllerObj
 class Simulator(object):
     def __init__(self, mode, percentObsDensity=20, endTime=40, nonRandomWorld=False,
                  circleRadius=0.7, worldScale=1.0, autoInitialize=True, verbose=True,
-                 numCars=2):
+                 numCars=3):
         self.verbose = verbose
         self.startSimTime = time.time()
         self.collisionThreshold = 0.2
@@ -41,7 +41,7 @@ class Simulator(object):
         self.circleRadius = circleRadius
         self.worldScale = worldScale
         self.mode = mode
-        self.numCars =2
+        self.numCars =3
         # create the visualizer object
         self.app = ConsoleApp()
         self.view = self.app.createView(useGrid=False)
@@ -132,55 +132,59 @@ class Simulator(object):
                                             scale=self.options['World']['scale'],
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-            self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-            self.AgentCar1Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            # self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            # self.AgentCar1Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
    
         else:
             print 'simulator mode error'
-# TODO: combine the ego and agent cars into a single array
-        if self.numCars>1:
-            # implement agent cars 
-            pass
-
-
-        self.EgoCar = CarPlant(controller=self.EgoCarController,
-                            velocity=self.options['Car']['velocity'])
-        self.EgoCarController.addingCar(self.EgoCar)
-        self.EgoCarController.initializeVelocity(self.EgoCar.v)
-# TODO: get rid of hard coding
-        self.AgentCar1 = CarPlant(controller=self.AgentCar1Controller,
-                            velocity=self.options['Car']['velocity'])
-        self.AgentCar1Controller.addingCar(self.AgentCar1)
-        self.AgentCar1Controller.initializeVelocity(self.AgentCar1.v)
-        # create the things needed for simulation
-        om.removeFromObjectModel(om.findObjectByName('EgoCar'))
 
         self.robots, self.frames = World.buildRobot(numCars=self.numCars)
         # adding sensors onto the EgoCar
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
+        self.AgentCars=[]
+        self.AgentCarControllers=[]
 
-
-        for i in xrange(0,self.numCars):
+        for i in xrange(0, self.numCars):
             self.frames[i] = self.robots[i].getChildFrame()
             self.frames[i].setProperty('Scale', 3)
-            #self.frames[i].setProperty('Visible', False)
-            #self.frames[i].setProperty('Edit', True)
             self.frames[i].widget.HandleRotationEnabledOff()
             rep = self.frames[i].widget.GetRepresentation()
             rep.SetTranslateAxisEnabled(2, False)
             rep.SetRotateAxisEnabled(0, False)
             rep.SetRotateAxisEnabled(1, False)
+            #self.frames[i].setProperty('Visible', False)
+            #self.frames[i].setProperty('Edit', True)
 
-        self.defaultControllerTime = self.options['runTime']['defaultControllerTime']
-        print len(self.frames)
+            if i ==0:
+                # ego car 
+                self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+                self.EgoCar = CarPlant(controller=self.EgoCarController,
+                            velocity=self.options['Car']['velocity'])
+                self.EgoCarController.addingCar(self.EgoCar)
+                self.EgoCarController.initializeVelocity(self.EgoCar.v)
+                self.EgoCar.setFrame(self.frames[0])
+            else:
+                # implement agent cars 
+                    self.AgentCarControllers.append(ControllerObj(self.Sensor, 
+                        self.SensorApproximator, self.mode, self.goalX, self.goalY))
+                    self.AgentCars.append(CarPlant(controller=self.AgentCarControllers[i-1],
+                                velocity=self.options['Car']['velocity']))
+                    self.AgentCarControllers[i-1].addingCar(self.AgentCars[i-1])
+                    self.AgentCarControllers[i-1].initializeVelocity(
+                        self.AgentCars[i-1].v)
+                    self.AgentCars[i-1].setFrame(self.frames[i])
 
-        self.EgoCar.setFrame(self.frames[0])
-
-        self.AgentCar1.setFrame(self.frames[1])
 
 
-        
+# TODO: get rid of hard coding
+        # self.AgentCar1 = CarPlant(controller=self.AgentCar1Controller,
+        #                     velocity=self.options['Car']['velocity'])
+        # self.AgentCar1Controller.addingCar(self.AgentCar1)
+        # self.AgentCar1Controller.initializeVelocity(self.AgentCar1.v)
+        # # create the things needed for simulation
+        om.removeFromObjectModel(om.findObjectByName('EgoCar'))
+        self.defaultControllerTime = self.options['runTime']['defaultControllerTime']        
         print "Finished initialization"
 
 
