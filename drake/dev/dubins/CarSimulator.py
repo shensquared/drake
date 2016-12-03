@@ -28,7 +28,7 @@ from controller import ControllerObj
 class Simulator(object):
     def __init__(self, mode, percentObsDensity=20, endTime=40, nonRandomWorld=False,
                  circleRadius=0.7, worldScale=1.0, autoInitialize=True, verbose=True,
-                 numCars=3):
+                 numCars=2):
         self.verbose = verbose
         self.startSimTime = time.time()
         self.collisionThreshold = 0.2
@@ -41,7 +41,7 @@ class Simulator(object):
         self.circleRadius = circleRadius
         self.worldScale = worldScale
         self.mode = mode
-        self.numCars =3
+        self.numCars = numCars
         # create the visualizer object
         self.app = ConsoleApp()
         self.view = self.app.createView(useGrid=False)
@@ -132,59 +132,51 @@ class Simulator(object):
                                             scale=self.options['World']['scale'],
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-            # self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-            # self.AgentCar1Controller = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-   
+
         else:
             print 'simulator mode error'
 
+        # create the things needed for simulation
+        om.removeFromObjectModel(om.findObjectByName('EgoCar'))
         self.robots, self.frames = World.buildRobot(numCars=self.numCars)
         # adding sensors onto the EgoCar
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
         self.AgentCars=[]
-        self.AgentCarControllers=[]
+        self.AgentCarsControllers=[]
 
-        for i in xrange(0, self.numCars):
+        for i in xrange(0,self.numCars):
+            if i ==0:
+                self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+                self.EgoCar = CarPlant(controller=self.EgoCarController,
+                                    velocity=self.options['Car']['velocity'])
+                self.EgoCarController.addingCar(self.EgoCar)
+                self.EgoCarController.initializeVelocity(self.EgoCar.v)
+                self.EgoCar.setFrame(self.frames[0])
+            else:
+                self.AgentCarsControllers.append(
+                    ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+                )
+
+                self.AgentCars.append(CarPlant(controller=self.AgentCarsControllers[i-1],
+                                    velocity=self.options['Car']['velocity']))
+
+                self.AgentCarsControllers[i-1].addingCar(self.AgentCars[i-1])
+                self.AgentCarsControllers[i-1].initializeVelocity(self.AgentCars[i-1].v)
+                self.AgentCars[i-1].setFrame(self.frames[i])
+
             self.frames[i] = self.robots[i].getChildFrame()
             self.frames[i].setProperty('Scale', 3)
+            #self.frames[i].setProperty('Visible', False)
+            #self.frames[i].setProperty('Edit', True)
             self.frames[i].widget.HandleRotationEnabledOff()
             rep = self.frames[i].widget.GetRepresentation()
             rep.SetTranslateAxisEnabled(2, False)
             rep.SetRotateAxisEnabled(0, False)
             rep.SetRotateAxisEnabled(1, False)
-            #self.frames[i].setProperty('Visible', False)
-            #self.frames[i].setProperty('Edit', True)
 
-            if i ==0:
-                # ego car 
-                self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-                self.EgoCar = CarPlant(controller=self.EgoCarController,
-                            velocity=self.options['Car']['velocity'])
-                self.EgoCarController.addingCar(self.EgoCar)
-                self.EgoCarController.initializeVelocity(self.EgoCar.v)
-                self.EgoCar.setFrame(self.frames[0])
-            else:
-                # implement agent cars 
-                    self.AgentCarControllers.append(ControllerObj(self.Sensor, 
-                        self.SensorApproximator, self.mode, self.goalX, self.goalY))
-                    self.AgentCars.append(CarPlant(controller=self.AgentCarControllers[i-1],
-                                velocity=self.options['Car']['velocity']))
-                    self.AgentCarControllers[i-1].addingCar(self.AgentCars[i-1])
-                    self.AgentCarControllers[i-1].initializeVelocity(
-                        self.AgentCars[i-1].v)
-                    self.AgentCars[i-1].setFrame(self.frames[i])
+        self.defaultControllerTime = self.options['runTime']['defaultControllerTime']
 
-
-
-# TODO: get rid of hard coding
-        # self.AgentCar1 = CarPlant(controller=self.AgentCar1Controller,
-        #                     velocity=self.options['Car']['velocity'])
-        # self.AgentCar1Controller.addingCar(self.AgentCar1)
-        # self.AgentCar1Controller.initializeVelocity(self.AgentCar1.v)
-        # # create the things needed for simulation
-        om.removeFromObjectModel(om.findObjectByName('EgoCar'))
-        self.defaultControllerTime = self.options['runTime']['defaultControllerTime']        
         print "Finished initialization"
 
 
@@ -214,7 +206,7 @@ class Simulator(object):
             currentRaycast = self.Sensor.raycastAll(self.frames[0])
             self.raycastData[idx,:] = currentRaycast
             S_current = (currentCarState, currentRaycast)
-          
+
 
             if controllerType not in self.colorMap.keys():
                 print
@@ -238,7 +230,7 @@ class Simulator(object):
 
             self.controlInputData[idx] = controlInput
 
-            nextCarState = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)        
+            nextCarState = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
             x = nextCarState[0]
             y = nextCarState[1]
             theta = nextCarState[2]
@@ -256,7 +248,7 @@ class Simulator(object):
                                                                             currentTime, self.frames[0],
                                                                             raycastDistance=nextRaycast,
                                                                             randomize=False)
-            
+
 
             #bookkeeping
 
@@ -298,7 +290,7 @@ class Simulator(object):
         maxNumTimesteps = np.size(self.t)
         self.stateOverTime = np.zeros((maxNumTimesteps+1, 3))
         self.angleOverTime = np.zeros((maxNumTimesteps+1, 3))
-        
+
         self.raycastData = np.zeros((maxNumTimesteps+1, self.Sensor.numRays))
         self.controlInputData = np.zeros(maxNumTimesteps+1)
         self.numTimesteps = maxNumTimesteps
@@ -306,7 +298,7 @@ class Simulator(object):
         self.controllerTypeOrder = ['default']
         self.counter = 0
         self.simulationData = []
-    
+
         self.initializeStatusBar()
 
         self.idxDict = dict()
@@ -316,7 +308,7 @@ class Simulator(object):
         self.idxDict['default'] = self.counter
         loopStartIdx = self.counter
         simCutoff = min(loopStartIdx + self.defaultControllerTime/dt, self.numTimesteps)
-        
+
         while ((self.counter - loopStartIdx < self.defaultControllerTime/dt) and self.counter < self.numTimesteps-1):
             self.printStatusBar()
             startIdx = self.counter
@@ -346,7 +338,7 @@ class Simulator(object):
         self.nextTickComplete = 1.0 / float(self.numTicks)
         self.nextTickIdx = 1
         print "Simulation percentage complete: (", self.numTicks, " # is complete)"
-    
+
     def printStatusBar(self):
         fractionDone = float(self.counter) / float(self.numTimesteps)
         if fractionDone > self.nextTickComplete:
@@ -354,7 +346,7 @@ class Simulator(object):
             self.nextTickIdx += 1
             self.nextTickComplete += 1.0 / self.numTicks
 
-            timeSoFar = time.time() - self.startSimTime 
+            timeSoFar = time.time() - self.startSimTime
             estimatedTimeLeft_sec = (1 - fractionDone) * timeSoFar / fractionDone
             estimatedTimeLeft_minutes = estimatedTimeLeft_sec / 60.0
 
@@ -365,11 +357,11 @@ class Simulator(object):
         tol = 5
 
         while True:
-            
+
             x = 0.0
             y =   -5.0
             theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
-            
+
             self.EgoCar.setCarState(x,y,theta)
             self.setRobotFrameState(x,y,theta)
 
@@ -377,7 +369,7 @@ class Simulator(object):
 
             if not self.checkInCollision():
                 break
-                
+
         return x,y,theta
 
 
@@ -385,11 +377,11 @@ class Simulator(object):
         tol = 5
 
         while True:
-            
+
             x = np.random.uniform(self.world.Xmin+tol, self.world.Xmax-tol, 1)[0]
             y = np.random.uniform(self.world.Ymin+tol, self.world.Ymax-tol, 1)[0]
             theta = np.random.uniform(0,2*np.pi,1)[0]
-            
+
             self.EgoCar.setCarState(x,y,theta)
             self.setRobotFrameState(x,y,theta)
 
@@ -461,7 +453,7 @@ class Simulator(object):
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)
-            # cameracontrolpanel.CameraControlPanel.trackerManager.setTrackerMode('Position & Orientation')    
+            # cameracontrolpanel.CameraControlPanel.trackerManager.setTrackerMode('Position & Orientation')
 
         elif self.mode=='Goal':
             applogic.resetCamera(viewDirection=[0.2,0,-1])
@@ -472,7 +464,7 @@ class Simulator(object):
             self.view.raise_()
         else:
             print 'view camera mode error'
-        
+
 
         camera_control_panel.widget.show()
         elapsed = time.time() - self.startSimTime
@@ -491,14 +483,14 @@ class Simulator(object):
     def updateDrawPolyApprox(self, frame):
         distances = self.Sensor.raycastAll(frame)
         polyCoefficients = self.SensorApproximator.polyFitConstrainedLP(distances)
-    
+
         d = DebugData()
-        
+
         x = self.SensorApproximator.approxThetaVector
         y = x * 0.0
         for index,val in enumerate(y):
             y[index] = self.horner(x[index],polyCoefficients)
-        
+
         origin = np.array(frame.transform.GetPosition())
         origin[2] = -0.001
 
@@ -518,7 +510,7 @@ class Simulator(object):
         for i in coefficients:
             result = result * x + i
         return result
-        
+
 
     def updateDrawIntersection(self, frame):
 
@@ -667,10 +659,8 @@ if __name__ == "__main__":
     circleRadius = argNamespace.circleRadius[0]
     worldScale = argNamespace.worldScale[0]
     numCars = argNamespace.numCars[0]
-    
+
     sim = Simulator(percentObsDensity=percentObsDensity, endTime=endTime,
                     nonRandomWorld=nonRandomWorld, circleRadius=circleRadius, worldScale=worldScale,
                     numCars=numCars)
     sim.run()
-
-
