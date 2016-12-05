@@ -182,7 +182,6 @@ class Simulator(object):
 
     def runSingleSimulation(self, controllerType='default', simulationCutoff=None):
         self.setRandomCollisionFreeInitialState()
-
         currentCarState = np.copy(self.EgoCar.state)
         nextCarState = np.copy(self.EgoCar.state)
         currentAngleState = np.copy(self.EgoCar.angles)
@@ -191,6 +190,21 @@ class Simulator(object):
         currentRaycast = self.Sensor.raycastAll(self.frames[0])
         nextRaycast = np.zeros(self.Sensor.numRays)
 
+# expand one dimension
+        for i in xrange(0, self.numCars):
+            if i == 0:
+                currentCarsStates[0] = np.copy(self.EgoCar.state)
+                nextCarState = np.copy(self.EgoCar.state)
+                currentAngleState = np.copy(self.EgoCar.angles)
+                nextAngleState=np.copy(self.EgoCar.angles)
+                self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
+                currentRaycast = self.Sensor.raycastAll(self.frames[0])
+                nextRaycast = np.zeros(self.Sensor.numRays)
+            else:
+        
+
+
+        
         # record the reward data
         runData = dict()
         startIdx = self.counter
@@ -218,8 +232,6 @@ class Simulator(object):
                                                                             currentTime, self.frames[0],
                                                                             raycastDistance=currentRaycast,
                                                                             randomize=False)
-
-
 
             self.angleOverTime[idx,:] = controlAngle
 
