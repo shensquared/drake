@@ -193,31 +193,27 @@ class Simulator(object):
         # nextRaycast = np.zeros(self.Sensor.numRays)
 
 # WIP   
-        currentCarsStates =[]
-        nextCarsStates = []
-        currentAnglesStates = []
-        nextAnglesStates =[]
+        currentCarsStates = np.zeros((self.numCars,3))
+        nextCarsStates =  np.zeros((self.numCars,3))
+        currentAnglesStates =  np.zeros((self.numCars,3))
+        nextAnglesStates = np.zeros((self.numCars,3))
         for i in xrange(0, self.numCars):
             if i == 0:
                 currentCarsStates[0] = np.copy(self.EgoCar.state)
-                nextCarState[0]= np.copy(self.EgoCar.state)
+                nextCarsStates[0]= np.copy(self.EgoCar.state)
                 currentAnglesStates[0]= np.copy(self.EgoCar.angles)
                 nextAnglesStates[0]=np.copy(self.EgoCar.angles)
                 currentRaycast = self.Sensor.raycastAll(self.frames[0])
                 nextRaycast = np.zeros(self.Sensor.numRays)
             else:
-                currentCarsStates.append(np.copy(self.AgentCars[i-1].state))
-                nextCarsStates.append(np.copy(self.AgentCars[i-1].state))
-                currentAnglesStates.append(np.copy(self.AgentCars[i-1].angles))
-                nextAnglesStates.append(np.copy(self.AgentCars[i-1].angles))
+                currentCarsStates[i]=(np.copy(self.AgentCars[i-1].state))
+                nextCarsStates[i]=(np.copy(self.AgentCars[i-1].state))
+                currentAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
+                nextAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
                 # currentRaycast = self.Sensor.raycastAll(self.frames[0])
                 # nextRaycast = np.zeros(self.Sensor.numRays)
             self.setRobotFrameState(i,currentCarsStates[i][0], currentCarsStates[i][1], currentCarsStates[i][2])
 
-        # sensor raycast implementation
-        currentRaycast = self.Sensor.raycastAll(self.frames[0])
-        self.raycastData[idx,:] = currentRaycast
-        S_current = (currentCarsStates, currentRaycast)
 
         runData = dict()
         startIdx = self.counter
@@ -225,6 +221,12 @@ class Simulator(object):
             idx = self.counter
             currentTime = self.t[idx]
             self.stateOverTime[idx,:] = currentCarsStates
+            # sensor raycast implementation
+            currentRaycast = self.Sensor.raycastAll(self.frames[0])
+            self.raycastData[idx,:] = currentRaycast
+            S_current = (currentCarsStates, currentRaycast)
+
+
 
             for i in xrange(0, self.numCars):
                 x = self.stateOverTime[idx,i,0]
@@ -260,18 +262,15 @@ class Simulator(object):
                 self.setRobotFrameState(i,x,y,theta)
 
 
-            self.angleOverTime[idx,:] = controlAngle
+            # self.angleOverTime[idx,:] = controlAngle
             # phi = self.angleOverTime[idx,0]
             # alpha = self.angleOverTime[idx,1]
             # u = self.angleOverTime[idx,2]
 
-            nextRaycast = self.Sensor.raycastAll(self.frames[0])
+                nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
             # Compute the next control input
-            S_next = (nextCarsStates, nextRaycast)
-
-
-
+                S_next = (nextCarsStates, nextRaycast)
                 if controllerType in ["default", "defaultRandom"]:
                     if i == 0:
                         nextControlInput, nextAngle, nextControlInputIdx = self.EgoCarController.computeControlInput(nextCarsStates[i],
@@ -298,8 +297,8 @@ class Simulator(object):
 
 
         # fill in the last state by hand
-        self.stateOverTime[self.counter,:] = currentCarState
-        self.angleOverTime[self.counter,:] = currentAngleState
+        self.stateOverTime[self.counter,:] = currentCarsStates
+        # self.angleOverTime[self.counter,:] = currentAngleState
         self.raycastData[self.counter,:] = currentRaycast
 
         # this just makes sure we don't get stuck in an infinite loop.
@@ -317,11 +316,12 @@ class Simulator(object):
         self.endTime = self.defaultControllerTime # used to be the sum of the other times as well
         self.t = np.arange(0.0, self.endTime, dt)
         maxNumTimesteps = np.size(self.t)
-        self.stateOverTime = np.zeros((maxNumTimesteps+1, 3))
-        self.angleOverTime = np.zeros((maxNumTimesteps+1, 3))
+        self.stateOverTime = np.zeros((maxNumTimesteps+1, self.numCars, 3))
+        # self.angleOverTime = np.zeros((maxNumTimesteps+1, 3))
 
         self.raycastData = np.zeros((maxNumTimesteps+1, self.Sensor.numRays))
-        self.controlInputData = np.zeros(maxNumTimesteps+1)
+        self.controlInputData = np.zeros((maxNumTimesteps+1, self.numCars))
+
         self.numTimesteps = maxNumTimesteps
 
         self.controllerTypeOrder = ['default']
@@ -354,10 +354,10 @@ class Simulator(object):
         # BOOKKEEPING
         # truncate stateOverTime, raycastData, controlInputs to be the correct size
         self.numTimesteps = self.counter + 1
-        self.angleOverTime = self.angleOverTime[0:self.counter+1, :]
+        # self.angleOverTime = self.angleOverTime[0:self.counter+1, :]
         self.stateOverTime = self.stateOverTime[0:self.counter+1, :]
         self.raycastData = self.raycastData[0:self.counter+1, :]
-        self.controlInputData = self.controlInputData[0:self.counter+1]
+        self.controlInputData = self.controlInputData[0:self.counter+1,:]
         self.endTime = 1.0*self.counter/self.numTimesteps*self.endTime
 
     def initializeStatusBar(self):
@@ -474,12 +474,12 @@ class Simulator(object):
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
 
-            # robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
-            # camera_control_panel.trackerManager.target = robot;
-            # camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
-            # camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
-            # camera_control_panel.trackerManager.initTracker()
-            # camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
+            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            camera_control_panel.trackerManager.target = robot;
+            camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
+            camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
+            camera_control_panel.trackerManager.initTracker()
+            camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)
@@ -617,10 +617,10 @@ class Simulator(object):
     def onSliderChanged(self, value):
         if not self.sliderMovedByPlayTimer:
             self.playTimer.stop()
-        numSteps = len(self.stateOverTime)
+        numSteps = len(self.stateOverTime[1])
         idx = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         idx = min(idx, numSteps-1)
-        x,y,theta = self.stateOverTime[idx]
+        x,y,theta = self.stateOverTime[idx,0]
         # phi,alpha,u = self.angleOverTime[idx]
         # ray=self.raycastData[idx]
         # if not self.sliderMovedByPlayTimer:
