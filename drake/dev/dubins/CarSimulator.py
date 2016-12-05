@@ -187,6 +187,7 @@ class Simulator(object):
         nextCarsStates =  np.zeros((self.numCars,3))
         currentAnglesStates =  np.zeros((self.numCars,3))
         nextAnglesStates = np.zeros((self.numCars,3))
+        # initialization stuff
         for i in xrange(0, self.numCars):
             if i == 0:
                 currentCarsStates[0] = np.copy(self.EgoCar.state)
@@ -206,6 +207,7 @@ class Simulator(object):
         runData = dict()
         startIdx = self.counter
         while (self.counter < self.numTimesteps - 1):
+            # time index
             idx = self.counter
             currentTime = self.t[idx]
             self.stateOverTime[idx,:] = currentCarsStates
@@ -214,14 +216,11 @@ class Simulator(object):
             self.raycastData[idx,:] = currentRaycast
             S_current = (currentCarsStates, currentRaycast)
 
-
-
             for i in xrange(0, self.numCars):
                 x = self.stateOverTime[idx,i,0]
                 y = self.stateOverTime[idx,i,1]
                 theta = self.stateOverTime[idx,i,2]
                 self.setRobotFrameState(i,x,y,theta)
-
 
                 if controllerType not in self.colorMap.keys():
                     print
@@ -236,7 +235,7 @@ class Simulator(object):
                         self.controlInputData[idx, i] = controlInput
 
                         nextCarsStates [0] = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
-                    else:  
+                    else: 
                         controlInput = self.AgentCarsControllers[i-1].computeControlInput(currentCarsStates[i],
                                                                                     currentTime, self.frames[i],
                                                                                     raycastDistance=currentRaycast,
@@ -247,8 +246,6 @@ class Simulator(object):
                 y = nextCarsStates[i][1]
                 theta = nextCarsStates[i][2]
                 self.setRobotFrameState(i,x,y,theta)
-
-
                 nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
             # Compute the next control input
@@ -452,7 +449,7 @@ class Simulator(object):
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
 
-            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
             camera_control_panel.trackerManager.target = robot;
             camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
             camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
