@@ -183,15 +183,6 @@ class Simulator(object):
     def runSingleSimulation(self, controllerType='default', simulationCutoff=None):
         self.setRandomCollisionFreeInitialState()
 
-        # one instance case
-        # currentCarState = np.copy(self.EgoCar.state)
-        # nextCarState = np.copy(self.EgoCar.state)
-        # currentAngleState = np.copy(self.EgoCar.angles)
-        # nextAngleState=np.copy(self.EgoCar.angles)
-        # self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
-        # currentRaycast = self.Sensor.raycastAll(self.frames[0])
-        # nextRaycast = np.zeros(self.Sensor.numRays)
-
         currentCarsStates = np.zeros((self.numCars,3))
         nextCarsStates =  np.zeros((self.numCars,3))
         currentAnglesStates =  np.zeros((self.numCars,3))
@@ -209,8 +200,6 @@ class Simulator(object):
                 nextCarsStates[i]=(np.copy(self.AgentCars[i-1].state))
                 currentAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
                 nextAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
-                # currentRaycast = self.Sensor.raycastAll(self.frames[0])
-                # nextRaycast = np.zeros(self.Sensor.numRays)
             self.setRobotFrameState(i,currentCarsStates[i][0], currentCarsStates[i][1], currentCarsStates[i][2])
 
 
@@ -259,11 +248,6 @@ class Simulator(object):
                 theta = nextCarsStates[i][2]
                 self.setRobotFrameState(i,x,y,theta)
 
-
-            # self.angleOverTime[idx,:] = controlAngle
-            # phi = self.angleOverTime[idx,0]
-            # alpha = self.angleOverTime[idx,1]
-            # u = self.angleOverTime[idx,2]
 
                 nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
@@ -314,8 +298,6 @@ class Simulator(object):
         self.t = np.arange(0.0, self.endTime, dt)
         maxNumTimesteps = np.size(self.t)
         self.stateOverTime = np.zeros((maxNumTimesteps+1, self.numCars, 3))
-        # self.angleOverTime = np.zeros((maxNumTimesteps+1, 3))
-
         self.raycastData = np.zeros((maxNumTimesteps+1, self.Sensor.numRays))
         self.controlInputData = np.zeros((maxNumTimesteps+1, self.numCars))
 
@@ -351,7 +333,6 @@ class Simulator(object):
         # BOOKKEEPING
         # truncate stateOverTime, raycastData, controlInputs to be the correct size
         self.numTimesteps = self.counter + 1
-        # self.angleOverTime = self.angleOverTime[0:self.counter+1, :]
         self.stateOverTime = self.stateOverTime[0:self.counter+1, :]
         self.raycastData = self.raycastData[0:self.counter+1, :]
         self.controlInputData = self.controlInputData[0:self.counter+1,:]
@@ -507,38 +488,6 @@ class Simulator(object):
         if launchApp:
             self.setupPlayback()
 
-    # def updateDrawPolyApprox(self, frame):
-    #     distances = self.Sensor.raycastAll(frame)
-    #     polyCoefficients = self.SensorApproximator.polyFitConstrainedLP(distances)
-
-    #     d = DebugData()
-
-    #     x = self.SensorApproximator.approxThetaVector
-    #     y = x * 0.0
-    #     for index,val in enumerate(y):
-    #         y[index] = self.horner(x[index],polyCoefficients)
-
-    #     origin = np.array(frame.transform.GetPosition())
-    #     origin[2] = -0.001
-
-    #     for i in xrange(self.SensorApproximator.numApproxPoints):
-    #         if y[i] > 0:
-    #             ray = self.SensorApproximator.approxRays[:,i]
-    #             rayTransformed = np.array(frame.transform.TransformNormal(ray))
-    #             intersection = origin + rayTransformed * y[i]
-    #             intersection[2] = -0.001
-    #             d.addLine(origin, intersection, color=[0,0.1,1])
-
-    #     vis.updatePolyData(d.getPolyData(), 'polyApprox', colorByName='RGB255')
-
-    # def horner(self, x, weights):
-    #     coefficients = weights[::-1]
-    #     result = 0
-    #     for i in coefficients:
-    #         result = result * x + i
-    #     return result
-
-
     def updateDrawIntersection(self, frame):
 
         origin = np.array(frame.transform.GetPosition())
@@ -614,12 +563,11 @@ class Simulator(object):
     def onSliderChanged(self, value):
         if not self.sliderMovedByPlayTimer:
             self.playTimer.stop()
-        numSteps = len(self.stateOverTime[1])
+        numSteps = len(self.stateOverTime[:,1])
         idx = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         idx = min(idx, numSteps-1)
         x,y,theta = self.stateOverTime[idx,0]
-        # phi,alpha,u = self.angleOverTime[idx]
-        # ray=self.raycastData[idx]
+        ray=self.raycastData[idx]
         # if not self.sliderMovedByPlayTimer:
             # print 'ray cast'
             # print ray
