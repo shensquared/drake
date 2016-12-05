@@ -28,7 +28,7 @@ from controller import ControllerObj
 class Simulator(object):
     def __init__(self, mode, percentObsDensity=20, endTime=40, nonRandomWorld=False,
                  circleRadius=0.7, worldScale=1.0, autoInitialize=True, verbose=True,
-                 numCars= 3):
+                 numCars= 2):
         self.verbose = verbose
         self.startSimTime = time.time()
         self.collisionThreshold = 0.2
@@ -182,89 +182,109 @@ class Simulator(object):
 
     def runSingleSimulation(self, controllerType='default', simulationCutoff=None):
         self.setRandomCollisionFreeInitialState()
-        currentCarState = np.copy(self.EgoCar.state)
-        nextCarState = np.copy(self.EgoCar.state)
-        currentAngleState = np.copy(self.EgoCar.angles)
-        nextAngleState=np.copy(self.EgoCar.angles)
-        self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
-        currentRaycast = self.Sensor.raycastAll(self.frames[0])
-        nextRaycast = np.zeros(self.Sensor.numRays)
 
-# expand one dimension
+        # one instance case
+        # currentCarState = np.copy(self.EgoCar.state)
+        # nextCarState = np.copy(self.EgoCar.state)
+        # currentAngleState = np.copy(self.EgoCar.angles)
+        # nextAngleState=np.copy(self.EgoCar.angles)
+        # self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
+        # currentRaycast = self.Sensor.raycastAll(self.frames[0])
+        # nextRaycast = np.zeros(self.Sensor.numRays)
+
+# WIP   
+        currentCarsStates =[]
+        nextCarsStates = []
+        currentAnglesStates = []
+        nextAnglesStates =[]
         for i in xrange(0, self.numCars):
             if i == 0:
                 currentCarsStates[0] = np.copy(self.EgoCar.state)
-                nextCarState = np.copy(self.EgoCar.state)
-                currentAngleState = np.copy(self.EgoCar.angles)
-                nextAngleState=np.copy(self.EgoCar.angles)
-                self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
+                nextCarState[0]= np.copy(self.EgoCar.state)
+                currentAnglesStates[0]= np.copy(self.EgoCar.angles)
+                nextAnglesStates[0]=np.copy(self.EgoCar.angles)
                 currentRaycast = self.Sensor.raycastAll(self.frames[0])
                 nextRaycast = np.zeros(self.Sensor.numRays)
             else:
-        
+                currentCarsStates.append(np.copy(self.AgentCars[i-1].state))
+                nextCarsStates.append(np.copy(self.AgentCars[i-1].state))
+                currentAnglesStates.append(np.copy(self.AgentCars[i-1].angles))
+                nextAnglesStates.append(np.copy(self.AgentCars[i-1].angles))
+                # currentRaycast = self.Sensor.raycastAll(self.frames[0])
+                # nextRaycast = np.zeros(self.Sensor.numRays)
+            self.setRobotFrameState(i,currentCarsStates[i][0], currentCarsStates[i][1], currentCarsStates[i][2])
 
+        # sensor raycast implementation
+        currentRaycast = self.Sensor.raycastAll(self.frames[0])
+        self.raycastData[idx,:] = currentRaycast
+        S_current = (currentCarsStates, currentRaycast)
 
-        
-        # record the reward data
         runData = dict()
         startIdx = self.counter
         while (self.counter < self.numTimesteps - 1):
             idx = self.counter
             currentTime = self.t[idx]
-            self.stateOverTime[idx,:] = currentCarState
-            x = self.stateOverTime[idx,0]
-            y = self.stateOverTime[idx,1]
-            theta = self.stateOverTime[idx,2]
+            self.stateOverTime[idx,:] = currentCarsStates
 
-            self.setRobotFrameState(0, x,y,theta)
-            currentRaycast = self.Sensor.raycastAll(self.frames[0])
-            self.raycastData[idx,:] = currentRaycast
-            S_current = (currentCarState, currentRaycast)
+            for i in xrange(0, self.numCars):
+                x = self.stateOverTime[idx,i,0]
+                y = self.stateOverTime[idx,i,1]
+                theta = self.stateOverTime[idx,i,2]
+                self.setRobotFrameState(i,x,y,theta)
 
 
-            if controllerType not in self.colorMap.keys():
-                print
-                raise ValueError("controller of type " + controllerType + " not supported")
+                if controllerType not in self.colorMap.keys():
+                    print
+                    raise ValueError("controller of type " + controllerType + " not supported")
 
+                if controllerType in ["default", "defaultRandom"]:
+                    if i == 0:
+                        controlInput, controlAngle, controlInputIdx = self.EgoCarController.computeControlInput(currentCarsStates[0],
+                                                                                    currentTime, self.frames[0],
+                                                                                    raycastDistance=currentRaycast,
+                                                                                    randomize=False)
+                        self.controlInputData[idx, i] = controlInput
 
-            if controllerType in ["default", "defaultRandom"]:
-                controlInput, controlAngle, controlInputIdx = self.EgoCarController.computeControlInput(currentCarState,
-                                                                            currentTime, self.frames[0],
-                                                                            raycastDistance=currentRaycast,
-                                                                            randomize=False)
+                        nextCarsStates [0] = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
+                    else:  
+                        controlInput, controlAngle, controlInputIdx = self.AgentCarsControllers[i-1].computeControlInput(currentCarsStates[i],
+                                                                                    currentTime, self.frames[i],
+                                                                                    raycastDistance=currentRaycast,
+                                                                                    randomize=False)
+                        self.controlInputData[idx, i] = controlInput
+                        nextCarsStates [i] = self.AgentCars[i-1].simulateOneStep(controlInput=controlInput, dt=self.dt)
+
+                x = nextCarsStates[i][0]
+                y = nextCarsStates[i][1]
+                theta = nextCarsStates[i][2]
+                self.setRobotFrameState(i,x,y,theta)
+
 
             self.angleOverTime[idx,:] = controlAngle
+            # phi = self.angleOverTime[idx,0]
+            # alpha = self.angleOverTime[idx,1]
+            # u = self.angleOverTime[idx,2]
 
-            phi = self.angleOverTime[idx,0]
-            alpha = self.angleOverTime[idx,1]
-            u = self.angleOverTime[idx,2]
-
-
-            self.controlInputData[idx] = controlInput
-
-            nextCarState = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
-            x = nextCarState[0]
-            y = nextCarState[1]
-            theta = nextCarState[2]
-
-
-            self.setRobotFrameState(0, x,y,theta)
             nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
-
             # Compute the next control input
-            S_next = (nextCarState, nextRaycast)
+            S_next = (nextCarsStates, nextRaycast)
 
-            if controllerType in ["default", "defaultRandom"]:
-                nextControlInput, nextAngle, nextControlInputIdx = self.EgoCarController.computeControlInput(nextCarState,
+
+
+                if controllerType in ["default", "defaultRandom"]:
+                    if i == 0:
+                        nextControlInput, nextAngle, nextControlInputIdx = self.EgoCarController.computeControlInput(nextCarsStates[i],
                                                                             currentTime, self.frames[0],
                                                                             raycastDistance=nextRaycast,
-                                                                            randomize=False)
+                                                                            randomize=False)    
+                    else:
+                        nextControlInput, nextAngle, nextControlInputIdx = self.AgentCarsControllers[i-1].computeControlInput(nextCarsStates[i],
+                                                                            currentTime, self.frames[i],
+                                                                            raycastDistance=nextRaycast,
+                                                                            randomize=False)    
 
-
-            #bookkeeping
-
-            currentCarState = nextCarState
+            currentCarsStates = nextCarsStates
             nextAngleState=nextAngle
             currentRaycast = nextRaycast
             self.counter+=1
@@ -273,15 +293,14 @@ class Simulator(object):
             if self.checkInCollision(nextRaycast):
                 if self.verbose: print "Had a collision, terminating simulation"
                 break
-
             if self.counter >= simulationCutoff:
                 break
+
 
         # fill in the last state by hand
         self.stateOverTime[self.counter,:] = currentCarState
         self.angleOverTime[self.counter,:] = currentAngleState
         self.raycastData[self.counter,:] = currentRaycast
-
 
         # this just makes sure we don't get stuck in an infinite loop.
         if startIdx == self.counter:
@@ -602,8 +621,8 @@ class Simulator(object):
         idx = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         idx = min(idx, numSteps-1)
         x,y,theta = self.stateOverTime[idx]
-        phi,alpha,u = self.angleOverTime[idx]
-        ray=self.raycastData[idx]
+        # phi,alpha,u = self.angleOverTime[idx]
+        # ray=self.raycastData[idx]
         # if not self.sliderMovedByPlayTimer:
             # print 'ray cast'
             # print ray
