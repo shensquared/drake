@@ -28,7 +28,7 @@ from controller import ControllerObj
 class Simulator(object):
     def __init__(self, mode, percentObsDensity=20, endTime=40, nonRandomWorld=False,
                  circleRadius=0.7, worldScale=1.0, autoInitialize=True, verbose=True,
-                 numCars=1):
+                 numCars= 3):
         self.verbose = verbose
         self.startSimTime = time.time()
         self.collisionThreshold = 0.2
@@ -187,7 +187,7 @@ class Simulator(object):
         nextCarState = np.copy(self.EgoCar.state)
         currentAngleState = np.copy(self.EgoCar.angles)
         nextAngleState=np.copy(self.EgoCar.angles)
-        self.setRobotFrameState(currentCarState[0], currentCarState[1], currentCarState[2])
+        self.setRobotFrameState(0,currentCarState[0], currentCarState[1], currentCarState[2])
         currentRaycast = self.Sensor.raycastAll(self.frames[0])
         nextRaycast = np.zeros(self.Sensor.numRays)
 
@@ -202,7 +202,7 @@ class Simulator(object):
             y = self.stateOverTime[idx,1]
             theta = self.stateOverTime[idx,2]
 
-            self.setRobotFrameState(x,y,theta)
+            self.setRobotFrameState(0, x,y,theta)
             currentRaycast = self.Sensor.raycastAll(self.frames[0])
             self.raycastData[idx,:] = currentRaycast
             S_current = (currentCarState, currentRaycast)
@@ -236,7 +236,7 @@ class Simulator(object):
             theta = nextCarState[2]
 
 
-            self.setRobotFrameState(x,y,theta)
+            self.setRobotFrameState(0, x,y,theta)
             nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
 
@@ -359,7 +359,7 @@ class Simulator(object):
             theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
 
             self.EgoCar.setCarState(x,y,theta)
-            self.setRobotFrameState(x,y,theta)
+            self.setRobotFrameState(0, x,y,theta)
 
             print "In loop"
 
@@ -372,18 +372,19 @@ class Simulator(object):
     def setRandomCollisionFreeInitialState(self):
         tol = 5
 
-        while True:
-
+        for i in xrange(0, self.numCars):
             x = np.random.uniform(self.world.Xmin+tol, self.world.Xmax-tol, 1)[0]
             y = np.random.uniform(self.world.Ymin+tol, self.world.Ymax-tol, 1)[0]
             theta = np.random.uniform(0,2*np.pi,1)[0]
-
-            self.EgoCar.setCarState(x,y,theta)
-            self.setRobotFrameState(x,y,theta)
-
-            if not self.checkInCollision():
-                break
-
+            while True:
+                if i == 0:
+                    self.EgoCar.setCarState(x,y,theta)
+                    self.setRobotFrameState(0,x,y,theta)
+                else:
+                    self.AgentCars[i-1].setCarState(x,y,theta)
+                    self.setRobotFrameState(i-1, x,y,theta)
+                if not self.checkInCollision():
+                    break
         return x,y,theta
 
     def setupPlayback(self):
@@ -442,12 +443,12 @@ class Simulator(object):
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
 
-            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
-            camera_control_panel.trackerManager.target = robot;
-            camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
-            camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
-            camera_control_panel.trackerManager.initTracker()
-            camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
+            # robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            # camera_control_panel.trackerManager.target = robot;
+            # camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
+            # camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
+            # camera_control_panel.trackerManager.initTracker()
+            # camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)
@@ -546,16 +547,17 @@ class Simulator(object):
         return name
 
 
-    def setRobotFrameState(self, x, y, theta):
+    def setRobotFrameState(self, i, x, y, theta):
         t = vtk.vtkTransform()
         t.Translate(x,y,0.0)
         t.RotateZ(np.degrees(theta))
-        self.robots[0].getChildFrame().copyFrame(t)
+        self.robots[i].getChildFrame().copyFrame(t)
 
     # returns true if we are in collision
     def checkInCollision(self, raycastDistance=None):
         if raycastDistance is None:
-            self.setRobotFrameState(self.EgoCar.state[0],self.EgoCar.state[1],self.EgoCar.state[2])
+            # TODO: adding agentCars
+            self.setRobotFrameState(0, self.EgoCar.state[0],self.EgoCar.state[1],self.EgoCar.state[2])
             raycastDistance = self.Sensor.raycastAll(self.frames[0])
         if np.min(raycastDistance) < self.collisionThreshold:
             return True
@@ -567,7 +569,7 @@ class Simulator(object):
         #simulate(t.elapsed)
         x = np.sin(time.time())
         y = np.cos(time.time())
-        self.setRobotFrameState(x,y,0.0)
+        self.setRobotFrameState(0, x,y,0.0)
         if (time.time() - self.playTime) > self.endTime:
             self.playTimer.stop()
 
@@ -593,7 +595,7 @@ class Simulator(object):
         # if not self.sliderMovedByPlayTimer:
             # print 'ray cast'
             # print ray
-        self.setRobotFrameState(x,y,theta)
+        self.setRobotFrameState(0, x,y,theta)
         self.sliderMovedByPlayTimer = False
 
     def onPlayButton(self):
