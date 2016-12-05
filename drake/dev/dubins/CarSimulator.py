@@ -28,7 +28,7 @@ from controller import ControllerObj
 class Simulator(object):
     def __init__(self, mode, percentObsDensity=20, endTime=40, nonRandomWorld=False,
                  circleRadius=0.7, worldScale=1.0, autoInitialize=True, verbose=True,
-                 numCars=2):
+                 numCars=1):
         self.verbose = verbose
         self.startSimTime = time.time()
         self.collisionThreshold = 0.2
@@ -265,8 +265,6 @@ class Simulator(object):
             if self.counter >= simulationCutoff:
                 break
 
-
-
         # fill in the last state by hand
         self.stateOverTime[self.counter,:] = currentCarState
         self.angleOverTime[self.counter,:] = currentAngleState
@@ -330,8 +328,6 @@ class Simulator(object):
         self.raycastData = self.raycastData[0:self.counter+1, :]
         self.controlInputData = self.controlInputData[0:self.counter+1]
         self.endTime = 1.0*self.counter/self.numTimesteps*self.endTime
-
-
 
     def initializeStatusBar(self):
         self.numTicks = 10
@@ -424,8 +420,10 @@ class Simulator(object):
         w.showMaximized()
 
         self.frames[0].connectFrameModified(self.updateDrawIntersection)
-        # self.frames[0].connectFrameModified(self.updateDrawPolyApprox)
+# TODO: the next line makes palyback smooth, but why?
         self.updateDrawIntersection(self.frames[0])
+# Only seems to be useful for when readings are approximated
+        # self.frames[0].connectFrameModified(self.updateDrawPolyApprox)
         # self.updateDrawPolyApprox(self.frames[0])
 
         camera = self.view.camera()
@@ -444,12 +442,12 @@ class Simulator(object):
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
 
-            # robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
-            # camera_control_panel.trackerManager.target = robot;
-            # camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
-            # camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
-            # camera_control_panel.trackerManager.initTracker()
-            # camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
+            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            camera_control_panel.trackerManager.target = robot;
+            camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
+            camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
+            camera_control_panel.trackerManager.initTracker()
+            camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)
@@ -480,36 +478,36 @@ class Simulator(object):
         if launchApp:
             self.setupPlayback()
 
-    def updateDrawPolyApprox(self, frame):
-        distances = self.Sensor.raycastAll(frame)
-        polyCoefficients = self.SensorApproximator.polyFitConstrainedLP(distances)
+    # def updateDrawPolyApprox(self, frame):
+    #     distances = self.Sensor.raycastAll(frame)
+    #     polyCoefficients = self.SensorApproximator.polyFitConstrainedLP(distances)
 
-        d = DebugData()
+    #     d = DebugData()
 
-        x = self.SensorApproximator.approxThetaVector
-        y = x * 0.0
-        for index,val in enumerate(y):
-            y[index] = self.horner(x[index],polyCoefficients)
+    #     x = self.SensorApproximator.approxThetaVector
+    #     y = x * 0.0
+    #     for index,val in enumerate(y):
+    #         y[index] = self.horner(x[index],polyCoefficients)
 
-        origin = np.array(frame.transform.GetPosition())
-        origin[2] = -0.001
+    #     origin = np.array(frame.transform.GetPosition())
+    #     origin[2] = -0.001
 
-        for i in xrange(self.SensorApproximator.numApproxPoints):
-            if y[i] > 0:
-                ray = self.SensorApproximator.approxRays[:,i]
-                rayTransformed = np.array(frame.transform.TransformNormal(ray))
-                intersection = origin + rayTransformed * y[i]
-                intersection[2] = -0.001
-                d.addLine(origin, intersection, color=[0,0.1,1])
+    #     for i in xrange(self.SensorApproximator.numApproxPoints):
+    #         if y[i] > 0:
+    #             ray = self.SensorApproximator.approxRays[:,i]
+    #             rayTransformed = np.array(frame.transform.TransformNormal(ray))
+    #             intersection = origin + rayTransformed * y[i]
+    #             intersection[2] = -0.001
+    #             d.addLine(origin, intersection, color=[0,0.1,1])
 
-        vis.updatePolyData(d.getPolyData(), 'polyApprox', colorByName='RGB255')
+    #     vis.updatePolyData(d.getPolyData(), 'polyApprox', colorByName='RGB255')
 
-    def horner(self, x, weights):
-        coefficients = weights[::-1]
-        result = 0
-        for i in coefficients:
-            result = result * x + i
-        return result
+    # def horner(self, x, weights):
+    #     coefficients = weights[::-1]
+    #     result = 0
+    #     for i in coefficients:
+    #         result = result * x + i
+    #     return result
 
 
     def updateDrawIntersection(self, frame):
