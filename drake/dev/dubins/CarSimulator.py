@@ -192,7 +192,6 @@ class Simulator(object):
         # currentRaycast = self.Sensor.raycastAll(self.frames[0])
         # nextRaycast = np.zeros(self.Sensor.numRays)
 
-# WIP   
         currentCarsStates = np.zeros((self.numCars,3))
         nextCarsStates =  np.zeros((self.numCars,3))
         currentAnglesStates =  np.zeros((self.numCars,3))
@@ -241,7 +240,7 @@ class Simulator(object):
 
                 if controllerType in ["default", "defaultRandom"]:
                     if i == 0:
-                        controlInput, controlAngle, controlInputIdx = self.EgoCarController.computeControlInput(currentCarsStates[0],
+                        controlInput = self.EgoCarController.computeControlInput(currentCarsStates[0],
                                                                                     currentTime, self.frames[0],
                                                                                     raycastDistance=currentRaycast,
                                                                                     randomize=False)
@@ -249,13 +248,12 @@ class Simulator(object):
 
                         nextCarsStates [0] = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
                     else:  
-                        controlInput, controlAngle, controlInputIdx = self.AgentCarsControllers[i-1].computeControlInput(currentCarsStates[i],
+                        controlInput = self.AgentCarsControllers[i-1].computeControlInput(currentCarsStates[i],
                                                                                     currentTime, self.frames[i],
                                                                                     raycastDistance=currentRaycast,
                                                                                     randomize=False)
                         self.controlInputData[idx, i] = controlInput
                         nextCarsStates [i] = self.AgentCars[i-1].simulateOneStep(controlInput=controlInput, dt=self.dt)
-
                 x = nextCarsStates[i][0]
                 y = nextCarsStates[i][1]
                 theta = nextCarsStates[i][2]
@@ -273,18 +271,17 @@ class Simulator(object):
                 S_next = (nextCarsStates, nextRaycast)
                 if controllerType in ["default", "defaultRandom"]:
                     if i == 0:
-                        nextControlInput, nextAngle, nextControlInputIdx = self.EgoCarController.computeControlInput(nextCarsStates[i],
+                        nextControlInput = self.EgoCarController.computeControlInput(nextCarsStates[i],
                                                                             currentTime, self.frames[0],
                                                                             raycastDistance=nextRaycast,
                                                                             randomize=False)    
                     else:
-                        nextControlInput, nextAngle, nextControlInputIdx = self.AgentCarsControllers[i-1].computeControlInput(nextCarsStates[i],
+                        nextControlInput = self.AgentCarsControllers[i-1].computeControlInput(nextCarsStates[i],
                                                                             currentTime, self.frames[i],
                                                                             raycastDistance=nextRaycast,
                                                                             randomize=False)    
 
             currentCarsStates = nextCarsStates
-            nextAngleState=nextAngle
             currentRaycast = nextRaycast
             self.counter+=1
 

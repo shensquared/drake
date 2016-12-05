@@ -43,26 +43,20 @@ class ControllerObj(object):
         else:
             self.distances = raycastDistance
         if self.mode=='Goal':
-            u, angles, actionIdx = self.mothController()
+            u = self.mothController()
         elif self.mode=='Obs':
-            u, angles, actionIdx = self.naiveController()
+            u = self.naiveController()
         elif self.mode=='2in1':
-            u, angles, actionIdx = self.twoin1Controller() 
+            u = self.twoin1Controller() 
         elif self.mode=='Manual':
-            u, angles, actionIdx = self.manualController() 
+            u = self.manualController() 
         else:
             print 'controller-mode setup error'
 
-        if randomize:
-            if np.random.uniform(0,1,1)[0] < self.epsilonRand:
-                # otherActionIdx = np.setdiff1d(self.actionSetIdx, np.array([actionIdx]))
-                # randActionIdx = np.random.choice(otherActionIdx)
-                actionIdx = np.random.choice(self.actionSetIdx)
-                u = self.actionSet[actionIdx]
-        return u, angles, actionIdx
+        return u
 
     def manualController(self, steering):
-        return steering, 0, 0
+        return steering
 
     def mothController(self, arrived=False):
         distances=self.distances
@@ -107,7 +101,7 @@ class ControllerObj(object):
             # f = open(filename, 'w+')
             # f.write(str(self.history))
             # f.close
-        return u, angleState, 0
+        return u
 
 
     def naiveController(self):
@@ -154,7 +148,7 @@ class ControllerObj(object):
         if u < -self.u_max:
             u = -self.u_max
         angleState=self.angleState
-        return -u, angleState, 0
+        return -u
 
     def twoin1Controller(self, arrived=False):
         distances=self.distances
@@ -186,13 +180,5 @@ class ControllerObj(object):
             u = self.u_max
         if u < -self.u_max:
             u = -self.u_max
-        return u, angels, 0
-
-
-
-    def computeControlInputFromFrame(self):
-        carState = 0
-        t = 0
-        frame = om.findObjectByName('robot frame')
-        return self.computeControlInput(carState, t, frame)
+        return u 
 
