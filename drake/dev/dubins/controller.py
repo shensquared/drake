@@ -48,6 +48,8 @@ class ControllerObj(object):
             u, angles, actionIdx = self.naiveController()
         elif self.mode=='2in1':
             u, angles, actionIdx = self.twoin1Controller() 
+        elif self.mode=='Manual':
+            u, angles, actionIdx = self.manualController() 
         else:
             print 'controller-mode setup error'
 
@@ -57,9 +59,10 @@ class ControllerObj(object):
                 # randActionIdx = np.random.choice(otherActionIdx)
                 actionIdx = np.random.choice(self.actionSetIdx)
                 u = self.actionSet[actionIdx]
-
         return u, angles, actionIdx
 
+    def manualController(self, steering):
+        return steering, 0, 0
 
     def mothController(self, arrived=False):
         distances=self.distances

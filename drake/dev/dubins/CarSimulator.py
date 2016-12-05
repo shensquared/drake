@@ -590,9 +590,9 @@ class Simulator(object):
         x,y,theta = self.stateOverTime[idx]
         phi,alpha,u = self.angleOverTime[idx]
         ray=self.raycastData[idx]
-        if not self.sliderMovedByPlayTimer:
+        # if not self.sliderMovedByPlayTimer:
             # print 'ray cast'
-            print ray
+            # print ray
         self.setRobotFrameState(x,y,theta)
         self.sliderMovedByPlayTimer = False
 
@@ -607,6 +607,15 @@ class Simulator(object):
     def onPauseButton(self):
         print 'pause'
         self.playTimer.stop()
+
+    def onMaunualControll(self, value):
+        steering = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
+        print steering
+# TODO: remove hard code
+        self.AgentCarsControllers[0].mode = 'Manual'
+        self.AgentCarsControllers[0].manualController(steering = steering)
+        
+
 
     def saveToFile(self, filename):
         # should also save the run data if it is available, i.e. stateOverTime, rewardOverTime
