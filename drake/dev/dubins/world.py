@@ -51,16 +51,6 @@ class World(object):
             d.addLine(firstEndpt, secondEndpt, radius=1.0)
 
         return worldXmin, worldXmax, worldYmin, worldYmax
-    # @staticmethod
-    # def buildGoal(d):
-    #     goalX=obsXmin + np.random.rand()*(obsXmax-obsXmin)
-    #     goalY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
-    #     goalFirst = (goalX,goalY,+0.2)
-    #     goalEnd = (goalX,goalY,-0.2)
-    #     d.addLine(goalFirst, goalEnd, radius=circleRadius, color=[0,0,1])
-
-    #     return goalX, goalY
-
 
     @staticmethod
     def buildRobot(x=0,y=0,numCars=2):
@@ -96,13 +86,13 @@ class World(object):
         loc.SetDataSet(polyData)
         loc.BuildLocator()
         return loc
+
     @staticmethod
     def buildCircleWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
                          obstaclesInnerFraction=1.0):
         #print "building circle world"
         if nonRandom:
             np.random.seed(randomSeed)
-
         d = DebugData()
         worldXmin, worldXmax, worldYmin, worldYmax = World.buildBoundaries(d, scale=scale, boundaryType="Square")
         #print "boundaries done"
@@ -134,10 +124,8 @@ class World(object):
         goalFirst = (goalX,goalY,+20)
         goalEnd = (goalX,goalY,-0.2)
         d.addLine(goalFirst, goalEnd, radius=circleRadius, color=[0,0,1])
-        # the really cute pink RGB [1,0.6,0.7]
-
+        # the really cute pink has RGB [1,0.6,0.7]
         obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
-
         world = World()
         world.visObj = obj
         world.Xmax = worldXmax
@@ -146,7 +134,6 @@ class World(object):
         world.Ymin = worldYmin
         world.numObstacles = numObstacles
         world.percentObsDensity = percentObsDensity
-
         return world, goalX, goalY
 
 
@@ -190,8 +177,6 @@ class World(object):
         goalFirst = (goalX,goalY,+20)
         goalEnd = (goalX,goalY,-0.2)
         d.addLine(goalFirst, goalEnd, radius=3*circleRadius, color=[1,1,1])
-        # the really cute pink RGB [1,0.6,0.7]
-
         obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
 
         world = World()
