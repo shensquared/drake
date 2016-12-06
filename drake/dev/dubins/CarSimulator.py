@@ -200,7 +200,7 @@ class Simulator(object):
             # sensor raycast implementation
             currentRaycast = self.Sensor.raycastAll(self.frames[0])
             self.raycastData[idx,:] = currentRaycast
-            S_current = (currentCarsStates, currentRaycast)
+            # S_current = (currentCarsStates, currentRaycast)
 
             for i in xrange(0, self.numCars):
                 x = self.stateOverTime[idx,i,0]
@@ -227,7 +227,7 @@ class Simulator(object):
                 nextRaycast = self.Sensor.raycastAll(self.frames[0])
 
             # Compute the next control input
-                S_next = (nextCarsStates, nextRaycast)
+                # S_next = (nextCarsStates, nextRaycast)
                 if controllerType in ["default", "defaultRandom"]:
                     nextControlInput = self.CarsControllers[i].computeControlInput(nextCarsStates[i],
                                                                         currentTime, self.frames[i],
@@ -327,23 +327,23 @@ class Simulator(object):
             print "#" * self.nextTickIdx, "-" * (self.numTicks - self.nextTickIdx), "estimated", estimatedTimeLeft_minutes, "minutes left"
 
 
-    def setCollisionFreeInitialState(self):
-        tol = 5
+    # def setCollisionFreeInitialState(self):
+    #     tol = 5
 
-        while True:
+    #     while True:
 
-            x = 0.0
-            y =   -5.0
-            theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
+    #         x = 0.0
+    #         y =   -5.0
+    #         theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
 
-            for i in xrange(0, self.numCars):
-                self.Cars[i].setCarState(x,y,theta)
-                self.setRobotFrameState(i,x,y,theta)
+    #         for i in xrange(0, self.numCars):
+    #             self.Cars[i].setCarState(x,y,theta)
+    #             self.setRobotFrameState(i,x,y,theta)
 
-            print "In loop"
-            if not self.checkInCollision():
-                break
-        return x,y,theta
+    #         print "In loop"
+    #         if not self.checkInCollision():
+    #             break
+    #     return x,y,theta
 
 
     def setRandomCollisionFreeInitialState(self):
