@@ -142,28 +142,20 @@ class Simulator(object):
         # adding sensors onto the EgoCar
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
-        self.AgentCars=[]
-        self.AgentCarsControllers=[]
+        self.Cars=[]
+        self.CarsControllers=[]
 
         for i in xrange(0,self.numCars):
-            if i ==0:
-                self.EgoCarController = ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-                self.EgoCar = CarPlant(controller=self.EgoCarController,
-                                    velocity=self.options['Car']['velocity'])
-                self.EgoCarController.addingCar(self.EgoCar)
-                self.EgoCarController.initializeVelocity(self.EgoCar.v)
-                self.EgoCar.setFrame(self.frames[0])
-            else:
-                self.AgentCarsControllers.append(
-                    ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
-                )
+            self.CarsControllers.append(
+                ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+            )
 
-                self.AgentCars.append(CarPlant(controller=self.AgentCarsControllers[i-1],
-                                    velocity=self.options['Car']['velocity']))
+            self.Cars.append(CarPlant(controller=self.CarsControllers[i],
+                                velocity=self.options['Car']['velocity']))
 
-                self.AgentCarsControllers[i-1].addingCar(self.AgentCars[i-1])
-                self.AgentCarsControllers[i-1].initializeVelocity(self.AgentCars[i-1].v)
-                self.AgentCars[i-1].setFrame(self.frames[i])
+            self.CarsControllers[i].addingCar(self.Cars[i])
+            self.CarsControllers[i].initializeVelocity(self.Cars[i].v)
+            self.Cars[i].setFrame(self.frames[i])
 
             self.frames[i] = self.robots[i].getChildFrame()
             self.frames[i].setProperty('Scale', 3)
@@ -189,20 +181,13 @@ class Simulator(object):
         nextAnglesStates = np.zeros((self.numCars,3))
         # initialization stuff
         for i in xrange(0, self.numCars):
-            if i == 0:
-                currentCarsStates[0] = np.copy(self.EgoCar.state)
-                nextCarsStates[0]= np.copy(self.EgoCar.state)
-                currentAnglesStates[0]= np.copy(self.EgoCar.angles)
-                nextAnglesStates[0]=np.copy(self.EgoCar.angles)
-                currentRaycast = self.Sensor.raycastAll(self.frames[0])
-                nextRaycast = np.zeros(self.Sensor.numRays)
-            else:
-                currentCarsStates[i]=(np.copy(self.AgentCars[i-1].state))
-                nextCarsStates[i]=(np.copy(self.AgentCars[i-1].state))
-                currentAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
-                nextAnglesStates[i]=(np.copy(self.AgentCars[i-1].angles))
+            currentCarsStates[i]=(np.copy(self.Cars[i].state))
+            nextCarsStates[i]=(np.copy(self.Cars[i].state))
+            currentAnglesStates[i]=(np.copy(self.Cars[i].angles))
+            nextAnglesStates[i]=(np.copy(self.Cars[i].angles))
+            currentRaycast = self.Sensor.raycastAll(self.frames[0])
+            nextRaycast = np.zeros(self.Sensor.numRays)
             self.setRobotFrameState(i,currentCarsStates[i][0], currentCarsStates[i][1], currentCarsStates[i][2])
-
 
         runData = dict()
         startIdx = self.counter
@@ -227,21 +212,12 @@ class Simulator(object):
                     raise ValueError("controller of type " + controllerType + " not supported")
 
                 if controllerType in ["default", "defaultRandom"]:
-                    if i == 0:
-                        controlInput = self.EgoCarController.computeControlInput(currentCarsStates[0],
-                                                                                    currentTime, self.frames[0],
-                                                                                    raycastDistance=currentRaycast,
-                                                                                    randomize=False)
-                        self.controlInputData[idx, i] = controlInput
-
-                        nextCarsStates [0] = self.EgoCar.simulateOneStep(controlInput=controlInput, dt=self.dt)
-                    else: 
-                        controlInput = self.AgentCarsControllers[i-1].computeControlInput(currentCarsStates[i],
-                                                                                    currentTime, self.frames[i],
-                                                                                    raycastDistance=currentRaycast,
-                                                                                    randomize=False)
-                        self.controlInputData[idx, i] = controlInput
-                        nextCarsStates [i] = self.AgentCars[i-1].simulateOneStep(controlInput=controlInput, dt=self.dt)
+                    controlInput = self.CarsControllers[i].computeControlInput(currentCarsStates[i],
+                                                                                currentTime, self.frames[i],
+                                                                                raycastDistance=currentRaycast,
+                                                                                randomize=False)
+                    self.controlInputData[idx, i] = controlInput
+                    nextCarsStates [i] = self.Cars[i].simulateOneStep(controlInput=controlInput, dt=self.dt)
                 x = nextCarsStates[i][0]
                 y = nextCarsStates[i][1]
                 theta = nextCarsStates[i][2]
@@ -251,16 +227,10 @@ class Simulator(object):
             # Compute the next control input
                 S_next = (nextCarsStates, nextRaycast)
                 if controllerType in ["default", "defaultRandom"]:
-                    if i == 0:
-                        nextControlInput = self.EgoCarController.computeControlInput(nextCarsStates[i],
-                                                                            currentTime, self.frames[0],
-                                                                            raycastDistance=nextRaycast,
-                                                                            randomize=False)    
-                    else:
-                        nextControlInput = self.AgentCarsControllers[i-1].computeControlInput(nextCarsStates[i],
-                                                                            currentTime, self.frames[i],
-                                                                            raycastDistance=nextRaycast,
-                                                                            randomize=False)    
+                    nextControlInput = self.CarsControllers[i].computeControlInput(nextCarsStates[i],
+                                                                        currentTime, self.frames[i],
+                                                                        raycastDistance=nextRaycast,
+                                                                        randomize=False)    
 
             currentCarsStates = nextCarsStates
             currentRaycast = nextRaycast
@@ -364,14 +334,13 @@ class Simulator(object):
             y =   -5.0
             theta = 0 #+ np.random.uniform(0,2*np.pi,1)[0] * 0.01
 
-            self.EgoCar.setCarState(x,y,theta)
-            self.setRobotFrameState(0, x,y,theta)
+            for i in xrange(0, self.numCars):
+                self.Cars[i].setCarState(x,y,theta)
+                self.setRobotFrameState(i,x,y,theta)
 
             print "In loop"
-
             if not self.checkInCollision():
                 break
-
         return x,y,theta
 
 
@@ -383,12 +352,8 @@ class Simulator(object):
             y = np.random.uniform(self.world.Ymin+tol, self.world.Ymax-tol, 1)[0]
             theta = np.random.uniform(0,2*np.pi,1)[0]
             while True:
-                if i == 0:
-                    self.EgoCar.setCarState(x,y,theta)
-                    self.setRobotFrameState(0,x,y,theta)
-                else:
-                    self.AgentCars[i-1].setCarState(x,y,theta)
-                    self.setRobotFrameState(i-1, x,y,theta)
+                self.Cars[i].setCarState(x,y,theta)
+                self.setRobotFrameState(i, x,y,theta)
                 if not self.checkInCollision():
                     break
         return x,y,theta
@@ -448,8 +413,7 @@ class Simulator(object):
             # hacky way to be compatible with director update
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
-
-            robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
+            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
             camera_control_panel.trackerManager.target = robot;
             camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
             camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
@@ -460,13 +424,13 @@ class Simulator(object):
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTrackerMode('Position & Orientation')
 
-        elif self.mode=='Goal':
-            applogic.resetCamera(viewDirection=[0.2,0,-1])
-            # camera_control_panel.trackerManager.setTarget(self.world)
-            # camera_control_panel.trackerManager.setTrackerMode('Position')
-            # applogic.resetCamera(viewDirection=[0.2,0,-1])
-            # self.view.showMaximized()
-            self.view.raise_()
+        # elif self.mode=='Goal':
+        #     applogic.resetCamera(viewDirection=[0.2,0,-1])
+        #     # camera_control_panel.trackerManager.setTarget(self.world)
+        #     # camera_control_panel.trackerManager.setTrackerMode('Position')
+        #     # applogic.resetCamera(viewDirection=[0.2,0,-1])
+        #     # self.view.showMaximized()
+        #     self.view.raise_()
         else:
             print 'view camera mode error'
 
@@ -530,9 +494,9 @@ class Simulator(object):
     # returns true if we are in collision
     def checkInCollision(self, raycastDistance=None):
         if raycastDistance is None:
-            # TODO: adding agentCars
-            self.setRobotFrameState(0, self.EgoCar.state[0],self.EgoCar.state[1],self.EgoCar.state[2])
-            raycastDistance = self.Sensor.raycastAll(self.frames[0])
+            for i in xrange(0, self.numCars):
+                self.setRobotFrameState(i, self.Cars[i].state[0],self.Cars[i].state[1],self.Cars[i].state[2])
+                raycastDistance = self.Sensor.raycastAll(self.frames[0])
         if np.min(raycastDistance) < self.collisionThreshold:
             return True
         else:
@@ -587,8 +551,8 @@ class Simulator(object):
         steering = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         print steering
 # TODO: remove hard code
-        self.AgentCarsControllers[0].mode = 'Manual'
-        self.AgentCarsControllers[0].manualController(steering = steering)
+        self.CarsControllers[0].mode = 'Manual'
+        self.CarsControllers[0].manualController(steering = steering)
         
 
 
