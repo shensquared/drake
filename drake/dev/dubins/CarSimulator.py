@@ -140,6 +140,7 @@ class Simulator(object):
         om.removeFromObjectModel(om.findObjectByName('EgoCar'))
         self.robots, self.frames = World.buildRobot(numCars=self.numCars)
         # adding sensors onto the EgoCar
+        # still deciding if the sensors should also be added onto the agent cars also
         self.locator = World.buildCellLocator(self.world.visObj.polyData)
         self.Sensor.setLocator(self.locator)
         self.Cars=[]
@@ -147,9 +148,9 @@ class Simulator(object):
 
         for i in xrange(0,self.numCars):
             self.CarsControllers.append(
-                ControllerObj(self.Sensor, self.SensorApproximator, self.mode, self.goalX, self.goalY)
+                ControllerObj(self.Sensor, self.SensorApproximator, 
+                self.mode, self.goalX, self.goalY)
             )
-
             self.Cars.append(CarPlant(controller=self.CarsControllers[i],
                                 velocity=self.options['Car']['velocity']))
 
@@ -218,6 +219,7 @@ class Simulator(object):
                                                                                 randomize=False)
                     self.controlInputData[idx, i] = controlInput
                     nextCarsStates [i] = self.Cars[i].simulateOneStep(controlInput=controlInput, dt=self.dt)
+                    # print nextCarsStates[1]
                 x = nextCarsStates[i][0]
                 y = nextCarsStates[i][1]
                 theta = nextCarsStates[i][2]
@@ -413,12 +415,13 @@ class Simulator(object):
             # hacky way to be compatible with director update
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
-            robot = om.findObjectByName('EgoCar') # or whatever you need to do to get the object
+            robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
             camera_control_panel.trackerManager.target = robot;
             camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
             camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
             camera_control_panel.trackerManager.initTracker()
             camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
+
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
             # cameracontrolpanel.CameraControlPanel.trackerManager.setTarget(robot)

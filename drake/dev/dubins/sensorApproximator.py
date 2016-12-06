@@ -24,13 +24,13 @@ class SensorApproximatorObj(object):
         self.approxRays[1,:] = -np.sin(self.approxThetaVector)
         
 
-    def polyFitConstrainedLP(self, distances):
-        self.laserDepths = np.array(distances) - np.ones((np.shape(distances)))*self.circleRadius # decrease each sensor by the circle radius (i.e., inflate all obstacles)
-        #self.laserDepths[0] = 0.1
-        #self.laserDepths[-1] = 0.1
-        self.setUpOptimization()
-        self.constrainedLP()
-        return self.polyCoefficientsLP
+    # def polyFitConstrainedLP(self, distances):
+    #     self.laserDepths = np.array(distances) - np.ones((np.shape(distances)))*self.circleRadius # decrease each sensor by the circle radius (i.e., inflate all obstacles)
+    #     #self.laserDepths[0] = 0.1
+    #     #self.laserDepths[-1] = 0.1
+    #     self.setUpOptimization()
+    #     self.constrainedLP()
+    #     return self.polyCoefficientsLP
 
 
     

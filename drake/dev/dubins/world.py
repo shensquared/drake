@@ -53,7 +53,7 @@ class World(object):
         return worldXmin, worldXmax, worldYmin, worldYmax
 
     @staticmethod
-    def buildRobot(x=0,y=0,numCars=2):
+    def buildRobot(numCars=1):
         # numCars is the total number of cars, with the first being the ego car,
         # and the rest being the agent cars
         #print "building robot"
