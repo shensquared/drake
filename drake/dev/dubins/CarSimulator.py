@@ -138,6 +138,7 @@ class Simulator(object):
 
         # create the things needed for simulation
         om.removeFromObjectModel(om.findObjectByName('EgoCar'))
+        om.removeFromObjectModel(om.findObjectByName('AgentCar1'))
         self.robots, self.frames = World.buildRobot(numCars=self.numCars)
         # adding sensors onto the EgoCar
         # still deciding if the sensors should also be added onto the agent cars also
@@ -175,7 +176,6 @@ class Simulator(object):
 
     def runSingleSimulation(self, controllerType='default', simulationCutoff=None):
         self.setRandomCollisionFreeInitialState()
-
         currentCarsStates = np.zeros((self.numCars,3))
         nextCarsStates =  np.zeros((self.numCars,3))
         currentAnglesStates =  np.zeros((self.numCars,3))
@@ -197,10 +197,16 @@ class Simulator(object):
             idx = self.counter
             currentTime = self.t[idx]
             self.stateOverTime[idx,:] = currentCarsStates
+                        # if (self.counter < 3):
+                        #     print self.counter
+                        #     print 'stateovertime'
+                        #     print self.stateOverTime
+                        #     print 'element'
+                        #     print self.stateOverTime[self.counter,:]
             # sensor raycast implementation
             currentRaycast = self.Sensor.raycastAll(self.frames[0])
             self.raycastData[idx,:] = currentRaycast
-            # S_current = (currentCarsStates, currentRaycast)
+                        # S_current = (currentCarsStates, currentRaycast)
 
             for i in xrange(0, self.numCars):
                 x = self.stateOverTime[idx,i,0]
@@ -219,7 +225,7 @@ class Simulator(object):
                                                                                 randomize=False)
                     self.controlInputData[idx, i] = controlInput
                     nextCarsStates [i] = self.Cars[i].simulateOneStep(controlInput=controlInput, dt=self.dt)
-                    # print nextCarsStates[1]
+                # print  nextCarsStates[1]
                 x = nextCarsStates[i][0]
                 y = nextCarsStates[i][1]
                 theta = nextCarsStates[i][2]
@@ -530,12 +536,14 @@ class Simulator(object):
         numSteps = len(self.stateOverTime[:,1])
         idx = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
         idx = min(idx, numSteps-1)
-        x,y,theta = self.stateOverTime[idx,0]
-        ray=self.raycastData[idx]
+
+        for i in xrange(self.numCars):
+            x,y,theta = self.stateOverTime[idx,i]
+            ray=self.raycastData[idx]
         # if not self.sliderMovedByPlayTimer:
             # print 'ray cast'
             # print ray
-        self.setRobotFrameState(0, x,y,theta)
+            self.setRobotFrameState(i, x,y,theta)
         self.sliderMovedByPlayTimer = False
 
     def onPlayButton(self):
