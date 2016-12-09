@@ -126,12 +126,15 @@ class Simulator(object):
 
         om.removeFromObjectModel(om.findObjectByName('world'))
         if self.mode=='Obs':
-            self.world, self.goalX, self.goalY = World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
-                                            circleRadius=self.options['World']['circleRadius'],
-                                            nonRandom=self.options['World']['nonRandomWorld'],
-                                            scale=self.options['World']['scale'],
-                                            randomSeed=self.options['World']['randomSeed'],
-                                            obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
+            self.world, self.goalX, self.goalY = World.buildWarehouseWorld(.3)
+
+
+            # World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
+            #                                 circleRadius=self.options['World']['circleRadius'],
+            #                                 nonRandom=self.options['World']['nonRandomWorld'],
+            #                                 scale=self.options['World']['scale'],
+            #                                 randomSeed=self.options['World']['randomSeed'],
+            #                                 obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
 
         else:
             print 'simulator mode error'
@@ -421,12 +424,12 @@ class Simulator(object):
             # hacky way to be compatible with director update
             # TODO: clean up once director provides class with legit getTargetFrame() method
             # camera_control_panel.trackerManager.setTarget(TargetFrameConverter(robot))
-            robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
-            camera_control_panel.trackerManager.target = robot;
-            camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
-            camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
-            camera_control_panel.trackerManager.initTracker()
-            camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
+            # robot = om.findObjectByName('AgentCar1') # or whatever you need to do to get the object
+            # camera_control_panel.trackerManager.target = robot;
+            # camera_control_panel.trackerManager.targetFrame = robot.getChildFrame();
+            # camera_control_panel.trackerManager.callbackId = camera_control_panel.trackerManager.targetFrame.connectFrameModified(camera_control_panel.trackerManager.onTargetFrameModified)
+            # camera_control_panel.trackerManager.initTracker()
+            # camera_control_panel.trackerManager.setTrackerMode('Smooth Follow')
 
 
             # cameracontrolpanel.CameraControlPanel(self.view).widget.show()
@@ -503,9 +506,10 @@ class Simulator(object):
     # returns true if we are in collision
     def checkInCollision(self, raycastDistance=None):
         if raycastDistance is None:
-            for i in xrange(0, self.numCars):
+            for i in xrange(self.numCars):
                 self.setRobotFrameState(i, self.Cars[i].state[0],self.Cars[i].state[1],self.Cars[i].state[2])
                 raycastDistance = self.Sensor.raycastAll(self.frames[0])
+
         if np.min(raycastDistance) < self.collisionThreshold:
             return True
         else:

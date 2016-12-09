@@ -20,7 +20,7 @@ class World(object):
         d.addLine((2,-1,0), (2,1,0), radius=0.1)
         d.addLine((2,-1,0), (1,-2,0), radius=0.1)
         obj = vis.showPolyData(d.getPolyData(), 'world')
-        return obj
+        return obj, 0, 0
 
     @staticmethod
     def buildBoundaries(d, scale=1.0, boundaryType="Warehouse"):
@@ -32,10 +32,10 @@ class World(object):
             worldYmax = 10
 
         if boundaryType == "Square":
-            worldXmin = -50*scale
-            worldXmax = 50*scale
-            worldYmin = -50*scale
-            worldYmax = 10*scale
+            worldXmin = -20*scale
+            worldXmax = 20*scale
+            worldYmin = -20*scale
+            worldYmax = 20*scale
 
         # draw boundaries for the world
         NW = (worldXmax, worldYmax, 0)
@@ -88,6 +88,55 @@ class World(object):
         return loc
 
     @staticmethod
+    def buildTrafficWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
+                         obstaclesInnerFraction=1.0):
+        #print "building circle world"
+        if nonRandom:
+            np.random.seed(randomSeed)
+        d = DebugData()
+        worldXmin, worldXmax, worldYmin, worldYmax = World.buildBoundaries(d, scale=scale, boundaryType="Square")
+        #print "boundaries done"
+
+        worldArea = (worldXmax-worldXmin)*(worldYmax-worldYmin)
+        #print worldArea
+        obsScalingFactor = 1.0/12.0
+        maxNumObstacles = obsScalingFactor * worldArea
+        
+        numObstacles = int(obstaclesInnerFraction**2 * percentObsDensity/100.0 * maxNumObstacles)
+        #print numObstacles
+
+        obsXmin = worldXmin + (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
+        obsXmax = worldXmax - (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
+        obsYmin = worldYmin + (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
+        obsYmax = worldYmax - (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
+
+        for i in xrange(numObstacles-1):
+            firstX = obsXmin + np.random.rand()*(obsXmax-obsXmin)
+            firstY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
+            firstEndpt = (firstX,firstY,+0.2)
+            secondEndpt = (firstX,firstY,-0.2)
+
+            # d.addLine(firstEndpt, secondEndpt, radius=2*np.random.randn())
+            d.addLine(firstEndpt, secondEndpt, radius=circleRadius)
+        # add a goal object
+        goalX=obsXmin + np.random.rand()*(obsXmax-obsXmin)
+        goalY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
+        goalFirst = (goalX,goalY,+20)
+        goalEnd = (goalX,goalY,-0.2)
+        d.addLine(goalFirst, goalEnd, radius=circleRadius, color=[0,0,1])
+        # the really cute pink has RGB [1,0.6,0.7]
+        obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
+        world = World()
+        world.visObj = obj
+        world.Xmax = worldXmax
+        world.Xmin = worldXmin
+        world.Ymax = worldYmax
+        world.Ymin = worldYmin
+        world.numObstacles = numObstacles
+        world.percentObsDensity = percentObsDensity
+        return world, goalX, goalY
+
+    @staticmethod
     def buildCircleWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
                          obstaclesInnerFraction=1.0):
         #print "building circle world"
@@ -137,62 +186,6 @@ class World(object):
         return world, goalX, goalY
 
 
-
-    @staticmethod
-    def buildGoalWorld(percentObsDensity, nonRandom=True, circleRadius=3, scale=None, randomSeed=5,
-                         obstaclesInnerFraction=1.0):
-        #print "building circle world"
-
-        if nonRandom:
-            np.random.seed(randomSeed)
-
-        d = DebugData()
-        worldXmin, worldXmax, worldYmin, worldYmax = World.buildBoundaries(d, scale=scale, boundaryType="Square")
-        #print "boundaries done"
-
-        worldArea = (worldXmax-worldXmin)*(worldYmax-worldYmin)
-        #print worldArea
-        obsScalingFactor = 1.0/12.0
-        maxNumObstacles = obsScalingFactor * worldArea
-        
-        numObstacles = 1
-        #print numObstacles
-
-        obsXmin = worldXmin + (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
-        obsXmax = worldXmax - (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
-        obsYmin = worldYmin + (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
-        obsYmax = worldYmax - (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
-
-        for i in xrange(numObstacles-1):
-            firstX = obsXmin + np.random.rand()*(obsXmax-obsXmin)
-            firstY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
-            firstEndpt = (firstX,firstY,+0.2)
-            secondEndpt = (firstX,firstY,-0.2)
-
-            # d.addLine(firstEndpt, secondEndpt, radius=2*np.random.randn())
-            d.addLine(firstEndpt, secondEndpt, radius=circleRadius)
-        # add a goal object
-        goalX=obsXmin + np.random.rand()*(obsXmax-obsXmin)
-        goalY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
-        goalFirst = (goalX,goalY,+20)
-        goalEnd = (goalX,goalY,-0.2)
-        d.addLine(goalFirst, goalEnd, radius=3*circleRadius, color=[1,1,1])
-        obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
-
-        world = World()
-        world.visObj = obj
-        world.Xmax = worldXmax
-        world.Xmin = worldXmin
-        world.Ymax = worldYmax
-        world.Ymin = worldYmin
-        world.numObstacles = numObstacles
-        world.percentObsDensity = percentObsDensity
-
-        return world, goalX, goalY
-
-
-
-
     @staticmethod
     def buildStickWorld(percentObsDensity):
         print "building stick world"
@@ -235,7 +228,7 @@ class World(object):
         world.numObstacles = numObstacles
         world.percentObsDensity = percentObsDensity
 
-        return world
+        return world, 0, 0
 
 
 
@@ -293,7 +286,7 @@ class World(object):
         world.numObstacles = numObstacles
         world.percentObsDensity = percentObsDensity
 
-        return world
+        return world, 0, 0
 
     @staticmethod
     def buildCircleWarehouseWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
@@ -341,7 +334,7 @@ class World(object):
         world.numObstacles = numObstacles
         world.percentObsDensity = percentObsDensity
 
-        return world
+        return world, 0, 0
 
     @staticmethod
     def buildFixedTriangleWorld(percentObsDensity):
@@ -385,7 +378,7 @@ class World(object):
         world.numObstacles = numObstacles
         world.percentObsDensity = percentObsDensity
 
-        return world
+        return world, 0, 0
 
 
 
