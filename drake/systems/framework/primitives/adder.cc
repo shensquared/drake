@@ -15,9 +15,9 @@ namespace systems {
 template <typename T>
 Adder<T>::Adder(int num_inputs, int size) {
   for (int i = 0; i < num_inputs; i++) {
-    this->DeclareInputPort(kVectorValued, size, kInheritedSampling);
+    this->DeclareInputPort(kVectorValued, size);
   }
-  this->DeclareOutputPort(kVectorValued, size, kInheritedSampling);
+  this->DeclareOutputPort(kVectorValued, size);
 }
 
 template <typename T>
@@ -43,6 +43,12 @@ void Adder<T>::EvalOutput(const Context<T>& context,
     const BasicVector<T>* input_vector = this->EvalVectorInput(context, i);
     output_vector->get_mutable_value() += input_vector->get_value();
   }
+}
+
+template<typename T>
+Adder<AutoDiffXd>* Adder<T>::DoToAutoDiffXd() const {
+  return new Adder<AutoDiffXd>(this->get_num_input_ports(),
+                               this->get_input_port(0).get_size());
 }
 
 // Explicitly instantiates on the most common scalar types.

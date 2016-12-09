@@ -24,7 +24,7 @@ template <typename T>
 struct DiscreteEvent {
   typedef std::function<void(const Context<T>&)> PublishCallback;
   typedef std::function<void(const Context<T>&, DifferenceState<T>*)>
-  UpdateCallback;
+      UpdateCallback;
 
   enum ActionType {
     kUnknownAction = 0,  // A default value that causes the handler to abort.
@@ -93,25 +93,41 @@ class System {
     return input_ports_;
   }
 
-  /// Returns the input port @p input_port.
-  const SystemPortDescriptor<T>& get_input_port(int port_number) const {
-    if (port_number >= get_num_input_ports()) {
+  /// Returns the descriptor of the input port at index @p port_index.
+  const SystemPortDescriptor<T>& get_input_port(int port_index) const {
+    if (port_index >= get_num_input_ports()) {
       throw std::out_of_range("port number out of range.");
     }
-    return input_ports_[port_number];
+    return input_ports_[port_index];
   }
 
-  /// Returns the output port @p output_port.
-  const SystemPortDescriptor<T>& get_output_port(int port_number) const {
-    if (port_number >= get_num_output_ports()) {
+  /// Returns the descriptor of the output port at index @p port_index.
+  const SystemPortDescriptor<T>& get_output_port(int port_index) const {
+    if (port_index >= get_num_output_ports()) {
       throw std::out_of_range("port number out of range.");
     }
-    return output_ports_[port_number];
+    return output_ports_[port_index];
   }
 
   /// Returns descriptors for all the output ports of this system.
   const std::vector<SystemPortDescriptor<T>>& get_output_ports() const {
     return output_ports_;
+  }
+
+  /// Returns the total dimension of all of the input ports (as if they were
+  /// muxed).
+  int get_num_total_inputs() const {
+    int count = 0;
+    for (const auto& in : input_ports_) count += in.get_size();
+    return count;
+  }
+
+  /// Returns the total dimension of all of the output ports (as if they were
+  /// muxed).
+  int get_num_total_outputs() const {
+    int count = 0;
+    for (const auto& out : output_ports_) count += out.get_size();
+    return count;
   }
 
   /// Checks that @p output is consistent with the number and size of output
@@ -158,11 +174,26 @@ class System {
     return context.get_continuous_state()->CopyToVector();
   }
 
-  /// Returns a default context, initialized with the correct
-  /// numbers of concrete input ports and state variables for this System.
-  /// Since input port pointers are not owned by the context, they should
-  /// simply be initialized to nullptr.
-  virtual std::unique_ptr<Context<T>> CreateDefaultContext() const = 0;
+  /// Allocates a context, initialized with the correct numbers of concrete
+  /// input ports and state variables for this System.  Since input port
+  /// pointers are not owned by the context, they should simply be initialized
+  /// to nullptr.
+  virtual std::unique_ptr<Context<T>> AllocateContext() const = 0;
+
+  /// Assigns default values to all elements of the state.
+  virtual void SetDefaultState(Context<T>* context) const = 0;
+
+  /// Assigns default values to all parameters declared in the context.
+  virtual void SetDefaultParameters(Context<T>* context) const = 0;
+
+  /// Allocates a context and sets the state and parameters to their default
+  /// values.
+  std::unique_ptr<Context<T>> CreateDefaultContext() const {
+    std::unique_ptr<Context<T>> context = AllocateContext();
+    SetDefaultState(context.get());
+    SetDefaultParameters(context.get());
+    return context;
+  }
 
   /// Returns a default output, initialized with the correct number of
   /// concrete output ports for this System. @p context is provided as
@@ -375,9 +406,9 @@ class System {
   /// matrix). See the alternate signature if you already have the generalized
   /// velocity in an Eigen VectorX object; this signature will copy the
   /// VectorBase into an Eigen object before performing the computation.
-  void MapVelocityToQDot(
-      const Context<T> &context, const VectorBase<T> &generalized_velocity,
-      VectorBase<T> *qdot) const {
+  void MapVelocityToQDot(const Context<T>& context,
+                         const VectorBase<T>& generalized_velocity,
+                         VectorBase<T>* qdot) const {
     MapVelocityToQDot(context, generalized_velocity.CopyToVector(), qdot);
   }
 
@@ -385,8 +416,8 @@ class System {
   /// generalized configuration (qdot). See alternate signature of
   /// MapVelocityToQDot() for more information.
   void MapVelocityToQDot(
-      const Context<T> &context,
-      const Eigen::Ref<const VectorX<T>> &generalized_velocity,
+      const Context<T>& context,
+      const Eigen::Ref<const VectorX<T>>& generalized_velocity,
       VectorBase<T>* qdot) const {
     DoMapVelocityToQDot(context, generalized_velocity, qdot);
   }
@@ -403,21 +434,18 @@ class System {
   /// already have `qdot` in an Eigen VectorX object; this signature will
   /// copy the VectorBase into an Eigen object before performing the
   /// computation.
-  void MapQDotToVelocity(
-      const Context<T> &context, const VectorBase<T> &qdot,
-      VectorBase<T> *generalized_velocity) const {
-    MapQDotToVelocity(
-        context, qdot.CopyToVector(),
-        generalized_velocity);
+  void MapQDotToVelocity(const Context<T>& context, const VectorBase<T>& qdot,
+                         VectorBase<T>* generalized_velocity) const {
+    MapQDotToVelocity(context, qdot.CopyToVector(), generalized_velocity);
   }
 
   /// Transforms the time derivative of configuration to generalized velocity.
   /// This signature allows using an Eigen VectorX object for faster speed.
   /// See the other signature of MapQDotToVelocity() for additional information.
   void MapQDotToVelocity(
-      const Context<T> &context,
-      const Eigen::Ref<const VectorX<T>> &configuration_derivatives,
-      VectorBase<T> *generalized_velocity) const {
+      const Context<T>& context,
+      const Eigen::Ref<const VectorX<T>>& configuration_derivatives,
+      VectorBase<T>* generalized_velocity) const {
     DoMapQDotToVelocity(context, configuration_derivatives,
                         generalized_velocity);
   }
@@ -457,14 +485,30 @@ class System {
   ///   MySystem<double> plant;
   ///   std::unique_ptr<MySystem<AutoDiffXd>> ad_plant =
   ///       systems::System<double>::ToAutoDiffXd<MySystem>(plant);
-  /// @p endcode
+  /// @endcode
   ///
   /// @tparam S The specific System pointer type to return.
   template <template <typename> class S = ::drake::systems::System>
   static std::unique_ptr<S<AutoDiffXd>> ToAutoDiffXd(
       const System<double>& from) {
+    // Capture the copy as System<AutoDiffXd>.
+    std::unique_ptr<System<AutoDiffXd>> clone(from.DoToAutoDiffXd());
+    // Attempt to downcast to S<AutoDiffXd>.
+    S<AutoDiffXd>* downcast = dynamic_cast<S<AutoDiffXd>*>(clone.get());
+    // If the downcast fails, return nullptr, letting the copy be deleted.
+    if (downcast == nullptr) {
+      return nullptr;
+    }
+    // If the downcast succeeds, redo it, taking ownership this time.
     return std::unique_ptr<S<AutoDiffXd>>(
-        dynamic_cast<S<AutoDiffXd>*>(from.DoToAutoDiffXd()));
+        dynamic_cast<S<AutoDiffXd>*>(clone.release()));
+  }
+
+  /// Creates a deep copy of this System, transmogrified to use the autodiff
+  /// scalar type, with a dynamic-sized vector of partial derivatives.
+  /// Concrete Systems may shadow this with a more specific return type.
+  std::unique_ptr<System<AutoDiffXd>> ToAutoDiffXd() const {
+    return std::unique_ptr<System<AutoDiffXd>>(DoToAutoDiffXd());
   }
 
   /// Declares that @p parent is the immediately enclosing Diagram. The
@@ -490,23 +534,18 @@ class System {
     input_ports_.emplace_back(descriptor);
   }
 
-  /// Adds a port with the specified @p type, @p size, and @p sampling
-  /// to the input topology.
+  /// Adds a port with the specified @p type and @p size to the input topology.
   /// @return descriptor of declared port.
-  const SystemPortDescriptor<T>& DeclareInputPort(PortDataType type, int size,
-                                                  SamplingSpec sampling) {
-    int port_number = get_num_input_ports();
-    input_ports_.emplace_back(this, kInputPort, port_number, type, size,
-                              sampling);
+  const SystemPortDescriptor<T>& DeclareInputPort(PortDataType type, int size) {
+    int port_index = get_num_input_ports();
+    input_ports_.emplace_back(this, kInputPort, port_index, type, size);
     return input_ports_.back();
   }
 
-  /// Adds an abstract-valued port with the specified @p sampling to the
-  /// input topology.
+  /// Adds an abstract-valued port to the input topology.
   /// @return descriptor of declared port.
-  const SystemPortDescriptor<T>& DeclareAbstractInputPort(
-      SamplingSpec sampling) {
-    return DeclareInputPort(kAbstractValued, 0 /* size */, sampling);
+  const SystemPortDescriptor<T>& DeclareAbstractInputPort() {
+    return DeclareInputPort(kAbstractValued, 0 /* size */);
   }
 
   /// Adds a port with the specified @p descriptor to the output topology.
@@ -516,23 +555,19 @@ class System {
     output_ports_.emplace_back(descriptor);
   }
 
-  /// Adds a port with the specified @p type, @p size, and @p sampling
-  /// to the output topology.
+  /// Adds a port with the specified @p type and @p size to the output topology.
   /// @return descriptor of declared port.
-  const SystemPortDescriptor<T>& DeclareOutputPort(PortDataType type, int size,
-                                                   SamplingSpec sampling) {
-    int port_number = get_num_output_ports();
-    output_ports_.emplace_back(this, kOutputPort, port_number, type, size,
-                               sampling);
+  const SystemPortDescriptor<T>& DeclareOutputPort(PortDataType type,
+                                                   int size) {
+    int port_index = get_num_output_ports();
+    output_ports_.emplace_back(this, kOutputPort, port_index, type, size);
     return output_ports_.back();
   }
 
-  /// Adds an abstract-valued port with the specified @p sampling to the
-  /// output topology.
+  /// Adds an abstract-valued port with to the output topology.
   /// @return descriptor of declared port.
-  const SystemPortDescriptor<T>& DeclareAbstractOutputPort(
-      SamplingSpec sampling) {
-    return DeclareOutputPort(kAbstractValued, 0 /* size */, sampling);
+  const SystemPortDescriptor<T>& DeclareAbstractOutputPort() {
+    return DeclareOutputPort(kAbstractValued, 0 /* size */);
   }
 
   /// Returns a mutable Eigen expression for a vector valued output port with
@@ -599,10 +634,9 @@ class System {
   /// the same size as the generalized velocity allocated in
   /// AllocateTimeDerivatives(). Implementations that are not
   /// second-order systems may simply do nothing.
-  virtual void DoMapQDotToVelocity(
-      const Context<T> &context,
-      const Eigen::Ref<const VectorX<T>> &qdot,
-      VectorBase<T> *generalized_velocity) const {
+  virtual void DoMapQDotToVelocity(const Context<T>& context,
+                                   const Eigen::Ref<const VectorX<T>>& qdot,
+                                   VectorBase<T>* generalized_velocity) const {
     // In the particular case where generalized velocity and generalized
     // configuration are not even the same size, we detect this error and abort.
     // This check will thus not identify cases where the generalized velocity
@@ -622,8 +656,8 @@ class System {
    * additional information.
    */
   virtual void DoMapVelocityToQDot(
-      const Context<T> &context,
-      const Eigen::Ref<const VectorX<T>> &generalized_velocity,
+      const Context<T>& context,
+      const Eigen::Ref<const VectorX<T>>& generalized_velocity,
       VectorBase<T>* qdot) const {
     // In the particular case where generalized velocity and generalized
     // configuration are not even the same size, we detect this error and abort.
@@ -640,8 +674,10 @@ class System {
   /// pointer. Overrides should return a more specific covariant type.
   /// Templated overrides may assume that they are subclasses of System<double>.
   ///
-  /// TODO(david-german-tri): Provide a default implementation on LeafSystem,
-  /// then make this method pure virtual.
+  /// No default implementation is provided in LeafSystem, since the member data
+  /// of particular concrete leaf Systems is not knowable to the framework.
+  /// A default implementation is provided in Diagram, which Diagram subclasses
+  /// with member data should override.
   virtual System<AutoDiffXd>* DoToAutoDiffXd() const {
     DRAKE_ABORT_MSG("Override DoToAutoDiffXd before using ToAutoDiffXd.");
     return nullptr;

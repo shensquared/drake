@@ -40,7 +40,7 @@ TEST_F(LinearSystemTest, Construction) {
   EXPECT_EQ("test_linear_system", dut_->get_name());
   EXPECT_EQ(dut_->A(), A_);
   EXPECT_EQ(dut_->B(), B_);
-  EXPECT_EQ(dut_->xDot0(), xDot0_);
+  EXPECT_EQ(dut_->f0(), f0_);
   EXPECT_EQ(dut_->C(), C_);
   EXPECT_EQ(dut_->D(), D_);
   EXPECT_EQ(dut_->y0(), y0_);
@@ -88,32 +88,29 @@ TEST_F(LinearSystemTest, Output) {
 GTEST_TEST(TestLinearize, FromAffine) {
   Eigen::Matrix3d A;
   Eigen::Matrix<double, 3, 1> B;
-  Eigen::Vector3d xDot0;
+  Eigen::Vector3d f0;
   Eigen::Matrix<double, 2, 3> C;
   Eigen::Vector2d D;
   Eigen::Vector2d y0;
   A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
   B << 10, 11, 12;
-  xDot0 << 13, 14, 15;
+  f0 << 13, 14, 15;
   C << 16, 17, 18, 19, 20, 21;
   D << 22, 23;
   y0 << 24, 25;
-  AffineSystem<double> system(A, B, xDot0, C, D, y0);
+  AffineSystem<double> system(A, B, f0, C, D, y0);
   auto context = system.CreateDefaultContext();
   Eigen::Vector3d x0;
   x0 << 26, 27, 28;
   context->get_mutable_continuous_state_vector()->SetFromVector(x0);
   double u0 = 29;
-  auto u0vec = std::make_unique<BasicVector<double>>(1);
-  u0vec->SetAtIndex(0, u0);
-  context->SetInputPort(
-      0, std::make_unique<FreestandingInputPort>(std::move(u0vec)));
+  context->FixInputPort(0, Vector1d::Constant(u0));
 
   // This Context is not an equilibrium point.
   EXPECT_THROW(Linearize(system, *context), std::runtime_error);
 
   // Set x0 to the actual equilibrium point.
-  x0 = A.colPivHouseholderQr().solve(-B * u0 - xDot0);
+  x0 = A.colPivHouseholderQr().solve(-B * u0 - f0);
   context->get_mutable_continuous_state_vector()->SetFromVector(x0);
 
   auto linearized_system = Linearize(system, *context);
@@ -127,6 +124,54 @@ GTEST_TEST(TestLinearize, FromAffine) {
                               MatrixCompareType::absolute));
   EXPECT_TRUE(CompareMatrices(D, linearized_system->D(), tol,
                               MatrixCompareType::absolute));
+}
+
+// Test a few simple systems that are known to be controllable (or not).
+GTEST_TEST(TestLinearize, Controllability) {
+  Eigen::Matrix2d A;
+  Eigen::Matrix<double, 2, 1> B;
+  Eigen::Matrix<double, 0, 2> C;
+  Eigen::Matrix<double, 0, 1> D;
+
+  // Controllable system: x1dot = x2, x2dot = u (aka xddot = u).
+  A << 0, 1, 0, 0;
+  B << 0, 1;
+  LinearSystem<double> sys1(A, B, C, D);
+
+  EXPECT_TRUE(IsControllable(sys1));
+
+  // Uncontrollable system: x1dot = u, x2dot = u.
+  A << 0, 0, 0, 0;
+  B << 1, 1;
+  LinearSystem<double> sys2(A, B, C, D);
+
+  EXPECT_FALSE(IsControllable(sys2));
+}
+
+// Test a few simple systems that are known to be observable (or not).
+GTEST_TEST(TestLinearize, Observability) {
+  Eigen::Matrix2d A;
+  Eigen::Matrix<double, 2, 1> B;
+  Eigen::Matrix<double, 2, 2> C;
+  Eigen::Matrix<double, 2, 1> D;
+
+  // x1dot = x2, x2dot = u (aka  xddot = u).
+  A << 0, 1, 0, 0;
+  B << 0, 1;
+  D << 0, 0;
+
+  // Observable: y = x.
+  C << 1, 0, 0, 1;
+  LinearSystem<double> sys1(A, B, C, D);
+  EXPECT_TRUE(IsObservable(sys1));
+
+  // Unobservable: y = x2;
+  LinearSystem<double> sys2(A, B, C.bottomRows(1), D.bottomRows(1));
+  EXPECT_FALSE(IsObservable(sys2));
+
+  // Observable: y = x1;
+  LinearSystem<double> sys3(A, B, C.topRows(1), D.topRows(1));
+  EXPECT_TRUE(IsObservable(sys3));
 }
 
 }  // namespace

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "drake/common/drake_assert.h"
+#include "drake/common/number_traits.h"
 #include "drake/common/text_logging.h"
 #include "drake/systems/framework/cache.h"
 #include "drake/systems/framework/diagram_context.h"
@@ -175,7 +176,7 @@ class Diagram : public System<T>,
     return false;
   }
 
-  std::unique_ptr<Context<T>> CreateDefaultContext() const override {
+  std::unique_ptr<Context<T>> AllocateContext() const override {
     const int num_systems = num_subsystems();
     // Reserve inputs as specified during Diagram initialization.
     auto context = std::make_unique<DiagramContext<T>>(num_systems);
@@ -183,7 +184,7 @@ class Diagram : public System<T>,
     // Add each constituent system to the Context.
     for (int i = 0; i < num_systems; ++i) {
       const System<T>* const sys = sorted_systems_[i];
-      auto subcontext = sys->CreateDefaultContext();
+      auto subcontext = sys->AllocateContext();
       auto suboutput = sys->AllocateOutput(*subcontext);
       context->AddSystem(i, std::move(subcontext), std::move(suboutput));
     }
@@ -203,6 +204,28 @@ class Diagram : public System<T>,
 
     context->MakeState();
     return std::unique_ptr<Context<T>>(context.release());
+  }
+
+  void SetDefaultState(Context<T>* context) const override {
+    auto diagram_context = dynamic_cast<DiagramContext<T>*>(context);
+    DRAKE_DEMAND(diagram_context != nullptr);
+
+    // Set default state of each constituent system.
+    for (int i = 0; i < num_subsystems(); ++i) {
+      auto subcontext = diagram_context->GetMutableSubsystemContext(i);
+      sorted_systems_[i]->SetDefaultState(subcontext);
+    }
+  }
+
+  void SetDefaultParameters(Context<T>* context) const override {
+    auto diagram_context = dynamic_cast<DiagramContext<T>*>(context);
+    DRAKE_DEMAND(diagram_context != nullptr);
+
+    // Set default state of each constituent system.
+    for (int i = 0; i < num_subsystems(); ++i) {
+      auto subcontext = diagram_context->GetMutableSubsystemContext(i);
+      sorted_systems_[i]->SetDefaultParameters(subcontext);
+    }
   }
 
   std::unique_ptr<SystemOutput<T>> AllocateOutput(
@@ -395,8 +418,8 @@ class Diagram : public System<T>,
   /// the generalized velocity in the ContinuousState that this Diagram reserves
   /// in its context.
   void DoMapVelocityToQDot(
-      const Context<T> &context,
-      const Eigen::Ref<const VectorX<T>> &generalized_velocity,
+      const Context<T>& context,
+      const Eigen::Ref<const VectorX<T>>& generalized_velocity,
       VectorBase<T>* qdot) const override {
     // Check that the dimensions of the continuous state in the context match
     // the dimensions of the provided generalized velocity and configuration
@@ -435,8 +458,7 @@ class Diagram : public System<T>,
       Subvector<T> dq_slice(qdot, q_index, num_q);
 
       // Delegate the actual mapping to subsystem i itself.
-      sorted_systems_[i]->MapVelocityToQDot(
-          *subcontext, v_slice, &dq_slice);
+      sorted_systems_[i]->MapVelocityToQDot(*subcontext, v_slice, &dq_slice);
 
       // Advance the indices.
       v_index += num_v;
@@ -444,42 +466,157 @@ class Diagram : public System<T>,
     }
   }
 
+  /// Computes the next update time based on the configured actions, for scalar
+  /// types that are arithmetic, or aborts for scalar types that are not
+  /// arithmetic.
   void DoCalcNextUpdateTime(const Context<T>& context,
                             UpdateActions<T>* actions) const override {
-    auto diagram_context = dynamic_cast<const DiagramContext<T>*>(&context);
+    DoCalcNextUpdateTimeImpl(context, actions);
+  }
+
+  /// Creates a deep copy of this Diagram<double>, converting the scalar type
+  /// to AutoDiffXd, and preserving all internal structure. Diagram subclasses
+  /// may wish to override to initialize additional member data, or to return a
+  /// more specific covariant type.
+  /// This is the NVI implementation of ToAutoDiffXd.
+  Diagram<AutoDiffXd>* DoToAutoDiffXd() const override {
+    return ConvertScalarType<AutoDiffXd>([](const System<double>& subsystem) {
+             return subsystem.ToAutoDiffXd();
+           })
+        .release();
+  }
+
+ private:
+  /// Uses this Diagram<double> to manufacture a Diagram<NewType>, given a
+  /// @p converter for subsystems from System<double> to System<NewType>.
+  /// SFINAE overload for std::is_same<T, double>.
+  ///
+  /// @tparam NewType The scalar type to which to convert.
+  /// @tparam T1 SFINAE boilerplate.
+  template <typename NewType, typename T1 = T>
+  std::unique_ptr<Diagram<NewType>> ConvertScalarType(
+      std::function<std::unique_ptr<System<NewType>>(
+          const System<
+              std::enable_if_t<std::is_same<T1, double>::value, double>>&)>
+          converter) const {
+    std::vector<std::unique_ptr<System<NewType>>> new_systems;
+    // Recursively convert all the subsystems.
+    std::map<const System<T1>*, const System<NewType>*> old_to_new_map;
+    for (const auto& old_system : registered_systems_) {
+      new_systems.push_back(converter(*old_system));
+      old_to_new_map[old_system.get()] = new_systems.back().get();
+    }
+
+    // Set up the blueprint.
+    typename Diagram<NewType>::Blueprint blueprint;
+    // Make all the inputs and outputs.
+    for (const PortIdentifier& id : input_port_ids_) {
+      const System<NewType>* new_system = old_to_new_map[id.first];
+      const int port = id.second;
+      blueprint.input_port_ids.emplace_back(new_system, port);
+    }
+    for (const PortIdentifier& id : output_port_ids_) {
+      const System<NewType>* new_system = old_to_new_map[id.first];
+      const int port = id.second;
+      blueprint.output_port_ids.emplace_back(new_system, port);
+    }
+    // Make all the connections.
+    for (const auto& edge : dependency_graph_) {
+      const PortIdentifier& old_dest = edge.first;
+      const System<NewType>* const dest_system = old_to_new_map[old_dest.first];
+      const int dest_port = old_dest.second;
+      const typename Diagram<NewType>::PortIdentifier new_dest{dest_system,
+                                                               dest_port};
+
+      const PortIdentifier& old_src = edge.second;
+      const System<NewType>* const src_system = old_to_new_map[old_src.first];
+      const int src_port = old_src.second;
+      const typename Diagram<NewType>::PortIdentifier new_src{src_system,
+                                                              src_port};
+
+      blueprint.dependency_graph[new_dest] = new_src;
+    }
+    // Preserve the sort order.
+    for (const System<T1>* system : sorted_systems_) {
+      blueprint.sorted_systems.push_back(old_to_new_map[system]);
+    }
+
+    // Construct a new Diagram of type NewType from the blueprint.
+    std::unique_ptr<Diagram<NewType>> new_diagram(
+        new Diagram<NewType>(blueprint));
+    new_diagram->Own(std::move(new_systems));
+    return std::move(new_diagram);
+  }
+
+  /// Aborts at runtime.
+  /// SFINAE overload for !std::is_same<T, double>.
+  ///
+  /// @tparam NewType The scalar type to which to convert.
+  /// @tparam T1 SFINAE boilerplate.
+  template <typename NewType, typename T1 = T>
+  std::unique_ptr<Diagram<NewType>> ConvertScalarType(
+      std::function<std::unique_ptr<System<NewType>>(
+          const System<
+              std::enable_if_t<!std::is_same<T1, double>::value, double>>&)>
+          converter) const {
+    DRAKE_ABORT_MSG(
+        "Scalar type conversion is only supported from Diagram<double>.");
+  }
+
+  // Aborts for scalar types that are not numeric, since there is no reasonable
+  // definition of "next update time" outside of the real line.
+  //
+  // @tparam T1 SFINAE boilerplate for the scalar type. Do not set.
+  template <typename T1 = T>
+  typename std::enable_if<!is_numeric<T1>::value>::type
+  DoCalcNextUpdateTimeImpl(const Context<T1>& context,
+                           UpdateActions<T1>* actions) const {
+    DRAKE_ABORT_MSG(
+        "The default implementation of Diagram<T>::DoCalcNextUpdateTime "
+        "only works with types that are drake::is_numeric.");
+  }
+
+  // Computes the next update time across all the scheduled events, for
+  // scalar types that are numeric.
+  //
+  // @tparam T1 SFINAE boilerplate for the scalar type. Do not set.
+  template <typename T1 = T>
+  typename std::enable_if<is_numeric<T1>::value>::type DoCalcNextUpdateTimeImpl(
+      const Context<T1>& context, UpdateActions<T1>* actions) const {
+    auto diagram_context = dynamic_cast<const DiagramContext<T1>*>(&context);
     DRAKE_DEMAND(diagram_context != nullptr);
 
-    actions->time = std::numeric_limits<T>::infinity();
+    actions->time = std::numeric_limits<T1>::infinity();
 
     // Iterate over the subsystems in sorted order, and harvest the most
     // imminent updates.
-    std::vector<UpdateActions<T>> sub_actions(num_subsystems());
+    std::vector<UpdateActions<T1>> sub_actions(num_subsystems());
     for (int i = 0; i < num_subsystems(); ++i) {
-      const Context<T>* subcontext = diagram_context->GetSubsystemContext(i);
+      const Context<T1>* subcontext = diagram_context->GetSubsystemContext(i);
       DRAKE_DEMAND(subcontext != nullptr);
-      const T time = sorted_systems_[i]->CalcNextUpdateTime(*subcontext,
-                                                            &sub_actions[i]);
+      const T1 time =
+          sorted_systems_[i]->CalcNextUpdateTime(*subcontext, &sub_actions[i]);
       if (time < actions->time) {
         actions->time = time;
       }
     }
 
     // If no discrete actions are needed, bail early.
-    if (actions->time == std::numeric_limits<T>::infinity()) {
+    if (actions->time == std::numeric_limits<T1>::infinity()) {
       return;
     }
 
-    std::vector<std::pair<int, UpdateActions<T>>> publishers;
-    std::vector<std::pair<int, UpdateActions<T>>> updaters;
+    std::vector<std::pair<int, UpdateActions<T1>>> publishers;
+    std::vector<std::pair<int, UpdateActions<T1>>> updaters;
     for (int i = 0; i < num_subsystems(); i++) {
       // Ignore the subsystems that aren't among the most imminent updates.
       if (sub_actions[i].time > actions->time) continue;
       if (internal::HasEvent(sub_actions[i],
-                             DiscreteEvent<T>::kPublishAction)) {
+                             DiscreteEvent<T1>::kPublishAction)) {
         publishers.emplace_back(i, sub_actions[i]);
       }
       if (internal::HasEvent(sub_actions[i],
-                             DiscreteEvent<T>::kUpdateAction)) {
+                             DiscreteEvent<T1>::kUpdateAction)) {
         updaters.emplace_back(i, sub_actions[i]);
       }
     }
@@ -487,9 +624,9 @@ class Diagram : public System<T>,
 
     // Request a publish event, if our subsystems want it.
     if (!publishers.empty()) {
-      DiscreteEvent<T> event;
-      event.action = DiscreteEvent<T>::kPublishAction;
-      event.do_publish = std::bind(&Diagram<T>::HandlePublish, this,
+      DiscreteEvent<T1> event;
+      event.action = DiscreteEvent<T1>::kPublishAction;
+      event.do_publish = std::bind(&Diagram<T1>::HandlePublish, this,
                                    std::placeholders::_1, /* context */
                                    publishers);
       actions->events.push_back(event);
@@ -497,9 +634,9 @@ class Diagram : public System<T>,
 
     // Request an update event, if our subsystems want it.
     if (!updaters.empty()) {
-      DiscreteEvent<T> event;
-      event.action = DiscreteEvent<T>::kUpdateAction;
-      event.do_update = std::bind(&Diagram<T>::HandleUpdate, this,
+      DiscreteEvent<T1> event;
+      event.action = DiscreteEvent<T1>::kUpdateAction;
+      event.do_update = std::bind(&Diagram<T1>::HandleUpdate, this,
                                   std::placeholders::_1, /* context */
                                   std::placeholders::_2, /* difference state */
                                   updaters);
@@ -507,7 +644,6 @@ class Diagram : public System<T>,
     }
   }
 
- private:
   // A structural outline of a Diagram, produced by DiagramBuilder.
   struct Blueprint {
     // The ordered subsystem ports that are inputs to the entire diagram.
@@ -600,8 +736,7 @@ class Diagram : public System<T>,
     const auto& subsystem_descriptor = subsystem_ports[port_index];
     SystemPortDescriptor<T> descriptor(
         this, kInputPort, this->get_num_input_ports(),
-        subsystem_descriptor.get_data_type(), subsystem_descriptor.get_size(),
-        subsystem_descriptor.get_sampling());
+        subsystem_descriptor.get_data_type(), subsystem_descriptor.get_size());
     this->DeclareInputPort(descriptor);
   }
 
@@ -621,8 +756,7 @@ class Diagram : public System<T>,
     const auto& subsystem_descriptor = subsystem_ports[port_index];
     SystemPortDescriptor<T> descriptor(
         this, kOutputPort, this->get_num_output_ports(),
-        subsystem_descriptor.get_data_type(), subsystem_descriptor.get_size(),
-        subsystem_descriptor.get_sampling());
+        subsystem_descriptor.get_data_type(), subsystem_descriptor.get_size());
     this->DeclareOutputPort(descriptor);
   }
 
@@ -832,8 +966,8 @@ class Diagram : public System<T>,
       // Do that system's update actions.
       for (const DiscreteEvent<T>& event : action_details.events) {
         if (event.action == DiscreteEvent<T>::kUpdateAction) {
-          sorted_systems_[index]->EvalDifferenceUpdates(
-              *subcontext, event, subdifference);
+          sorted_systems_[index]->EvalDifferenceUpdates(*subcontext, event,
+                                                        subdifference);
         }
       }
     }
@@ -868,7 +1002,14 @@ class Diagram : public System<T>,
   std::vector<PortIdentifier> input_port_ids_;
   std::vector<PortIdentifier> output_port_ids_;
 
+  // For all T, Diagram<T> considers DiagramBuilder<T> a friend, so that the
+  // builder can set the internal state correctly.
   friend class DiagramBuilder<T>;
+
+  // For all T, Diagram<T> considers Diagram<double> a friend, so that
+  // Diagram<double> can provide transmogrification methods to more flavorful
+  // scalar types.  See Diagram<T>::ConvertScalarType.
+  friend class Diagram<double>;
 };
 
 }  // namespace systems

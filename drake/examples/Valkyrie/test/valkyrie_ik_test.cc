@@ -2,6 +2,7 @@
 // visualizer.
 
 #include <iostream>
+#include <memory>
 #include <numeric>
 
 #include "gtest/gtest.h"
@@ -17,6 +18,8 @@
 #include "drake/systems/framework/diagram.h"
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/framework/primitives/constant_vector_source.h"
+#include "drake/multibody/joints/floating_base_types.h"
+#include "drake/multibody/parser_urdf.h"
 #include "drake/multibody/rigid_body_tree.h"
 #include "drake/multibody/rigid_body_plant/drake_visualizer.h"
 
@@ -38,7 +41,7 @@ namespace {
  */
 std::vector<int> GetJointPositionVectorIndices(const RigidBodyTreed* tree,
                                                const std::string& name) {
-  RigidBody* joint_child_body = tree->FindChildBodyOfJoint(name);
+  RigidBody<double>* joint_child_body = tree->FindChildBodyOfJoint(name);
   int num_positions = joint_child_body->getJoint().get_num_positions();
   std::vector<int> ret(static_cast<size_t>(num_positions));
 
@@ -64,11 +67,11 @@ void FindJointAndInsert(const RigidBodyTreed* model, const std::string& name,
 }
 
 GTEST_TEST(ValkyrieIK_Test, ValkyrieIK_Test_StandingPose_Test) {
-  std::shared_ptr<RigidBodyTreed> tree = std::make_shared<RigidBodyTreed>(
-      drake::GetDrakePath() +
-          "/examples/Valkyrie/urdf/urdf/"
+  auto tree = std::make_unique<RigidBodyTree<double>>();
+  parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
+      GetDrakePath() + "/examples/Valkyrie/urdf/urdf/"
           "valkyrie_A_sim_drake_one_neck_dof_wide_ankle_rom.urdf",
-      drake::multibody::joints::kRollPitchYaw);
+      multibody::joints::kRollPitchYaw, tree.get());
 
   // Setting up constraints, based on testIKMoreConstraints.cpp and
   // director-generated M-file.

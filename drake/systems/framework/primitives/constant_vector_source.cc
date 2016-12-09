@@ -4,6 +4,7 @@
 #include "drake/common/drake_assert.h"
 #include "drake/common/eigen_autodiff_types.h"
 #include "drake/common/eigen_types.h"
+#include "drake/common/symbolic_formula.h"
 #include "drake/systems/framework/basic_vector.h"
 #include "drake/systems/framework/leaf_context.h"
 
@@ -15,13 +16,13 @@ ConstantVectorSource<T>::ConstantVectorSource(
     const Eigen::Ref<const VectorX<T>>& source_value)
     : source_value_(source_value) {
   const int n = static_cast<int>(source_value.rows());
-  this->DeclareOutputPort(kVectorValued, n, kContinuousSampling);
+  this->DeclareOutputPort(kVectorValued, n);
 }
 
 template <typename T>
 ConstantVectorSource<T>::ConstantVectorSource(const T& source_value)
     : source_value_(Vector1<T>::Constant(source_value)) {
-  this->DeclareOutputPort(kVectorValued, 1, kContinuousSampling);
+  this->DeclareOutputPort(kVectorValued, 1);
 }
 
 template <typename T>
@@ -41,6 +42,7 @@ void ConstantVectorSource<T>::EvalOutput(const Context<T>& context,
 // Explicitly instantiates on the most common scalar types.
 template class ConstantVectorSource<double>;
 template class ConstantVectorSource<AutoDiffXd>;
+template class ConstantVectorSource<symbolic::Expression>;
 
 }  // namespace systems
 }  // namespace drake

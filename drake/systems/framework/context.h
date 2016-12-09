@@ -40,7 +40,7 @@ class Context {
   const T& get_time() const { return get_step_info().time_sec; }
 
   /// Set the current time in seconds.
-  virtual void set_time(const T& time_sec)  {
+  virtual void set_time(const T& time_sec) {
     get_mutable_step_info()->time_sec = time_sec;
   }
 
@@ -49,6 +49,32 @@ class Context {
 
   virtual const State<T>& get_state() const = 0;
   virtual State<T>* get_mutable_state() = 0;
+
+  /// Returns true if the Context has no state.
+  bool is_stateless() const {
+    const int nxc = get_continuous_state()->size();
+    const int nxd = get_num_difference_state_groups();
+    const int nxm = get_num_modal_state_groups();
+    return nxc == 0 && nxd == 0 && nxm == 0;
+  }
+
+  /// Returns true if the Context has continuous state, but no difference or
+  /// modal state.
+  bool has_only_continuous_state() const {
+    const int nxc = get_continuous_state()->size();
+    const int nxd = get_num_difference_state_groups();
+    const int nxm = get_num_modal_state_groups();
+    return nxc > 0 && nxd == 0 && nxm == 0;
+  }
+
+  /// Returns true if the Context has difference state, but no continuous or
+  /// modal state.
+  bool has_only_difference_state() const {
+    const int nxc = get_continuous_state()->size();
+    const int nxd = get_num_difference_state_groups();
+    const int nxm = get_num_modal_state_groups();
+    return nxd > 0 && nxc == 0 && nxm == 0;
+  }
 
   /// Sets the continuous state to @p xc, deleting whatever was there before.
   void set_continuous_state(std::unique_ptr<ContinuousState<T>> xc) {
@@ -79,6 +105,10 @@ class Context {
     return get_continuous_state()->get_vector();
   }
 
+  /// Returns the number of elements in the difference state.
+  int get_num_difference_state_groups() const {
+    return get_state().get_difference_state()->size();
+  }
 
   /// Returns a mutable pointer to the difference component of the state,
   /// which may be of size zero.
@@ -103,6 +133,11 @@ class Context {
   const BasicVector<T>* get_difference_state(int index) const {
     const DifferenceState<T>* xd = get_state().get_difference_state();
     return xd->get_difference_state(index);
+  }
+
+  /// Returns the number of elements in the modal state.
+  int get_num_modal_state_groups() const {
+    return get_state().get_modal_state()->size();
   }
 
   /// Returns a mutable pointer to the modal component of the state,
@@ -150,6 +185,19 @@ class Context {
   void FixInputPort(int index, std::unique_ptr<BasicVector<T>> value) {
     SetInputPort(index,
                  std::make_unique<FreestandingInputPort>(std::move(value)));
+  }
+
+  /// Connects a FreestandingInputPort with the given @p value at the given
+  /// @p index. Asserts if @p index is out of range.  Returns a raw pointer to
+  /// the allocated BasicVector that will remain valid until this input
+  /// port is overwritten or the context is destroyed.
+  BasicVector<T>* FixInputPort(int index,
+                               const Eigen::Ref<const VectorX<T>>& data) {
+    auto vec = std::make_unique<BasicVector<T>>(data);
+    BasicVector<T>* ptr = vec.get();
+    SetInputPort(index, std::make_unique<systems::FreestandingInputPort>(
+                            std::move(vec)));
+    return ptr;
   }
 
   /// Evaluates and returns the input port identified by @p descriptor,
@@ -314,4 +362,3 @@ class Context {
 
 }  // namespace systems
 }  // namespace drake
-

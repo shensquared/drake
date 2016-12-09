@@ -19,11 +19,11 @@ using drake::multibody::joints::kQuaternion;
 int AddFloatingJoint(
     const FloatingBaseType floating_base_type,
     const std::vector<int>& body_indices,
-    const std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    const std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     const PoseMap* pose_map,
     RigidBodyTree<double>* tree) {
   std::string floating_joint_name;
-  RigidBody* weld_to_body{nullptr};
+  RigidBody<double>* weld_to_body{nullptr};
   Eigen::Isometry3d transform_to_world;
 
   if (weld_to_frame == nullptr) {

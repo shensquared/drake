@@ -198,7 +198,7 @@ std::vector<int> AutomotiveSimulator<T>::GetModelJointStateSizes() const {
     const int model_instance_id = model_info.first;
     int num_joint_positions{0};
     int num_joint_velocities{0};
-    const std::vector<const RigidBody*> bodies =
+    const std::vector<const RigidBody<T>*> bodies =
         rigid_body_tree_->FindModelInstanceBodies(model_instance_id);
     for (const auto& body : bodies) {
       num_joint_positions += body->getJoint().get_num_positions();
@@ -304,8 +304,9 @@ void AutomotiveSimulator<T>::ConnectJointStateSourcesToVisualizer() {
 template <typename T>
 void AutomotiveSimulator<T>::Start() {
   DRAKE_DEMAND(!started_);
-  // By this time, all model instances should have been added to the tree. Thus,
-  // it should be safe to compile the tree.
+  // By this time, all model instances should have been added to the tree.
+  // While the parsers have already called `compile()` on the `RigidBodyTree`,
+  // in an abundance of caution, the following line calls `compile()` again.
   rigid_body_tree_->compile();
 
   ConnectJointStateSourcesToVisualizer();

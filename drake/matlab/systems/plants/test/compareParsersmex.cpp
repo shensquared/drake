@@ -2,11 +2,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 
 #include "drake/common/eigen_matrix_compare.h"
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/rigid_body_tree.h"
 #include "drake/multibody/joints/floating_base_types.h"
+#include "drake/multibody/parser_urdf.h"
 #include "drake/matlab/util/drakeMexUtil.h"
 
 using namespace Eigen;
@@ -52,8 +54,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         "Drake:compareParsersmex:BadInputs",
         "Unknown floating base type.  must be 'fixed', 'rpy', or 'quat'");
 
-  RigidBodyTree<double>* cpp_model =
-      new RigidBodyTree<double>(urdf_file, floating_base_type);
+  auto cpp_model = std::make_unique<RigidBodyTree<double>>();
+  drake::parsers::urdf::AddModelInstanceFromUrdfFileToWorld(urdf_file,
+      floating_base_type, cpp_model.get());
 
   // Compute coordinate transform between the two models (in case they are not
   // identical)
@@ -66,7 +69,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
   for (int i = 0; i < cpp_model->bodies.size(); ++i) {
     if (cpp_model->bodies[i]->has_parent_body() &&
         cpp_model->bodies[i]->getJoint().get_num_positions() > 0) {
-      RigidBody* b = matlab_model->FindChildBodyOfJoint(
+      RigidBody<double>* b = matlab_model->FindChildBodyOfJoint(
           cpp_model->bodies[i]->getJoint().get_name());
       if (b == nullptr) continue;
       for (int j = 0; j < b->getJoint().get_num_positions(); ++j) {
@@ -185,6 +188,4 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
       }
     }
   }
-
-  delete cpp_model;
 }

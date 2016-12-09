@@ -7,14 +7,14 @@
 #include <string>
 #include <vector>
 
-#include "drake/common/eigen_matrix_compare.h"
+#include "drake/common/drake_assert.h"
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/joints/floating_base_types.h"
 #include "drake/multibody/joints/drake_joints.h"
 #include "drake/multibody/material_map.h"
 #include "drake/multibody/parser_common.h"
 #include "drake/multibody/parser_model_instance_id_table.h"
-#include "drake/multibody/xmlUtil.h"
+#include "drake/multibody/xml_util.h"
 
 namespace drake {
 namespace parsers {
@@ -47,7 +47,7 @@ using drake::multibody::joints::kRollPitchYaw;
 
 namespace {
 
-void ParseInertial(RigidBody* body, XMLElement* node) {
+void ParseInertial(RigidBody<double>* body, XMLElement* node) {
   Isometry3d T = Isometry3d::Identity();
 
   XMLElement* origin = node->FirstChildElement("origin");
@@ -83,24 +83,28 @@ void ParseInertial(RigidBody* body, XMLElement* node) {
   body->set_spatial_inertia(transformSpatialInertia(T, I));
 }
 
-// Adds a material to the supplied material map. If the material is already
-// present, it checks whether the new values are the same as the old values. If
-// they are the same, return normally. Otherwise print a warning to std::cerr.
-//
-// Currently, only simple colors are supported as the material.
+// Adds a material to the supplied @materials map. Currently, only simple colors
+// are supported.
 //
 // TODO(liang.fok) Add support for texture-based materials. See:
-// https://github.com/RobotLocomotion/drake/issues/2588
+// https://github.com/RobotLocomotion/drake/issues/2588.
 //
 // @param[in] material_name A human-understandable name of the material.
 //
 // @param[in] color_rgba The red-green-blue-alpha color values of the material.
 // The range of values is [0, 1].
 //
+// @param[in] abort_if_name_clash If true, this method will abort if
+// @p material_name is already in @p materials regardless of whether the RGBA
+// values are the same. If false, this method will abort if
+// @p material_name is already in @p materials and the infinity norm of the
+// difference is greater than 1e-10.
+//
 // @param[out] materials A pointer to the map in which to store the material.
 // This cannot be nullptr.
 void AddMaterialToMaterialMap(const string& material_name,
                               const Vector4d& color_rgba,
+                              bool abort_if_name_clash,
                               MaterialMap* materials) {
   // Verifies that parameter materials is not nullptr.
   DRAKE_DEMAND(materials);
@@ -109,26 +113,20 @@ void AddMaterialToMaterialMap(const string& material_name,
   auto material_iter = materials->find(material_name);
   if (material_iter != materials->end()) {
     // The material is already in the map. Checks whether the old material is
-    // the same as the new material. Note that since the range of values in the
-    // RGBA vectors is [0, 1], absolute and relative tolerance comparisons are
-    // identical.
-    auto& existing_color = material_iter->second;
-    if (!drake::CompareMatrices(color_rgba, existing_color, 1e-10,
-                                drake::MatrixCompareType::absolute)) {
+    // the same as the new material.  The range of values in the RGBA vectors
+    // is [0, 1].
+    const auto& existing_color = material_iter->second;
+    if (abort_if_name_clash || (color_rgba != existing_color)) {
       // The materials map already has the material_name key but the color
       // associated with it is different.
       stringstream error_buff;
-      error_buff << "RigidBodyTreeURDF.cpp: AddMaterialToMaterialMap(): "
-                 << "Error: Material \"" + material_name + "\" was previously "
-                 << "defined but was associated with different RGBA color "
-                 << "values." << std::endl
+      error_buff << "Material \"" + material_name + "\" was previously "
+                 << "defined." << std::endl
                  << "  - existing RGBA values: " << existing_color.transpose()
                  << std::endl
                  << "  - new RGBA values: " << color_rgba.transpose()
-                 << std::endl
-                 << "Keeping the original RGBA values in the materials map."
                  << std::endl;
-      throw std::runtime_error(error_buff.str());
+      DRAKE_ABORT_MSG(error_buff.str().c_str());
     }
   } else {
     // Adds the new color to the materials map.
@@ -157,7 +155,8 @@ void ParseMaterial(XMLElement* node, MaterialMap& materials) {
           "RigidBodyTreeURDF.cpp: ParseMaterial(): ERROR: "
           "Color tag is missing rgba attribute.");
     }
-    AddMaterialToMaterialMap(name, rgba, &materials);
+    AddMaterialToMaterialMap(name, rgba, true /* abort_if_name_clash */,
+        &materials);
   } else {
     // If no color was specified and the material is not in the materials map,
     // check if the material is texture-based. If it is, print a warning, use
@@ -178,7 +177,8 @@ void ParseMaterial(XMLElement* node, MaterialMap& materials) {
             << "https://github.com/RobotLocomotion/drake/issues/2588. "
                "Defaulting to use the black color for this material."
             << endl;
-        AddMaterialToMaterialMap(name, rgba, &materials);
+        AddMaterialToMaterialMap(name, rgba, true /* abort_if_name_clash */,
+            &materials);
       } else {
         throw std::runtime_error(
             "RigidBodyTreeURDF.cpp: ParseMaterial: ERROR: Material\"" + name +
@@ -309,7 +309,8 @@ bool ParseGeometry(XMLElement* node, const PackageMap& ros_package_map,
 //
 // A warning is printed to std::cerr if a material is not set for the rigid
 // body's visualization.
-void ParseVisual(RigidBody* body, XMLElement* node, RigidBodyTree<double>* tree,
+void ParseVisual(RigidBody<double>* body, XMLElement* node,
+                 RigidBodyTree<double>* tree,
                  MaterialMap* materials, const PackageMap& ros_package_map,
                  const string& root_dir) {
   // Ensures there is a geometry child element. Since this is a required
@@ -383,8 +384,19 @@ void ParseVisual(RigidBody* body, XMLElement* node, RigidBodyTree<double>* tree,
     // http://wiki.ros.org/urdf/XML/link), but is needed by certain URDFs
     // released by companies and organizations like Robotiq and ROS Industrial
     // (for example, see this URDF by Robotiq: http://bit.ly/28P0pmo).
-    if (color_specified && name_specified)
-      AddMaterialToMaterialMap(material_name, rgba, materials);
+    if (color_specified && name_specified) {
+      // The `abort_if_name_clash` parameter is passed a value of `false` to
+      // allow the same material to be defined across multiple links as long as
+      // they correspond to the same RGBA value. This can happen, for example,
+      // in URDFs that are automatically generated using `xacro` since `xacro`
+      // may produce a URDF from multiple `.xacro` files. Through testing, we
+      // determined that the Gazebo simulator supports loading URDFs containing
+      // duplicate material specifications as long as the duplicates are
+      // distributed across multiple `<link>` elements and are not at the
+      // `<robot>` level.
+      AddMaterialToMaterialMap(material_name, rgba,
+          false /* abort_if_name_clash */, materials);
+    }
 
     // Sets the material's color.
     bool material_set = false;
@@ -432,7 +444,7 @@ void ParseVisual(RigidBody* body, XMLElement* node, RigidBodyTree<double>* tree,
   if (element.hasGeometry()) body->AddVisualElement(element);
 }
 
-void ParseCollision(RigidBody* body, XMLElement* node,
+void ParseCollision(RigidBody<double>* body, XMLElement* node,
                     RigidBodyTree<double>* tree,
                     const PackageMap& ros_package_map, const string& root_dir) {
   Isometry3d T_element_to_link = Isometry3d::Identity();
@@ -488,8 +500,8 @@ bool ParseBody(RigidBodyTree<double>* tree, string robot_name, XMLElement* node,
   const char* attr = node->Attribute("drake_ignore");
   if (attr && (std::strcmp(attr, "true") == 0)) return false;
 
-  RigidBody* body{nullptr};
-  std::unique_ptr<RigidBody> owned_body(body = new RigidBody());
+  RigidBody<double>* body{nullptr};
+  std::unique_ptr<RigidBody<double>> owned_body(body = new RigidBody<double>());
   body->set_model_name(robot_name);
   body->set_model_instance_id(model_instance_id);
 
@@ -847,12 +859,14 @@ void ParseLoop(RigidBodyTree<double>* tree, XMLElement* node,
   string name(node->Attribute("name"));
 
   XMLElement* link_node = node->FirstChildElement("link1");
-  std::shared_ptr<RigidBodyFrame> frameA = MakeRigidBodyFrameFromUrdfNode(
-      *tree, *link_node, link_node, name + "FrameA", model_instance_id);
+  std::shared_ptr<RigidBodyFrame<double>> frameA =
+      MakeRigidBodyFrameFromUrdfNode(
+          *tree, *link_node, link_node, name + "FrameA", model_instance_id);
 
   link_node = node->FirstChildElement("link2");
-  std::shared_ptr<RigidBodyFrame> frameB = MakeRigidBodyFrameFromUrdfNode(
-      *tree, *link_node, link_node, name + "FrameB", model_instance_id);
+  std::shared_ptr<RigidBodyFrame<double>> frameB =
+      MakeRigidBodyFrameFromUrdfNode(
+          *tree, *link_node, link_node, name + "FrameB", model_instance_id);
 
   XMLElement* axis_node = node->FirstChildElement("axis");
   if (axis_node && !parseVectorAttribute(axis_node, "xyz", axis))
@@ -860,7 +874,7 @@ void ParseLoop(RigidBodyTree<double>* tree, XMLElement* node,
 
   tree->addFrame(frameA);
   tree->addFrame(frameB);
-  RigidBodyLoop l(frameA, frameB, axis);
+  RigidBodyLoop<double> l(frameA, frameB, axis);
   tree->loops.push_back(l);
 }
 
@@ -869,8 +883,9 @@ void ParseFrame(RigidBodyTree<double>* tree, XMLElement* node,
   const char* frame_name = node->Attribute("name");
   if (!frame_name) throw runtime_error("ERROR parsing Drake frame name");
 
-  std::shared_ptr<RigidBodyFrame> frame = MakeRigidBodyFrameFromUrdfNode(
-      *tree, *node, node, frame_name, model_instance_id);
+  std::shared_ptr<RigidBodyFrame<double>> frame =
+      MakeRigidBodyFrameFromUrdfNode(
+          *tree, *node, node, frame_name, model_instance_id);
   tree->addFrame(frame);
 }
 
@@ -900,7 +915,7 @@ void ParseWorldJoint(XMLElement* node,
                      // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
                      FloatingBaseType& floating_base_type,
                      // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
-                     std::shared_ptr<RigidBodyFrame>& weld_to_frame) {
+                     std::shared_ptr<RigidBodyFrame<double>>& weld_to_frame) {
   bool found_world_joint = false;
 
   for (XMLElement* joint_node = node->FirstChildElement("joint"); joint_node;
@@ -931,7 +946,8 @@ void ParseWorldJoint(XMLElement* node,
 
       // Creates a new rigid body frame if the weld_to_frame parameter contains
       // a nullptr.
-      if (weld_to_frame == nullptr) weld_to_frame.reset(new RigidBodyFrame());
+      if (weld_to_frame == nullptr)
+        weld_to_frame.reset(new RigidBodyFrame<double>());
 
       weld_to_frame->set_name(string(RigidBodyTree<double>::kWorldName));
       weld_to_frame->set_transform_to_body(
@@ -959,7 +975,8 @@ ModelInstanceIdTable ParseModel(RigidBodyTree<double>* tree, XMLElement* node,
                                 const PackageMap& ros_package_map,
                                 const string& root_dir,
                                 const FloatingBaseType floating_base_type,
-                                std::shared_ptr<RigidBodyFrame> weld_to_frame) {
+                                std::shared_ptr<RigidBodyFrame<double>>
+                                    weld_to_frame) {
   if (!node->Attribute("name"))
     throw runtime_error("Error: your robot must have a name attribute");
 
@@ -975,7 +992,9 @@ ModelInstanceIdTable ParseModel(RigidBodyTree<double>* tree, XMLElement* node,
   int model_instance_id = tree->add_model_instance();
   model_instance_id_table[model_name] = model_instance_id;
 
-  // Parses the model's material elements.
+  // Parses the model's material elements. Throws an exception if there's a
+  // material name clash regardless of whether the associated RGBA values are
+  // the same.
   MaterialMap materials;
   for (XMLElement* material_node = node->FirstChildElement("material");
        material_node;
@@ -1065,7 +1084,7 @@ ModelInstanceIdTable ParseUrdf(
     // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     PackageMap& ros_package_map, const string& root_dir,
     const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   populatePackageMap(ros_package_map);
   XMLElement* node = xml_doc->FirstChildElement("robot");
@@ -1119,9 +1138,22 @@ ModelInstanceIdTable AddModelInstanceFromUrdfString(
 }
 
 ModelInstanceIdTable AddModelInstanceFromUrdfString(
+    const std::string& urdf_string,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    PackageMap& ros_package_map,
+    const std::string& root_dir,
+    const drake::multibody::joints::FloatingBaseType floating_base_type,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
+    RigidBodyTree<double>* tree) {
+  return AddModelInstanceFromUrdfStringSearchingInRosPackages(
+      urdf_string, ros_package_map, root_dir, floating_base_type,
+      weld_to_frame, tree);
+}
+
+ModelInstanceIdTable AddModelInstanceFromUrdfString(
     const string& urdf_string, const string& root_dir,
     const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   PackageMap ros_package_map;
   return AddModelInstanceFromUrdfStringSearchingInRosPackages(
@@ -1134,11 +1166,11 @@ ModelInstanceIdTable AddModelInstanceFromUrdfStringSearchingInRosPackages(
     // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     PackageMap& ros_package_map, const string& root_dir,
     const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   XMLDocument xml_doc;
   xml_doc.Parse(urdf_string.c_str());
-  return ParseUrdf(&xml_doc, ros_package_map, root_dir, kRollPitchYaw,
+  return ParseUrdf(&xml_doc, ros_package_map, root_dir, floating_base_type,
                    weld_to_frame, tree);
 }
 
@@ -1179,7 +1211,7 @@ ModelInstanceIdTable AddModelInstanceFromUrdfFile(
 
 ModelInstanceIdTable AddModelInstanceFromUrdfFile(
     const string& filename, const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   // Aborts if any of the output parameter pointers are invalid.
   DRAKE_DEMAND(tree);
@@ -1192,7 +1224,7 @@ ModelInstanceIdTable AddModelInstanceFromUrdfFileSearchingInRosPackages(
     const string& filename,
     // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     PackageMap& ros_package_map, const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   // Aborts if any of the output parameter pointers are invalid.
   DRAKE_DEMAND(tree);
@@ -1222,18 +1254,18 @@ ModelInstanceIdTable AddModelInstanceFromUrdfFile(
     const string& filename,
     // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     PackageMap& ros_package_map, const FloatingBaseType floating_base_type,
-    std::shared_ptr<RigidBodyFrame> weld_to_frame,
+    std::shared_ptr<RigidBodyFrame<double>> weld_to_frame,
     RigidBodyTree<double>* tree) {
   return AddModelInstanceFromUrdfFileSearchingInRosPackages(
       filename, ros_package_map, floating_base_type, weld_to_frame, tree);
 }
 
-std::shared_ptr<RigidBodyFrame> MakeRigidBodyFrameFromUrdfNode(
+std::shared_ptr<RigidBodyFrame<double>> MakeRigidBodyFrameFromUrdfNode(
     const RigidBodyTree<double>& tree, const tinyxml2::XMLElement& link,
     const tinyxml2::XMLElement* pose, const string& name,
     int model_instance_id) {
   string body_name = link.Attribute("link");
-  RigidBody* body =
+  RigidBody<double>* body =
       tree.FindBody(body_name, "" /* model_name */, model_instance_id);
   if (body == nullptr) {
     throw runtime_error("ERROR: Couldn't find body \"" + body_name +
@@ -1245,8 +1277,8 @@ std::shared_ptr<RigidBodyFrame> MakeRigidBodyFrameFromUrdfNode(
     parseVectorAttribute(pose, "xyz", xyz);
     parseVectorAttribute(pose, "rpy", rpy);
   }
-  return allocate_shared<RigidBodyFrame>(
-      Eigen::aligned_allocator<RigidBodyFrame>(), name, body, xyz, rpy);
+  return allocate_shared<RigidBodyFrame<double>>(
+      Eigen::aligned_allocator<RigidBodyFrame<double>>(), name, body, xyz, rpy);
 }
 
 }  // namespace urdf
