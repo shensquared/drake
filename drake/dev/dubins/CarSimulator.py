@@ -132,13 +132,21 @@ class Simulator(object):
                                             scale=self.options['World']['scale'],
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
-        if self.mode == 'Traffic':
+        elif self.mode == 'Traffic':
             self.world, self.goalX, self.goalY = World.buildTrafficWorld(percentObsDensity=self.options['World']['percentObsDensity'],
                                             circleRadius=self.options['World']['circleRadius'],
                                             nonRandom=self.options['World']['nonRandomWorld'],
                                             scale=self.options['World']['scale'],
                                             randomSeed=self.options['World']['randomSeed'],
                                             obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
+        elif self.mode == 'Manual':
+            self.world, self.goalX, self.goalY = World.buildTrafficWorld(percentObsDensity=self.options['World']['percentObsDensity'],
+                                            circleRadius=self.options['World']['circleRadius'],
+                                            nonRandom=self.options['World']['nonRandomWorld'],
+                                            scale=self.options['World']['scale'],
+                                            randomSeed=self.options['World']['randomSeed'],
+                                            obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
+
 
         else:
             print 'simulator mode error'
@@ -390,15 +398,23 @@ class Simulator(object):
 
         playButton = QtGui.QPushButton('Play/Pause')
         playButton.connect('clicked()', self.onPlayButton)
+        l.addWidget(playButton)
 
         slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         slider.connect('valueChanged(int)', self.onSliderChanged)
         self.sliderMax = self.numTimesteps
         slider.setMaximum(self.sliderMax)
         self.slider = slider
-
-        l.addWidget(playButton)
         l.addWidget(slider)
+
+        if self.mode == 'Manual':
+            self.manualControllerSliders =[]
+            for i in xrange(self.numCars):
+                self.manualControllerSliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
+                self.manualControllerSliders[i].connect('valueChanged(int)', self.onMaunualControll)
+                self.manualControllerSliders[i].setMaximum(10*self.CarsControllers[i].u_max)
+                self.manualControllerSliders[i].setMinimum(-10*self.CarsControllers[i].u_max)
+                l.addWidget(self.manualControllerSliders[i])
 
         w = QtGui.QWidget()
         l = QtGui.QVBoxLayout(w)
@@ -549,9 +565,6 @@ class Simulator(object):
         for i in xrange(self.numCars):
             x,y,theta = self.stateOverTime[idx,i]
             ray=self.raycastData[idx]
-        # if not self.sliderMovedByPlayTimer:
-            # print 'ray cast'
-            # print ray
             self.setRobotFrameState(i, x,y,theta)
         self.sliderMovedByPlayTimer = False
 
@@ -568,11 +581,10 @@ class Simulator(object):
         self.playTimer.stop()
 
     def onMaunualControll(self, value):
-        steering = int(np.floor(numSteps*(1.0*value/self.sliderMax)))
-        print steering
-# TODO: remove hard code
-        self.CarsControllers[0].mode = 'Manual'
-        self.CarsControllers[0].manualController(steering = steering)
+        # steering = int(np.floor(numSteps*(1.0*value/self.CarsControllers[i].u_max)))
+        self.CarsControllers[i].mode = 'Manual'
+        desiredSteering = value/10.0
+        self.CarsControllers[i].manualControllerSlidersroller(steering = desiredSteering)
         
 
 

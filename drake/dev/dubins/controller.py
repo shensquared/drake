@@ -51,7 +51,7 @@ class ControllerObj(object):
         elif self.mode=='Manual':
             u = self.manualController() 
         elif self.mode=='Traffic':
-            u = self.mothController()
+            u = self.twoin1Controller()
         else:
             print 'controller-mode setup error'
 
@@ -173,9 +173,9 @@ class ControllerObj(object):
             
 
         if np.min(distances)>=15:
-            u, angels, actionIdx= self.mothController()
+            u = self.mothController()
         else:
-            u, angels, actionIdx= self.naiveController()
+            u = self.naiveController()
         
 
         if u > self.u_max:
