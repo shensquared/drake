@@ -464,6 +464,18 @@ class Simulator(object):
         #     # applogic.resetCamera(viewDirection=[0.2,0,-1])
         #     # self.view.showMaximized()
         #     self.view.raise_()
+
+        elif self.mode == 'Traffic':
+            applogic.resetCamera(viewDirection=[0.2,0,-1])
+            target = om.findObjectByName('world')
+            camera_control_panel.trackerManager.target = target
+
+            # camera_control_panel.trackerManager.setTarget(self.world)
+            camera_control_panel.trackerManager.setTrackerMode('Position')
+            self.view.showMaximized()
+            self.view.raise_()
+
+
         else:
             print 'view camera mode error'
 
