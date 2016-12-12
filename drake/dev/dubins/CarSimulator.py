@@ -126,15 +126,19 @@ class Simulator(object):
 
         om.removeFromObjectModel(om.findObjectByName('world'))
         if self.mode=='Obs':
-            self.world, self.goalX, self.goalY = World.buildWarehouseWorld(.3)
-
-
-            # World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
-            #                                 circleRadius=self.options['World']['circleRadius'],
-            #                                 nonRandom=self.options['World']['nonRandomWorld'],
-            #                                 scale=self.options['World']['scale'],
-            #                                 randomSeed=self.options['World']['randomSeed'],
-            #                                 obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
+            self.world, self.goalX, self.goalY = World.buildCircleWorld(percentObsDensity=self.options['World']['percentObsDensity'],
+                                            circleRadius=self.options['World']['circleRadius'],
+                                            nonRandom=self.options['World']['nonRandomWorld'],
+                                            scale=self.options['World']['scale'],
+                                            randomSeed=self.options['World']['randomSeed'],
+                                            obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
+        if self.mode == 'Traffic':
+            self.world, self.goalX, self.goalY = World.buildTrafficWorld(percentObsDensity=self.options['World']['percentObsDensity'],
+                                            circleRadius=self.options['World']['circleRadius'],
+                                            nonRandom=self.options['World']['nonRandomWorld'],
+                                            scale=self.options['World']['scale'],
+                                            randomSeed=self.options['World']['randomSeed'],
+                                            obstaclesInnerFraction=self.options['World']['obstaclesInnerFraction'])
 
         else:
             print 'simulator mode error'
@@ -238,6 +242,7 @@ class Simulator(object):
             # Compute the next control input
                 # S_next = (nextCarsStates, nextRaycast)
                 if controllerType in ["default", "defaultRandom"]:
+                    # nextControlInput = 0
                     nextControlInput = self.CarsControllers[i].computeControlInput(nextCarsStates[i],
                                                                         currentTime, self.frames[i],
                                                                         raycastDistance=nextRaycast,

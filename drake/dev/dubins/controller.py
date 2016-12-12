@@ -50,6 +50,8 @@ class ControllerObj(object):
             u = self.twoin1Controller() 
         elif self.mode=='Manual':
             u = self.manualController() 
+        elif self.mode=='Traffic':
+            u = self.mothController()
         else:
             print 'controller-mode setup error'
 

@@ -102,28 +102,28 @@ class World(object):
         obsScalingFactor = 1.0/12.0
         maxNumObstacles = obsScalingFactor * worldArea
         
-        numObstacles = int(obstaclesInnerFraction**2 * percentObsDensity/100.0 * maxNumObstacles)
+        # numObstacles = int(obstaclesInnerFraction**2 * percentObsDensity/100.0 * maxNumObstacles)
         #print numObstacles
 
-        obsXmin = worldXmin + (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
-        obsXmax = worldXmax - (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
-        obsYmin = worldYmin + (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
-        obsYmax = worldYmax - (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
+        # obsXmin = worldXmin + (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
+        # obsXmax = worldXmax - (1-obstaclesInnerFraction)/2.0*(worldXmax - worldXmin)
+        # obsYmin = worldYmin + (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
+        # obsYmax = worldYmax - (1-obstaclesInnerFraction)/2.0*(worldYmax - worldYmin)
 
-        for i in xrange(numObstacles-1):
-            firstX = obsXmin + np.random.rand()*(obsXmax-obsXmin)
-            firstY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
-            firstEndpt = (firstX,firstY,+0.2)
-            secondEndpt = (firstX,firstY,-0.2)
+        # for i in xrange(numObstacles-1):
+        #     firstX = obsXmin + np.random.rand()*(obsXmax-obsXmin)
+        #     firstY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
+        #     firstEndpt = (firstX,firstY,+0.2)
+        #     secondEndpt = (firstX,firstY,-0.2)
 
-            # d.addLine(firstEndpt, secondEndpt, radius=2*np.random.randn())
-            d.addLine(firstEndpt, secondEndpt, radius=circleRadius)
-        # add a goal object
-        goalX=obsXmin + np.random.rand()*(obsXmax-obsXmin)
-        goalY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
-        goalFirst = (goalX,goalY,+20)
-        goalEnd = (goalX,goalY,-0.2)
-        d.addLine(goalFirst, goalEnd, radius=circleRadius, color=[0,0,1])
+        #     # d.addLine(firstEndpt, secondEndpt, radius=2*np.random.randn())
+        #     d.addLine(firstEndpt, secondEndpt, radius=circleRadius)
+        # # add a goal object
+        # goalX=obsXmin + np.random.rand()*(obsXmax-obsXmin)
+        # goalY = obsYmin + np.random.rand()*(obsYmax-obsYmin)
+        # goalFirst = (goalX,goalY,+20)
+        # goalEnd = (goalX,goalY,-0.2)
+        # d.addLine(goalFirst, goalEnd, radius=circleRadius, color=[0,0,1])
         # the really cute pink has RGB [1,0.6,0.7]
         obj = vis.showPolyData(d.getPolyData(), 'world',colorByName='RGB255')
         world = World()
@@ -132,9 +132,9 @@ class World(object):
         world.Xmin = worldXmin
         world.Ymax = worldYmax
         world.Ymin = worldYmin
-        world.numObstacles = numObstacles
-        world.percentObsDensity = percentObsDensity
-        return world, goalX, goalY
+        # world.numObstacles = numObstacles
+        # world.percentObsDensity = percentObsDensity
+        return world, 0, 0
 
     @staticmethod
     def buildCircleWorld(percentObsDensity, nonRandom=False, circleRadius=3, scale=None, randomSeed=5,
