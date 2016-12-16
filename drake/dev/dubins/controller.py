@@ -57,7 +57,7 @@ class ControllerObj(object):
 
         return u
 
-    def manualController(self, steering):
+    def manualController(self, steering=0):
         return steering
 
     def mothController(self, arrived=False):
