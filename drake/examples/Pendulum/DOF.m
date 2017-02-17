@@ -1,6 +1,7 @@
-function DOF(deg_K,deg_L1_aux,deg_L2_aux)
-
-doSimulation=true;
+function DOF( deg_K,deg_L1_aux,deg_L2_aux)
+% if doSimulation,
+%     Simulation;
+% end
 doPlotting=false;
 
 % check solver dependency
@@ -110,13 +111,13 @@ X=double(result.eval(X))
 eig(X);
 Y=double(result.eval(Y))
 eig(Y);
-new_P=double(result.eval(new_P));
+new_P=double(result.eval(new_P))
 disp('K_aux');
-K_aux=result.eval(K_aux)
+K_aux=(result.eval(K_aux))
 disp('L1_aux');
-L1_aux=result.eval(L1_aux)
+L1_aux=(result.eval(L1_aux))
 disp('L2_aux');
-L2_aux=result.eval(L2_aux)
+L2_aux=(result.eval(L2_aux))
 
 
 M=X;
@@ -158,13 +159,15 @@ disp('L2_gain');
 L2_gain=inv(N)*((Y*A_x*X+L1_aux*C*X+Y*B*K_aux+N*A_h*M'+N*B*K_aux)-L2_aux)*inv(M')
 
 
-% actual feedback terms, the gain multiplied with the state terms. 
+% actual feedback terms, which is the gain multiplied with the state terms. 
 K=K_gain*h;
 L1=L1_gain*x;
 L2=L2_gain*h;
+
 % residule=L1-L2; 
 % disp('residual');
 % dmsubs(residule,[observed;h],[sin(0);cos(0)+1;sin(0);cos(0)+1;0])
+
 save('partitionDOF.mat','K','L1','L2');
 
 
@@ -214,19 +217,28 @@ if doPlotting,
         ylabel('$$ thetadot $$','interpreter','latex','fontsize',15)
     end
 end
-
-
-
-if doSimulation,
-    pv = PendulumVisualizer();
-    sys=MyPendulumCL;
-    initial_state=[0;  12.9492];
-    initial_estimate=initial_state;
-    initial_estimate(2)=initial_state(2)+2*randn(1,1);
-    initial_augmented=[initial_state;initial_estimate]
-    [ytraj,xtraj]=simulate(sys,[0,3],initial_augmented);
-    % [ytraj,xtraj]=simulate(sys,[0,3],[0; 12;0;12.9492]);
-    pv.playback(ytraj); 
-    fnplt(xtraj,1);
+% 
+% if doSimulation,
+%     pv = PendulumVisualizer();
+%     sys=MyPendulumCL;
+%     
+%     initial_state=[0;0]+0.2*randn(2,1);
+%     % if the estimation and the initial state are equal at nonzero values, then it's possible for the both of them to deviate from the 
+%     % equlibrim at first and then start to converge again to the zero values.
+%     initial_estimate=initial_state;
+%     co_variance = .2;
+%     % initial_estimate(2)=initial_state(2)+covariance*randn(1,1);
+%     initial_augmented=[initial_state;initial_estimate];
+%     [ytraj,xtraj]=simulate(sys,[0,12],initial_augmented);
+% %     pv.playback(ytraj); 
+%     subplot(2,2,1);
+%     fnplt(xtraj,1);
+%     subplot(2,2,2);
+%     fnplt(xtraj,2);
+%     subplot(2,2,3);
+%     fnplt(xtraj,3);
+%     subplot(2,2,4);
+%     fnplt(xtraj,4);
+% end
 end
-end
+

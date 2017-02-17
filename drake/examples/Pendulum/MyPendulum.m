@@ -1,3 +1,5 @@
+% snadbox didn't get to use anywhere 
+
 classdef MyPendulum < PolynomialSystem
 % Defines the dynamics for the Pendulum.
   
@@ -16,7 +18,7 @@ classdef MyPendulum < PolynomialSystem
   methods
     function obj = MyPendulum(b)
       % Construct a new PendulumPlant
-      obj = obj@PolynomialSystem(6,0,1,3,false,true,false);
+      obj = obj@PolynomialSystem(6,0,1,2,false,true,false);
       if nargin>0 && ~isempty(b) % accept damping as optional input
         obj.b = b;
       end
@@ -31,9 +33,15 @@ classdef MyPendulum < PolynomialSystem
 
     function xdot = dynamicsRHS(~,~,x,u)
       % x = [s;c;thetadot];
-      x
       p = MyPendulum;
-      h=x(4:6);
+      % the actual theta
+      theta = atan2(x(1), x(2));
+      % the measurement
+      theta_hat = theta + mvnrnd(0,1);
+      % what is the actual estimated theta and theta hat in the buttom half of the state space? 
+      % h = x(4:6) + mvnrnd([,sigma)
+      
+      h = x(4:6);
       A_x=[x(1), 0, (x(2)-1);x(1), 0, -x(1); -p.g/p.l, 0, -p.b/(p.m*p.l.^2)]
       A_h=[h(1), 0, (h(2)-1);h(1), 0, -h(1); -p.g/p.l, 0, -p.b/(p.m*p.l.^2)]
       [K,L]=DOFreadPartition(x);
@@ -45,7 +53,11 @@ classdef MyPendulum < PolynomialSystem
 
 
     function y=output(~,~,x,~)
-      y=x(1:3);
+      % theta = atan2(x(1),x(2));
+      sinoftheta = x(1)
+      % y=(theta,x(3));
+
+      y = (sinoftheta, x(3));
     end
   end  
 end

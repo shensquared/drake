@@ -17,7 +17,7 @@ classdef MyPendulumCL < PolynomialSystem
     function obj = MyPendulumCL(b)
       % Construct a new PendulumPlant
       obj = obj@PolynomialSystem(4,0,1,2,false,true,false);
-      obj = setStateFrame(obj,CoordinateFrame('MyPendulumState',4,'x',{'theta','thetadot','thetahat','thetahatdot'}));
+      obj = setStateFrame(obj,CoordinateFrame('MyPendulumState',4,'x',{'theta','thetadot','thetahat','thetadothat'}));
 
       % obj = obj@PolynomialSystem(6,0,2,2,false,true,false);
       if nargin>0 && ~isempty(b) % accept damping as optional input
@@ -59,6 +59,7 @@ function [K,L]=readPartition(state)
 n=3;
 x=msspoly('x',n);
 h=msspoly('h',n);
+% only observing the angle measurement, so only have access to theta-relat4ed quantities but not the ones assossiated with theta+dot
 observed=[x(1);x(2)];
 load('partitionDOF.mat')
 s1=sin(state(1));
