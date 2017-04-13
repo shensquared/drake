@@ -35,7 +35,7 @@ Lane::Lane(const Segment* segment, const api::LaneId& id,  int index,
       segment->junction()->road_geometry());
 }
 
-const api::Segment* Lane::do_segment() const {
+const Segment* Lane::do_segment() const {
   return segment_;
 }
 
@@ -83,6 +83,17 @@ api::LanePosition Lane::DoEvalMotionDerivatives(
 
 api::GeoPosition Lane::DoToGeoPosition(
     const api::LanePosition& lane_pos) const {
+  int segment_idx = this->segment()->index();
+  if (segment_idx==0) {
+    return {lane_pos.s - length_ / 2, lane_pos.r + Lane::y_offset(),
+            lane_pos.h};
+  } else if (segment_idx==1) {
+    return {lane_pos.r + Lane::y_offset(), lane_pos.s - length_ / 2,
+            lane_pos.h};
+  }
+  throw std::runtime_error("Segment Index not recogonized");
+
+
   return {lane_pos.s, lane_pos.r + Lane::y_offset(), lane_pos.h};
 }
 

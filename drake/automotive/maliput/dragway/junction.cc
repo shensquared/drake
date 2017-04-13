@@ -20,7 +20,10 @@ Junction::Junction(RoadGeometry* road_geometry,
   DRAKE_DEMAND(road_geometry != nullptr);
 
     for (int i = 0; i < num_segments; ++i) {
-    auto segment = std::make_unique<Segment>(this, num_lanes, length, lane_width, shoulder_width);
+    auto segment = std::make_unique<Segment>(this, 
+    	api::SegmentId({"Dragway_Segment_" + std::to_string(i)}),
+      i,
+    	num_lanes, length, lane_width, shoulder_width);
     segments_.push_back(move(segment));
   };
 }

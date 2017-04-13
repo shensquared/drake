@@ -69,6 +69,8 @@ class Segment final : public api::Segment {
   /// @param[in] shoulder_width The width of the shoulders on each side of the
   /// road.
   Segment(Junction* junction,
+      const api::SegmentId id,
+      int index,
       int num_lanes,
       double length,
       double lane_width,
@@ -76,8 +78,13 @@ class Segment final : public api::Segment {
 
   ~Segment() final = default;
 
+  int index() const { return do_index(); }
+
+
  private:
   const api::SegmentId do_id() const final { return id_; }
+
+  int do_index() const  { return index_; }
 
   const api::Junction* do_junction() const final;
 
@@ -86,6 +93,7 @@ class Segment final : public api::Segment {
   const api::Lane* do_lane(int index) const final;
 
   const api::SegmentId id_;
+  const int index_{};  // The index of this Segment within a Junction.
   const Junction* junction_{};
   std::vector<std::unique_ptr<Lane>> lanes_;
 };

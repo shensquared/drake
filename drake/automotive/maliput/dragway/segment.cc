@@ -13,11 +13,14 @@ namespace maliput {
 namespace dragway {
 
 Segment::Segment(Junction* junction,
+    const api::SegmentId id,
+    int index,
     int num_lanes,
     double length,
     double lane_width,
     double shoulder_width)
-    : id_({"Dragway_Segment_ID"}),
+    : id_(id),
+      index_(index),
       junction_(junction) {
   // To better understand the semantics of the variables defined in this method,
   // see the class description.

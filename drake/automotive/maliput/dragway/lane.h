@@ -91,7 +91,7 @@ class Lane final : public api::Lane {
   /// @param driveable_bounds The driveable bounds of the lane, uniform along
   ///        the entire reference path.
   ///
-  Lane(const Segment* segment, const api::LaneId& id,  int index, double length,
+  Lane(const Segment* segment, const api::LaneId& id, int index, double length,
       double y_offset, const api::RBounds& lane_bounds,
       const api::RBounds& driveable_bounds);
 
@@ -109,11 +109,13 @@ class Lane final : public api::Lane {
 
   /// Returns the y-offset of this lane's frame relative to the world frame.
   double y_offset() const { return y_offset_; }
+  const Segment* segment() const { return do_segment(); }
+
 
  private:
   const api::LaneId do_id() const final { return id_; }
 
-  const api::Segment* do_segment() const final;
+  const Segment* do_segment() const final;
 
   int do_index() const final { return index_; }
 
