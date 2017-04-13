@@ -16,6 +16,7 @@ namespace maliput {
 namespace dragway {
 
 RoadGeometry::RoadGeometry(const api::RoadGeometryId& id,
+            int num_segments,
                int num_lanes,
                double length,
                double lane_width,
@@ -25,7 +26,7 @@ RoadGeometry::RoadGeometry(const api::RoadGeometryId& id,
   : id_(id),
     linear_tolerance_(linear_tolerance),
     angular_tolerance_(angular_tolerance),
-    junction_(this, num_lanes, length, lane_width, shoulder_width) {
+    junction_(this, num_segments, num_lanes, length, lane_width, shoulder_width) {
   DRAKE_DEMAND(length > 0);
   DRAKE_DEMAND(lane_width > 0);
   DRAKE_DEMAND(shoulder_width >= 0);

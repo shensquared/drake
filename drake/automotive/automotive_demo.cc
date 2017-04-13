@@ -33,12 +33,27 @@ DEFINE_double(target_realtime_rate, 1.0,
 DEFINE_double(simulation_sec, std::numeric_limits<double>::infinity(),
               "Number of seconds to simulate.");
 
+DEFINE_int32(num_dragway_segs, 0,
+             "The number of segments on the dragway. The number of segment is by "
+             "default one to have single multi-lane segment. A dragway road network is "
+             "only enabled when the user specifies a number of lanes greater "
+             "than zero. Only one road network can be enabled. Thus if this "
+             "option is enabled, no other road network can be enabled.");
 DEFINE_int32(num_dragway_lanes, 0,
-             "The number of lanes on the dragway. The number of lanes is by "
+"  A comma-separated list that specifies the number"             
+"The number of lanes on the dragway. The number of lanes is by "
              "default zero to disable the dragway. A dragway road network is "
              "only enabled when the user specifies a number of lanes greater "
              "than zero. Only one road network can be enabled. Thus if this "
              "option is enabled, no other road network can be enabled.");
+// DEFINE_int32(num_dragway_vert_lanes, 0,
+// "  A comma-separated list that specifies the number"             
+// "The number of lanes on the dragway. The number of lanes is by "
+//              "default zero to disable the dragway. A dragway road network is "
+//              "only enabled when the user specifies a number of lanes greater "
+//              "than zero. Only one road network can be enabled. Thus if this "
+//              "option is enabled, no other road network can be enabled.");
+
 DEFINE_double(dragway_length, 100, "The length of the dragway.");
 DEFINE_double(dragway_lane_width, 3.7, "The dragway lane width.");
 DEFINE_double(dragway_shoulder_width, 3.0, "The dragway's shoulder width.");
@@ -207,6 +222,7 @@ const maliput::api::RoadGeometry* AddDragway(
   std::unique_ptr<const maliput::api::RoadGeometry> road_geometry
       = std::make_unique<const maliput::dragway::RoadGeometry>(
           maliput::api::RoadGeometryId({"Automotive Demo Dragway"}),
+          FLAGS_num_dragway_segs,
           FLAGS_num_dragway_lanes,
           FLAGS_dragway_length,
           FLAGS_dragway_lane_width,
@@ -250,13 +266,13 @@ const maliput::api::RoadGeometry* AddTerrain(RoadNetworkType road_network_type,
 RoadNetworkType DetermineRoadNetworkType() {
   int num_environments_selected{0};
   if (FLAGS_with_onramp) ++num_environments_selected;
-  if (FLAGS_num_dragway_lanes) ++num_environments_selected;
+  if (FLAGS_num_dragway_segs) ++num_environments_selected;
   if (num_environments_selected > 1) {
     throw std::runtime_error("ERROR: More than one road network selected. Only "
         "one road network can be selected at a time.");
   }
 
-  if (FLAGS_num_dragway_lanes > 0) {
+  if (FLAGS_num_dragway_segs > 0) {
     return RoadNetworkType::dragway;
   } else if (FLAGS_with_onramp) {
     return RoadNetworkType::onramp;

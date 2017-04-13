@@ -8,30 +8,34 @@
 #include "drake/automotive/maliput/api/junction.h"
 #include "drake/automotive/maliput/api/lane_data.h"
 #include "drake/automotive/maliput/api/road_geometry.h"
-#include "drake/automotive/maliput/dragway/branch_point.h"
-#include "drake/automotive/maliput/dragway/junction.h"
+#include "drake/automotive/maliput/crossroad/branch_point.h"
+#include "drake/automotive/maliput/crossroad/junction.h"
 #include "drake/common/drake_copyable.h"
 
 namespace drake {
 namespace maliput {
-namespace dragway {
+namespace crossroad {
 
-/// Dragway's implementation of api::RoadGeometry.
+/// Crossroad's implementation of api::RoadGeometry.
 ///
 /// To understand the characteristics of the geometry, consult the
-/// dragway::Segment and dragway::Lane detailed class overview docs.
+/// crossroad::Segment and crossroad::Lane detailed class overview docs.
 class RoadGeometry final : public api::RoadGeometry {
  public:
   DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(RoadGeometry)
 
-  /// Constructs a dragway RoadGeometry.
+  /// Constructs a crossroad RoadGeometry.
   ///
   /// @param[in] id The ID of this RoadGeometry. This can be any user-selectable
   /// value.
   ///
-  /// @param[in] num_lanes The number of lanes. This must be greater than zero.
+  /// @param[in] num_horizontal_lanes The number of horizontal lanes. This must
+  /// be greater than zero.
   ///
-  /// @param[in] length The length of the dragway.
+  /// @param[in] num_vertical_lanes The number of vertical lanes. This must be
+  /// greater than zero.
+  ///
+  /// @param[in] length The length of the crossroad.
   ///
   /// @param[in] lane_width The width of each lane.
   ///
@@ -44,16 +48,12 @@ class RoadGeometry final : public api::RoadGeometry {
   /// @param[in] angular_tolerance The tolerance guaranteed for angular
   /// measurements (orientations).
   ///
-  RoadGeometry(const api::RoadGeometryId& id, 
-            int num_segments,
-               int num_lanes,
-               double length,
-               double lane_width,
-               double shoulder_width,
-               double linear_tolerance =
-                   std::numeric_limits<double>::epsilon(),
-               double angular_tolerance =
-                   std::numeric_limits<double>::epsilon());
+  RoadGeometry(
+      const api::RoadGeometryId& id, int num_horizontal_lanes,
+      int num_vertical_lanes, double length, double lane_width,
+      double shoulder_width,
+      double linear_tolerance = std::numeric_limits<double>::epsilon(),
+      double angular_tolerance = std::numeric_limits<double>::epsilon());
 
   ~RoadGeometry() final = default;
 
@@ -62,30 +62,20 @@ class RoadGeometry final : public api::RoadGeometry {
 
   int do_num_junctions() const final { return 1; }
 
-  const api::Junction* do_junction(int index) const final;
+  const Junction* do_junction(int index) const final;
 
   int do_num_branch_points() const final;
 
   const api::BranchPoint* do_branch_point(int index) const final;
 
-  api::RoadPosition DoToRoadPosition(
-      const api::GeoPosition& geo_position,
-      const api::RoadPosition* hint,
-      api::GeoPosition* nearest_position,
-      double* distance) const final;
+  api::RoadPosition DoToRoadPosition(const api::GeoPosition& geo_position,
+                                     const api::RoadPosition* hint,
+                                     api::GeoPosition* nearest_position,
+                                     double* distance) const final;
 
   double do_linear_tolerance() const final { return linear_tolerance_; }
 
   double do_angular_tolerance() const final { return angular_tolerance_; }
-
-  // Returns true iff `geo_pos` is "on" the dragway. It is on the dragway iff
-  // `geo_pos.x` and `geo_pos.y` fall within the dragway's driveable region.
-  bool IsGeoPositionOnDragway(const api::GeoPosition& geo_pos) const;
-
-  // Returns the index of the lane on which the provided `geo_pos` resides. This
-  // method requires that the provided `geo_pos` be on the dragway as determined
-  // by IsGeoPositionOnDragway().
-  int GetLaneIndex(const api::GeoPosition& geo_pos) const;
 
   const api::RoadGeometryId id_;
   const double linear_tolerance_{};
@@ -93,6 +83,6 @@ class RoadGeometry final : public api::RoadGeometry {
   const Junction junction_;
 };
 
-}  // namespace dragway
+}  // namespace crossroad
 }  // namespace maliput
 }  // namespace drake
