@@ -15,7 +15,7 @@ Lmonom = monomials(x,0:2);
 [prog,L1] = prog.newFreePoly(Lmonom);
 prog = prog.withSOS(L1);
 
-old_rho=10;
+old_rho=1;
 vert1=subs(V,x,[0]);
 vert2=subs(V,x,[old_rho]);
 
@@ -30,7 +30,7 @@ options = spot_sdp_default_options();
 options.verbose=1;
 sol=prog.minimize(0,@spot_mosek,options);
 V=sol.eval(V)
-slack=sol.eval(slack)
+% slack=sol.eval(slack)
 L1=sol.eval(L1)
 subs(L1,x,5)
 end
