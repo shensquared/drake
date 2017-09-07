@@ -2,50 +2,34 @@ function VanDerPol_PWA()
 	checkDependency('spotless');
 	checkDependency('mosek');
 	x=msspoly('x',2);
+	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
+	df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 
-%%% double cubic
-xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-
-%%% VanDerPol
-% xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
-% df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
-A_zero=[0 1;-1 1];
-
-rho=1;
-count=0;
-
-while(count<20)
-[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_rho',rho);
-[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_V_L',Vertices_values,L,w);
-count=count+1;
-end
-% square_iteration(x,xdot,Vertices_values);
-
-% rho=optimizeRho(x,xdot,w,old_rho,L)
-% plots(w);
-
-% w=level_set_version(x,xdot,A_zero);
-% w=lp_version(x,xdot,A_zero);
+	rhomin=0; rhomax=100;
+	rho=2e-3;
+	iter_count=0;
+	while(iter_count<100)
+	% 	 disp(iter_count);
+		[Vertices_values,w,rho,L]=diamond(x,xdot,df,'fix_rho',rho);
+		rho=1.2*rho;
+		 % [Vertices_values,w,rho,L,OK_flag]=diamond(x,xdot,df,'fix_V_L',Vertices_values,L,w,rho);
+		iter_count=iter_count+1;
+	end
+	% plots(w);
 end
 
-
-function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,varargin)
+function [Vertices_values,w,rho,L]=diamond(x,xdot,df,method,varargin)
+	% disp(method);
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-
-
 	switch method
 	case 'fix_rho'
-		rho=varargin{1}
-		% the decision variables are V and L
-		% Vertices conditions
+		rho=varargin{1};
+		% xdot=rho*subs(xdot,x,1/rho*x);
 		[prog,Vertices_values] = prog.newPos(4);
-		% epsi=1e-4*ones(4,1);
-		% prog=prog.withEqs(Vertices_values(1)-1);
-		% prog=prog.withPos(Vertices_values(1)-1e-5);
-
-		% Lagrange multipliers
-		Lmonom = monomials(x,0:4);
+		prog=prog.withPos(Vertices_values()-1e-6*ones(4,1));
+		Lmonom = monomials(x,0:2);
 		[prog,L1] = prog.newFreePoly(Lmonom);
 		[prog,L2] = prog.newFreePoly(Lmonom);
 		[prog,L3] = prog.newFreePoly(Lmonom);
@@ -70,18 +54,19 @@ function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,vararg
 		prog = prog.withSOS(L10);
 		prog = prog.withSOS(L11);
 		prog = prog.withSOS(L12);
-
-		% the normals, without scaling
-		w1=1/rho*[-Vertices_values(2);Vertices_values(1)];
-		w2=1/rho*[-Vertices_values(2);-Vertices_values(3)];
-		w3=1/rho*[Vertices_values(4);-Vertices_values(3)];
-		w4=1/rho*[Vertices_values(4);Vertices_values(1)];
+		% the normals, without scaling (so that w is at the same scale as vertice values)
+		w1=[-Vertices_values(2);Vertices_values(1)];
+		w2=[-Vertices_values(2);-Vertices_values(3)];
+		w3=[Vertices_values(4);-Vertices_values(3)];
+		w4=[Vertices_values(4);Vertices_values(1)];
+		% slack variables, pushing the solution into the interior of the feasible set
+		[prog,slack]=prog.newPos(4);
 
 	case 'fix_V_L'
 		Vertices_values=varargin{1};
 		L=varargin{2};
 		w=varargin{3};
-
+		old_rho=varargin{4};
 		L1=L(1);
 		L2=L(2);
 		L3=L(3);
@@ -96,11 +81,12 @@ function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,vararg
 		L12=L(12);
 		% the decision variable is rho
 		[prog,rho] = prog.newPos(1);
-
+		prog=prog.withPos(rho-old_rho);
 		w1=w(:,1);
 		w2=w(:,2);
 		w3=w(:,3);
 		w4=w(:,4);
+		[prog,slack]=prog.newPos(4);
 	otherwise
 		error('unknown method');
 	end
@@ -110,40 +96,54 @@ function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,vararg
 	constraint1=x(1);
 	constraint2=-x(2);
 	constraint3=-x(1)+x(2)-rho;
-	prog=prog.withSOS(-V1dot+L1*constraint1+L2*constraint2+L3*constraint3);
+	prog=prog.withSOS(-slack(1)-V1dot+L1*constraint1+L2*constraint2+L3*constraint3);
 
 	% polytope 2
 	V2dot=w2'*xdot;
 	constraint4=x(1);
 	constraint5=x(2);
 	constraint6=-x(1)-x(2)-rho;
-	prog=prog.withSOS(-V2dot+L4*constraint4+L5*constraint5+L6*constraint6);
+	prog=prog.withSOS(-slack(2)-V2dot+L4*constraint4+L5*constraint5+L6*constraint6);
 
 	% polytope 3
 	V3dot=w3'*xdot;
 	constraint7=x(2);
 	constraint8=-x(1);
 	constraint9=x(1)-x(2)-rho;
-	prog=prog.withSOS(-V3dot+L7*constraint7+L8*constraint8+L9*constraint9);
+	prog=prog.withSOS(-slack(3)-V3dot+L7*constraint7+L8*constraint8+L9*constraint9);
 
 	% polytope 4
 	V4dot=w4'*xdot;
 	constraint10=-x(1);
 	constraint11=-x(2);
 	constraint12=x(1)+x(2)-rho;
-	prog=prog.withSOS(-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
-
+	prog=prog.withSOS(-slack(4)-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
 	options = spot_sdp_default_options();
 	options.verbose=0;
-	sol=prog.minimize(-sum(rho),@spot_mosek,options);
+
+	% vert0=[0;0];
+	% vert1=[0;rho];
+	% vert2=[-rho;0];
+	% vert3=[0;-rho];
+	% vert4=[rho;0];
+	% v1dot_at_verticies=[subs(V1dot,x,vert1);subs(V1dot,x,vert2);subs(V2dot,x,vert2);subs(V2dot,x,vert3);subs(V3dot,x,vert3);subs(V3dot,x,vert4);subs(V4dot,x,vert4);subs(V4dot,x,vert1)];
+
+	sol=prog.minimize(-sum(slack),@spot_mosek,options);
+	if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
+	  error('The solver threw an internal error.');
+	end
 	if ~sol.isPrimalFeasible
-		error('Problem looks primal infeasible');
+		error('Problem looks primal infeasible.');
 	end
 
 	if ~sol.isDualFeasible
-		error('Problem looks dual infeasible. It is probably unbounded. ');
+		error('Problem looks dual infeasible. It is probably unbounded.');
 	end
-	fprintf(method);
+
+	if sol.status~=spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
+		error('not primal and dual feasible');
+	end
+
 	Vertices_values=double(sol.eval(Vertices_values))
 	w1=double((sol.eval(w1)));
 	w2=double(sol.eval(w2));
@@ -151,6 +151,7 @@ function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,vararg
 	w4=double(sol.eval(w4));
 	w=[w1,w2,w3,w4]
 	rho=double(sol.eval(rho))
+	% L=[(L1),(L2),(L3),(L4),(L5),(L6),(L7),(L8),(L9),(L10),(L11),(L12)];
 	L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
 

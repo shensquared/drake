@@ -4,39 +4,6 @@ function dot=get_dot(x)
 end
 
 
-
-
-function V = rhoLineSearch(V0,f,options)
-	x = V0.getFrame.getPoly;
-	[T,V,f] = balance(x,V0.getPoly,f);
-
-%% compute Vdot
-Vdot = diff(V,x)*f;
-
-prog = spotsosprog;
-prog = prog.withIndeterminate(x);
-
-Lmonom = monomials(x,0:options.degL1);
-[prog,L1] = prog.newSOSPoly(Lmonom);
-
-
-%% bracket the solution
-rhomin=0; rhomax=100;
-while ( checkRho(rhomax, x,V,Vdot,prog,L1,options) > 0 )
-	rhomin = rhomax;
-	rhomax = 1.2*rhomax;
-end
-
-%% now do binary search (mark's version might be better here)
-rho = fzero(@(rho) checkRho(rho, x,V,Vdot,prog,L1,options),[rhomin rhomax])
-
-V = V/rho;
-
-%% undo balancing
-V = subs(V,x,inv(T)*x);
-V = SpotPolynomialLyapunovFunction(V0.getFrame,V);
-end
-
 function [slack,info] = checkRho(rho,x,V,Vdot,prog,L,options)
 	[prog,slack] = prog.newFree(1);
 
@@ -283,7 +250,7 @@ end
 
 
 
-function w=lp_version(x,xdot,A_zero);
+function w=lp_version(x,xdot,df);
 prog = spotsosprog;
 prog = prog.withIndeterminate(x);
 % Vertices conditions
