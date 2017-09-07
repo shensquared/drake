@@ -1,7 +1,6 @@
 function VanDerPol_PWA()
 	checkDependency('spotless');
 	checkDependency('mosek');
-
 	x=msspoly('x',2);
 
 %%% double cubic
@@ -12,8 +11,8 @@ xdot = [-x(1)+x(1)^3; -x(2)+x(2)^3];
 % df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 A_zero=[0 1;-1 1];
 
-[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_rho',1);
-[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_V_L',Vertices_values,L)
+[Vertices_values,w,rho,L]=cvhull_diamond_iteration(x,xdot,A_zero,'fix_rho',1);
+% [Vertices_values,w,rho,L]=cvhull_diamond_iteration(x,xdot,A_zero,'fix_V_L',Vertices_values,L)
 
 % square_iteration(x,xdot,Vertices_values);
 
@@ -94,7 +93,6 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 	w3=[Vertices_values(4);-Vertices_values(3)];
 	w4=[Vertices_values(4);Vertices_values(1)];
 
-
 	% polytope 1
 	V1dot=w1'*xdot;
 	constraint1=x(1);
@@ -143,6 +141,10 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 	old_rho=double(sol.eval(rho));
 	L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
+
+
+
+
 
 function plots(w,xdot)
 	x1=-1:.01:0;
