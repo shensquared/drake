@@ -4,16 +4,21 @@ function VanDerPol_PWA()
 	x=msspoly('x',2);
 
 %%% double cubic
-xdot = [-x(1)+x(1)^3; -x(2)+x(2)^3];
+xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 
 %%% VanDerPol
 % xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
 % df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 A_zero=[0 1;-1 1];
 
-[Vertices_values,w,rho,L]=cvhull_diamond_iteration(x,xdot,A_zero,'fix_rho',1);
-% [Vertices_values,w,rho,L]=cvhull_diamond_iteration(x,xdot,A_zero,'fix_V_L',Vertices_values,L)
+rho=1;
+count=0;
 
+while(count<20)
+[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_rho',rho);
+[Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,'fix_V_L',Vertices_values,L,w);
+count=count+1;
+end
 % square_iteration(x,xdot,Vertices_values);
 
 % rho=optimizeRho(x,xdot,w,old_rho,L)
@@ -24,7 +29,7 @@ A_zero=[0 1;-1 1];
 end
 
 
-function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,varargin)
+function [Vertices_values,w,rho,L]=diamond_iteration(x,xdot,A_zero,method,varargin)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 
@@ -40,7 +45,7 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 		% prog=prog.withPos(Vertices_values(1)-1e-5);
 
 		% Lagrange multipliers
-		Lmonom = monomials(x,0:2);
+		Lmonom = monomials(x,0:4);
 		[prog,L1] = prog.newFreePoly(Lmonom);
 		[prog,L2] = prog.newFreePoly(Lmonom);
 		[prog,L3] = prog.newFreePoly(Lmonom);
@@ -65,9 +70,17 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 		prog = prog.withSOS(L10);
 		prog = prog.withSOS(L11);
 		prog = prog.withSOS(L12);
+
+		% the normals, without scaling
+		w1=1/rho*[-Vertices_values(2);Vertices_values(1)];
+		w2=1/rho*[-Vertices_values(2);-Vertices_values(3)];
+		w3=1/rho*[Vertices_values(4);-Vertices_values(3)];
+		w4=1/rho*[Vertices_values(4);Vertices_values(1)];
+
 	case 'fix_V_L'
 		Vertices_values=varargin{1};
 		L=varargin{2};
+		w=varargin{3};
 
 		L1=L(1);
 		L2=L(2);
@@ -82,16 +95,15 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 		L11=L(11);
 		L12=L(12);
 		% the decision variable is rho
-		[prog,rho] = prog.newPos(4);
+		[prog,rho] = prog.newPos(1);
+
+		w1=w(:,1);
+		w2=w(:,2);
+		w3=w(:,3);
+		w4=w(:,4);
 	otherwise
 		error('unknown method');
 	end
-
-	% the normals, without scaling
-	w1=[-Vertices_values(2);Vertices_values(1)];
-	w2=[-Vertices_values(2);-Vertices_values(3)];
-	w3=[Vertices_values(4);-Vertices_values(3)];
-	w4=[Vertices_values(4);Vertices_values(1)];
 
 	% polytope 1
 	V1dot=w1'*xdot;
@@ -122,7 +134,7 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 	prog=prog.withSOS(-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
 
 	options = spot_sdp_default_options();
-	options.verbose=1;
+	options.verbose=0;
 	sol=prog.minimize(-sum(rho),@spot_mosek,options);
 	if ~sol.isPrimalFeasible
 		error('Problem looks primal infeasible');
@@ -131,28 +143,22 @@ function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method,va
 	if ~sol.isDualFeasible
 		error('Problem looks dual infeasible. It is probably unbounded. ');
 	end
-
+	fprintf(method);
 	Vertices_values=double(sol.eval(Vertices_values))
 	w1=double((sol.eval(w1)));
 	w2=double(sol.eval(w2));
 	w3=double(sol.eval(w3));
 	w4=double(sol.eval(w4));
 	w=[w1,w2,w3,w4]
-	old_rho=double(sol.eval(rho));
+	rho=double(sol.eval(rho))
 	L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
-
-
-
-
 
 function plots(w,xdot)
 	x1=-1:.01:0;
 	y1=0:.01:1;
 	[X1,Y1]=meshgrid(x1,y1);
 	z1=w(1,1)*X1+w(2,1)*Y1;
-
-
 
 	x2=-1:.01:0;
 	y2=-1:.01:0;
@@ -168,7 +174,6 @@ function plots(w,xdot)
 	y4=0:.01:1;
 	[X4,Y4]=meshgrid(x4,y4);
 	z4=w(1,4)*X4+w(2,4)*Y4;
-
 
 	[fullX,fullY]=meshgrid(-2:.05:2,-2:.05:2);
 	subplot(1,2,1);
@@ -190,7 +195,6 @@ function plots(w,xdot)
 	% surf(X3,Y3,z3);hold on
 	% surf(X4,Y4,z4);hold on
 
-
 	% figure(2);
 	% tri = delaunay(X1,Y1);
 	% trisurf(tri,X1,Y1,z1);
@@ -199,62 +203,4 @@ function plots(w,xdot)
 	% z=[z1,z2,z3,z4];
 	% surf(X,Y,z);
 	% contour(X,Y,z);
-end
-
-function dot=get_dot(x)
-	dot=[x(2); -x(1)-x(2).*(x(1).^2-1)];
-end
-
-
-
-
-function V = rhoLineSearch(V0,f,options)
-	x = V0.getFrame.getPoly;
-	[T,V,f] = balance(x,V0.getPoly,f);
-
-%% compute Vdot
-Vdot = diff(V,x)*f;
-
-prog = spotsosprog;
-prog = prog.withIndeterminate(x);
-
-Lmonom = monomials(x,0:options.degL1);
-[prog,L1] = prog.newSOSPoly(Lmonom);
-
-
-%% bracket the solution
-rhomin=0; rhomax=100;
-while ( checkRho(rhomax, x,V,Vdot,prog,L1,options) > 0 )
-	rhomin = rhomax;
-	rhomax = 1.2*rhomax;
-end
-
-%% now do binary search (mark's version might be better here)
-rho = fzero(@(rho) checkRho(rho, x,V,Vdot,prog,L1,options),[rhomin rhomax])
-
-V = V/rho;
-
-%% undo balancing
-V = subs(V,x,inv(T)*x);
-V = SpotPolynomialLyapunovFunction(V0.getFrame,V);
-end
-
-function [slack,info] = checkRho(rho,x,V,Vdot,prog,L,options)
-	[prog,slack] = prog.newFree(1);
-
-	prog = prog.withSOS(-Vdot + L*(V - rho) - slack*V);
-
-	solver = options.solver;
-	options = spot_sdp_default_options();
-	sol = prog.minimize(-slack,solver,options);
-
-	if ~sol.isPrimalFeasible
-		error('Problem looks primal infeasible');
-	end
-
-	if ~sol.isDualFeasible
-		error('Problem looks dual infeasible. It is probably unbounded. ');
-	end
-
-	slack = doubleSafe(sol.eval(slack));
 end
