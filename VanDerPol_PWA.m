@@ -23,7 +23,7 @@ rho=optimizeRho(x,xdot,w,old_rho,L)
 end
 
 
-function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero)
+function [Vertices_values,w,old_rho,L]=diamond_iteration(x,xdot,A_zero,method)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 	% Vertices conditions
@@ -134,7 +134,7 @@ function rho=optimizeRho(x,xdot,w,old_rho,L)
 	L11=L(11);
 	L12=L(12);
 
-	
+
 	% Lagrange multipliers
 	% Lmonom = monomials(x,0:4);
 	% [prog,L1] = prog.newFreePoly(Lmonom);
