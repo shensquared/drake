@@ -6,7 +6,7 @@ function VanDerPol_PWA()
 	xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
 	df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 
-	rho=2e-3;
+	rho=5e-3;
 	iter_count=0;
 	Vertices_values=zeros(4,1);
 	w=zeros(2,4);
@@ -14,21 +14,22 @@ function VanDerPol_PWA()
 	max_iter=100;
 	epsi=1e-6;
 
-	last_vertice_values =1.0e-05 *[0.1233;
-    0.1577;
-    0.1228;
-    0.1591;]
-    rho=.0060;
+	last_vertice_values =   1.0e-05 *[
+    0.1232;
+    0.1576;
+    0.1227;
+    0.1590;]
 
 
-	% while(sol_OK)
-	% % 	 disp(iter_count);
-	% 	[rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,'fix_rho',rho,Vertices_values,w)
-	% 	rho=1.2*rho;
-	% 	iter_count=iter_count+1;
- %    end
-    diamond_ring(x,xdot,df,rho,last_vertice_values,rho);
-	rho
+
+	while(sol_OK)
+		disp(iter_count);
+		[rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,'fix_rho',rho,Vertices_values,w)
+		rho=1.2*rho;
+		iter_count=iter_count+1;
+    end
+    % diamond_ring(x,xdot,df,rho,last_vertice_values,rho);
+	rho;
 	% plots(w);
 end
 
@@ -197,14 +198,12 @@ function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 		V4=(sol.eval(V4))
 		% rho=double(sol.eval(rho));
 		% w=[w1,w2,w3,w4]./rho;
-		% rho_diff=rho-varargin{1};
 
 	else
 		sol_OK=false;
 		% rho=varargin{1};
 		% Vertices_values=varargin{2};
 		% w=varargin{3};
-		% rho_diff=0;
 	end
 end
 
@@ -346,19 +345,16 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 		w4=double(sol.eval(w4));
 		rho=double(sol.eval(rho));
 		w=[w1,w2,w3,w4]./rho;
-		rho_diff=rho-varargin{1};
 	% else if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
 	%   	error('The solver threw an internal error.');
 
 	else 
 		sol_OK=false;
-		rho=varargin{1};
+		% fall back to the last valid rho
+		rho=varargin{1}/1.2;
 		Vertices_values=varargin{2};
 		w=varargin{3};
-		rho_diff=0;
 	end
-
-	% L=[(L1),(L2),(L3),(L4),(L5),(L6),(L7),(L8),(L9),(L10),(L11),(L12)];
 	% L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
 
