@@ -6,20 +6,24 @@ function VanDerPol_PWA()
 	xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
 	df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 
-	rhomin=0; rhomax=100;
 	rho=2e-3;
 	iter_count=0;
-	while(iter_count<100)
+	Vertices_values=zeros(4,1);
+	w=zeros(2,4);
+	sol_OK=true;
+	max_iter=100;
+	epsi=1e-6;
+	while(sol_OK)
 	% 	 disp(iter_count);
-		[Vertices_values,w,rho,L]=diamond(x,xdot,df,'fix_rho',rho);
+		[rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,'fix_rho',rho,Vertices_values,w);
 		rho=1.2*rho;
-		 % [Vertices_values,w,rho,L,OK_flag]=diamond(x,xdot,df,'fix_V_L',Vertices_values,L,w,rho);
 		iter_count=iter_count+1;
 	end
+	rho
 	% plots(w);
 end
 
-function [Vertices_values,w,rho,L]=diamond(x,xdot,df,method,varargin)
+function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 	% disp(method);
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -61,6 +65,7 @@ function [Vertices_values,w,rho,L]=diamond(x,xdot,df,method,varargin)
 		w4=[Vertices_values(4);Vertices_values(1)];
 		% slack variables, pushing the solution into the interior of the feasible set
 		[prog,slack]=prog.newPos(4);
+
 
 	case 'fix_V_L'
 		Vertices_values=varargin{1};
@@ -119,7 +124,7 @@ function [Vertices_values,w,rho,L]=diamond(x,xdot,df,method,varargin)
 	constraint12=x(1)+x(2)-rho;
 	prog=prog.withSOS(-slack(4)-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
 	options = spot_sdp_default_options();
-	options.verbose=0;
+	options.verbose=1;
 
 	% vert0=[0;0];
 	% vert1=[0;rho];
@@ -129,30 +134,42 @@ function [Vertices_values,w,rho,L]=diamond(x,xdot,df,method,varargin)
 	% v1dot_at_verticies=[subs(V1dot,x,vert1);subs(V1dot,x,vert2);subs(V2dot,x,vert2);subs(V2dot,x,vert3);subs(V3dot,x,vert3);subs(V3dot,x,vert4);subs(V4dot,x,vert4);subs(V4dot,x,vert1)];
 
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
-	if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
-	  error('The solver threw an internal error.');
-	end
-	if ~sol.isPrimalFeasible
-		error('Problem looks primal infeasible.');
+	% if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
+	%   error('The solver threw an internal error.');
+	% end
+	% if ~sol.isPrimalFeasible
+	% 	error('Problem looks primal infeasible.');
+	% end
+
+	% if ~sol.isDualFeasible
+	% 	error('Problem looks dual infeasible. It is probably unbounded.');
+	% end
+
+	% if sol.status~=spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
+	% 	error('not primal and dual feasible');
+	% end
+
+
+	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
+		sol_OK=true;
+		Vertices_values=double(sol.eval(Vertices_values));
+		w1=double((sol.eval(w1)));
+		w2=double(sol.eval(w2));
+		w3=double(sol.eval(w3));
+		w4=double(sol.eval(w4));
+		rho=double(sol.eval(rho));
+		w=[w1,w2,w3,w4]./rho;
+		rho_diff=rho-varargin{1};
+	else
+		sol_OK=false;
+		rho=varargin{1};
+		Vertices_values=varargin{2};
+		w=varargin{3};
+		rho_diff=0;
 	end
 
-	if ~sol.isDualFeasible
-		error('Problem looks dual infeasible. It is probably unbounded.');
-	end
-
-	if sol.status~=spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
-		error('not primal and dual feasible');
-	end
-
-	Vertices_values=double(sol.eval(Vertices_values))
-	w1=double((sol.eval(w1)));
-	w2=double(sol.eval(w2));
-	w3=double(sol.eval(w3));
-	w4=double(sol.eval(w4));
-	w=[w1,w2,w3,w4]
-	rho=double(sol.eval(rho))
 	% L=[(L1),(L2),(L3),(L4),(L5),(L6),(L7),(L8),(L9),(L10),(L11),(L12)];
-	L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
+	% L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
 
 function plots(w,xdot)
