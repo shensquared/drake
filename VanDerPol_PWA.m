@@ -22,7 +22,7 @@ function VanDerPol_PWA()
 
 	while(sol_OK)
 		disp(iter_count);
-		[rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,'fix_rho',rho,Vertices_values,w)
+		[rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,rho,Vertices_values,w)
 		rho=1.2*rho;
 		iter_count=iter_count+1;
     end
@@ -42,7 +42,6 @@ end
 function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-
 
 	[prog,t] = prog.newPos(1);
 	prog=prog.withPos(t*ones(4,1)-last_vertice_values);
@@ -102,31 +101,18 @@ function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 	% ring 1
 	V1dot=diff(V1,x)*xdot*sum_rho;
-	% constraint1=x(1);
-	% constraint2=-x(2);
-	% constraint3=-x(1)+x(2)-sum_rho;
-	% constraint4=-(-x(1)+x(2)-last_rho);	
 	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)*constraint1);
 
 	% ring 2
 	V2dot=diff(V2,x)*xdot*sum_rho;
-	% constraint4=x(1);
-	% constraint5=x(2);
-	% constraint6=-x(1)-x(2)-sum_rho;
 	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)*constraint2);
 
 	% ring 3
 	V3dot=diff(V3,x)*xdot*sum_rho;
-	% constraint7=x(2);
-	% constraint8=-x(1);
-	% constraint9=x(1)-x(2)-sum_rho;
 	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)*constraint3);
 
 	% ring 4
 	V4dot=diff(V4,x)*xdot*sum_rho;
-	% constraint10=-x(1);
-	% constraint11=-x(2);
-	% constraint12=x(1)+x(2)-sum_rho;
 	prog=prog.withSOS(-slack(4)-V4dot+L(13:16)*constraint4);
 	
 
@@ -155,8 +141,7 @@ function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 end
 
 
-function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
-	% disp(method);
+function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,varargin)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 	rho=varargin{1};
@@ -177,38 +162,24 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 	constraint3=[x(2);-x(1);x(1)-x(2)-rho;];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-rho;];
 
-
-
 	% polytope 1
-	% V1dot=w1'*xdot;
-	% constraint1=x(1);
-	% constraint2=-x(2);
-	% constraint3=-x(1)+x(2)-rho;
-	prog=prog.withSOS(-slack(1)-V1dot+L(1:3)*constraint1);
+	V1dot=w1'*xdot;
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:3)'*constraint1);
 
 	% polytope 2
-	% V2dot=w2'*xdot;
-	% constraint4=x(1);
-	% constraint5=x(2);
-	% constraint6=-x(1)-x(2)-rho;
-	prog=prog.withSOS(-slack(2)-V2dot+L(4:6)*constraint2);
+	V2dot=w2'*xdot;
+	prog=prog.withSOS(-slack(2)-V2dot+L(4:6)'*constraint2);
 
 	% polytope 3
-	% V3dot=w3'*xdot;
-	% constraint7=x(2);
-	% constraint8=-x(1);
-	% constraint9=x(1)-x(2)-rho;
-	prog=prog.withSOS(-slack(3)-V3dot+L(7:9)*constraint3);
+	V3dot=w3'*xdot;
+	prog=prog.withSOS(-slack(3)-V3dot+L(7:9)'*constraint3);
 
 	% polytope 4
-	% V4dot=w4'*xdot;
-	% constraint10=-x(1);
-	% constraint11=-x(2);
-	% constraint12=x(1)+x(2)-rho;
-	prog=prog.withSOS(-slack(4)-V4dot+L(10:12)*constraint4);
+	V4dot=w4'*xdot;
+	prog=prog.withSOS(-slack(4)-V4dot+L(10:12)'*constraint4);
+	
 	options = spot_sdp_default_options();
 	options.verbose=1;
-
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
@@ -221,7 +192,6 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 		rho=double(sol.eval(rho));
 		% getting the right scale of the original w
 		w=[w1,w2,w3,w4]./rho;
-
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho
@@ -230,13 +200,13 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 		w=varargin{3};
 		figure(2)
 		syms x1 x2;
-		V= piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*[x1;x2],x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*[x1;x2],x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*[x1;x2],-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*[x1;x2]);
-		fsurf(1e3*V); hold on
-		fcontour(V);
+		V= piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*[x1;x2],x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*[x1;x2],x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*[x1;x2],-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*[x1;x2],NaN);
+		fsurf(V); hold on
+		% fcontour(V);
 		figure(3)
 		sym_xdot =[x2; -x1-x2.*(x1.^2-1)];
-		Vdot=piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*sym_xdot,x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*sym_xdot,x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*sym_xdot,-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*sym_xdot);
-		fsurf(1e3*Vdot); hold on
+		Vdot=piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*sym_xdot,x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*sym_xdot,x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*sym_xdot,-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*sym_xdot,NaN);
+		fsurf(Vdot); hold on
 	end
 end
 
