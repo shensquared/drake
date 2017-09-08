@@ -3,7 +3,7 @@ function VanDerPol_PWA()
 	checkDependency('mosek');
 	x=msspoly('x',2);
 	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-	xdot = [x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	df = [0 1; -1-2*x(1)*x(2), -(x(1)^2-1)];
 
 	rho=5e-3;
@@ -204,7 +204,8 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,varargin)
 		fsurf(V); hold on
 		% fcontour(V);
 		figure(3)
-		sym_xdot =[x2; -x1-x2.*(x1.^2-1)];
+		% sym_xdot=[-2*x1+x1^3; -2*x2+x2^3];
+		sym_xdot =-[x2; -x1-x2.*(x1.^2-1)];
 		Vdot=piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*sym_xdot,x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*sym_xdot,x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*sym_xdot,-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*sym_xdot,NaN);
 		fsurf(Vdot); hold on
 	end
