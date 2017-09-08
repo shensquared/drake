@@ -18,9 +18,7 @@ function VanDerPol_PWA()
     0.1232;
     0.1576;
     0.1227;
-    0.1590;]
-
-
+    0.1590];
 
 	while(sol_OK)
 		disp(iter_count);
@@ -28,7 +26,15 @@ function VanDerPol_PWA()
 		rho=1.2*rho;
 		iter_count=iter_count+1;
     end
-    % diamond_ring(x,xdot,df,rho,last_vertice_values,rho);
+
+    % beginning of the diamond ring iteration
+	% while(sol_OK)
+	% 	disp(iter_count);
+% 	diamond_ring(x,xdot,df,0,zeros(4,1),5e-3);
+
+		% rho=1.2*rho;
+		% iter_count=iter_count+1;
+    % end
 	rho;
 	% plots(w);
 end
@@ -36,11 +42,12 @@ end
 function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-	% xdot=rho*subs(xdot,x,1/rho*x);
+
+
 	[prog,t] = prog.newPos(1);
 	prog=prog.withPos(t*ones(4,1)-last_vertice_values);
 	[prog,this_vert_values] = prog.newPos(4);
-	prog=prog.withPos(this_vert_values-t*ones(4,1));
+	prog=prog.withPos(this_vert_values-last_vertice_values);
 
 	Vmonom = monomials(x,0:1);
 	[prog,V1] = prog.newFreePoly(Vmonom);
@@ -57,14 +64,16 @@ function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 	vert7=[0;-last_rho-delta_rho];
 	vert8=[last_rho+delta_rho;0];
 
-	prog=prog.withEqs(subs(V1,x,vert1)-last_vertice_values(1));
-	prog=prog.withEqs(subs(V1,x,vert2)-last_vertice_values(2));
-	prog=prog.withEqs(subs(V2,x,vert2)-last_vertice_values(2));
-	prog=prog.withEqs(subs(V2,x,vert3)-last_vertice_values(3));
-	prog=prog.withEqs(subs(V3,x,vert3)-last_vertice_values(3));
-	prog=prog.withEqs(subs(V3,x,vert4)-last_vertice_values(4));
-	prog=prog.withEqs(subs(V4,x,vert4)-last_vertice_values(4));
-	prog=prog.withEqs(subs(V4,x,vert1)-last_vertice_values(1));
+	prog=prog.withPos(subs(V1,x,vert1)-last_vertice_values(1));
+	prog=prog.withPos(subs(V1,x,vert2)-last_vertice_values(2));
+	prog=prog.withPos(subs(V2,x,vert2)-last_vertice_values(2));
+	prog=prog.withPos(subs(V2,x,vert3)-last_vertice_values(3));
+	prog=prog.withPos(subs(V3,x,vert3)-last_vertice_values(3));
+	prog=prog.withPos(subs(V3,x,vert4)-last_vertice_values(4));
+	prog=prog.withPos(subs(V4,x,vert4)-last_vertice_values(4));
+	prog=prog.withPos(subs(V4,x,vert1)-last_vertice_values(1));
+
+	% prog=prog.withEqs(subs(V1,x,vert5)-this_vert_values(1));
 
 	prog=prog.withEqs(subs(V1,x,vert5)-this_vert_values(1));
 	prog=prog.withEqs(subs(V1,x,vert6)-this_vert_values(2));
@@ -74,267 +83,133 @@ function diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho)
 	prog=prog.withEqs(subs(V3,x,vert8)-this_vert_values(4));
 	prog=prog.withEqs(subs(V4,x,vert8)-this_vert_values(4));
 	prog=prog.withEqs(subs(V4,x,vert5)-this_vert_values(1));
-
 	
-	% Lmonom = monomials(x,0:2);
-	% [prog,L1] = prog.newFreePoly(Lmonom);
-	% [prog,L2] = prog.newFreePoly(Lmonom);
-	% [prog,L3] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L1);
-	% prog = prog.withSOS(L2);
-	% prog = prog.withSOS(L3);
-	% [prog,L4] = prog.newFreePoly(Lmonom);
-	% [prog,L5] = prog.newFreePoly(Lmonom);
-	% [prog,L6] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L4);
-	% prog = prog.withSOS(L5);
-	% prog = prog.withSOS(L6);
-	% [prog,L7] = prog.newFreePoly(Lmonom);
-	% [prog,L8] = prog.newFreePoly(Lmonom);
-	% [prog,L9] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L7);
-	% prog = prog.withSOS(L8);
-	% prog = prog.withSOS(L9);
-	% [prog,L10] = prog.newFreePoly(Lmonom);
-	% [prog,L11] = prog.newFreePoly(Lmonom);
-	% [prog,L12] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L10);
-	% prog = prog.withSOS(L11);
-	% prog = prog.withSOS(L12);
+	Lmonom = monomials(x,0:2);
+	[prog,L] = prog.newSOSPoly(Lmonom,16);
 
-	% [prog,L13] = prog.newFreePoly(Lmonom);
-	% [prog,L14] = prog.newFreePoly(Lmonom);
-	% [prog,L15] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L13);
-	% prog = prog.withSOS(L14);
-	% prog = prog.withSOS(L15);
-	% [prog,L16] = prog.newFreePoly(Lmonom);
-	% [prog,L17] = prog.newFreePoly(Lmonom);
-	% [prog,L18] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L16);
-	% prog = prog.withSOS(L17);
-	% prog = prog.withSOS(L18);
-	% [prog,L19] = prog.newFreePoly(Lmonom);
-	% [prog,L20] = prog.newFreePoly(Lmonom);
-	% [prog,L21] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L19);
-	% prog = prog.withSOS(L20);
-	% prog = prog.withSOS(L21);
-	% [prog,L22] = prog.newFreePoly(Lmonom);
-	% [prog,L23] = prog.newFreePoly(Lmonom);
-	% [prog,L24] = prog.newFreePoly(Lmonom);
-	% prog = prog.withSOS(L22);
-	% prog = prog.withSOS(L23);
-	% prog = prog.withSOS(L24);
-	% sum_rho=last_rho+delta_rho;
-	% r_sum_rho=1/sum_rho;
-	% r_delta_rho=1/delta_rho;
-	% r_last_rho=1/last_rho
-
-	% % the normals, without scaling (so that w is at the same scale as vertice values)
-	% w1=[r_last_rho*(last_vertice_values(1)-last_vertice_values(2));r_delta_rho*(this_vert_values(1)-last_vertice_values(1))];
-	% w2=[r_delta_rho*(last_vertice_values(2)-this_vert_values(2));r_sum_rho*(this_vert_values(1)-last_vertice_values(2))];
-	% w3=[r_delta_rho*(last_vertice_values(2)-this_vert_values(2));r_last_rho*(this_vert_values(2)-last_vertice_values(3))];
-	% w4=[]
-
-	% w1=[-Vertices_values(2);Vertices_values(1)];
-	% w2=[-Vertices_values(2);-Vertices_values(3)];
-	% w3=[Vertices_values(4);-Vertices_values(3)];
-	% w4=[Vertices_values(4);Vertices_values(1)];
-
-	% w1=[-Vertices_values(2);Vertices_values(1)];
-	% w2=[-Vertices_values(2);-Vertices_values(3)];
-	% w3=[Vertices_values(4);-Vertices_values(3)];
-	% w4=[Vertices_values(4);Vertices_values(1)];
-
+	sum_rho=last_rho+delta_rho;
+	r_sum_rho=1/sum_rho;
+	r_delta_rho=1/delta_rho;
+	r_last_rho=1/last_rho;
 
 	% % slack variables, pushing the solution into the interior of the feasible set
-	% [prog,slack]=prog.newPos(4);
+	[prog,slack]=prog.newPos(4);
+	
 
-	% % ring 1
-	% V1dot=w1'*xdot;
+	constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
+	constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
+	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
+	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+	% ring 1
+	V1dot=diff(V1,x)*xdot*sum_rho;
 	% constraint1=x(1);
 	% constraint2=-x(2);
-	% constraint3=-x(1)+x(2)-rho;
-	% prog=prog.withSOS(-slack(1)-V1dot+L1*constraint1+L2*constraint2+L3*constraint3);
+	% constraint3=-x(1)+x(2)-sum_rho;
+	% constraint4=-(-x(1)+x(2)-last_rho);	
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)*constraint1);
 
-	% % ring 2
-	% V2dot=w2'*xdot;
+	% ring 2
+	V2dot=diff(V2,x)*xdot*sum_rho;
 	% constraint4=x(1);
 	% constraint5=x(2);
-	% constraint6=-x(1)-x(2)-rho;
-	% prog=prog.withSOS(-slack(2)-V2dot+L4*constraint4+L5*constraint5+L6*constraint6);
+	% constraint6=-x(1)-x(2)-sum_rho;
+	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)*constraint2);
 
-	% % ring 3
-	% V3dot=w3'*xdot;
+	% ring 3
+	V3dot=diff(V3,x)*xdot*sum_rho;
 	% constraint7=x(2);
 	% constraint8=-x(1);
-	% constraint9=x(1)-x(2)-rho;
-	% prog=prog.withSOS(-slack(3)-V3dot+L7*constraint7+L8*constraint8+L9*constraint9);
+	% constraint9=x(1)-x(2)-sum_rho;
+	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)*constraint3);
 
-	% % ring 4
-	% V4dot=w4'*xdot;
+	% ring 4
+	V4dot=diff(V4,x)*xdot*sum_rho;
 	% constraint10=-x(1);
 	% constraint11=-x(2);
-	% constraint12=x(1)+x(2)-rho;
-	% prog=prog.withSOS(-slack(4)-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
+	% constraint12=x(1)+x(2)-sum_rho;
+	prog=prog.withSOS(-slack(4)-V4dot+L(13:16)*constraint4);
+	
+
 	options = spot_sdp_default_options();
 	options.verbose=1;
 
-	% vert0=[0;0];
-	% vert1=[0;rho];
-	% vert2=[-rho;0];
-	% vert3=[0;-rho];
-	% vert4=[rho;0];
-	% v1dot_at_verticies=[subs(V1dot,x,vert1);subs(V1dot,x,vert2);subs(V2dot,x,vert2);subs(V2dot,x,vert3);subs(V3dot,x,vert3);subs(V3dot,x,vert4);subs(V4dot,x,vert4);subs(V4dot,x,vert1)];
-
-	sol=prog.minimize(sum(t),@spot_mosek,options);
+	sol=prog.minimize(-sum(slack),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
 		% Vertices_values=double(sol.eval(Vertices_values));
-		V1=((sol.eval(V1)))
-		V2=(sol.eval(V2))
-		V3=(sol.eval(V3))
-		V4=(sol.eval(V4))
+		w1=double(sol.eval(diff(V1,x)))
+		w2=double(sol.eval(diff(V2,x)))
+		w3=double(sol.eval(diff(V3,x)))
+		w4=double(sol.eval(diff(V4,x)))
+		delta_rho=double(sol.eval(delta_rho))
+		V1=(sol.eval(V1));
+		V2=(sol.eval(V2));
+		V3=(sol.eval(V3));
+		V4=(sol.eval(V4));
+		new_v_values=double(sol.eval(this_vert_values))
 		% rho=double(sol.eval(rho));
 		% w=[w1,w2,w3,w4]./rho;
-
 	else
 		sol_OK=false;
-		% rho=varargin{1};
-		% Vertices_values=varargin{2};
-		% w=varargin{3};
 	end
 end
-
 
 
 function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 	% disp(method);
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-	switch method
-	case 'fix_rho'
-		rho=varargin{1};
-		% xdot=rho*subs(xdot,x,1/rho*x);
-		[prog,Vertices_values] = prog.newPos(4);
-		prog=prog.withPos(Vertices_values()-1e-6*ones(4,1));
-		Lmonom = monomials(x,0:2);
-		[prog,L1] = prog.newFreePoly(Lmonom);
-		[prog,L2] = prog.newFreePoly(Lmonom);
-		[prog,L3] = prog.newFreePoly(Lmonom);
-		prog = prog.withSOS(L1);
-		prog = prog.withSOS(L2);
-		prog = prog.withSOS(L3);
-		[prog,L4] = prog.newFreePoly(Lmonom);
-		[prog,L5] = prog.newFreePoly(Lmonom);
-		[prog,L6] = prog.newFreePoly(Lmonom);
-		prog = prog.withSOS(L4);
-		prog = prog.withSOS(L5);
-		prog = prog.withSOS(L6);
-		[prog,L7] = prog.newFreePoly(Lmonom);
-		[prog,L8] = prog.newFreePoly(Lmonom);
-		[prog,L9] = prog.newFreePoly(Lmonom);
-		prog = prog.withSOS(L7);
-		prog = prog.withSOS(L8);
-		prog = prog.withSOS(L9);
-		[prog,L10] = prog.newFreePoly(Lmonom);
-		[prog,L11] = prog.newFreePoly(Lmonom);
-		[prog,L12] = prog.newFreePoly(Lmonom);
-		prog = prog.withSOS(L10);
-		prog = prog.withSOS(L11);
-		prog = prog.withSOS(L12);
-		% the normals, without scaling (so that w is at the same scale as vertice values)
-		w1=[-Vertices_values(2);Vertices_values(1)];
-		w2=[-Vertices_values(2);-Vertices_values(3)];
-		w3=[Vertices_values(4);-Vertices_values(3)];
-		w4=[Vertices_values(4);Vertices_values(1)];
-		% slack variables, pushing the solution into the interior of the feasible set
-		[prog,slack]=prog.newPos(4);
+	rho=varargin{1};
+	[prog,Vertices_values] = prog.newPos(4);
+	prog=prog.withPos(Vertices_values()-1e-6*ones(4,1));
+	Lmonom = monomials(x,0:2);
+	[prog,L] = prog.newSOSPoly(Lmonom,12);
+	% the normals, without scaling (so that w is at the same scale as vertice values)
+	w1=[-Vertices_values(2);Vertices_values(1)];
+	w2=[-Vertices_values(2);-Vertices_values(3)];
+	w3=[Vertices_values(4);-Vertices_values(3)];
+	w4=[Vertices_values(4);Vertices_values(1)];
+	% slack variables, pushing the solution into the interior of the feasible set
+	[prog,slack]=prog.newPos(4);
+
+	constraint1=[x(1);-x(2);-x(1)+x(2)-rho;];
+	constraint2=[x(1);x(2);-x(1)-x(2)-rho;];
+	constraint3=[x(2);-x(1);x(1)-x(2)-rho;];
+	constraint4=[-x(1);-x(2);x(1)+x(2)-rho;];
 
 
-	case 'fix_V_L'
-		Vertices_values=varargin{1};
-		L=varargin{2};
-		w=varargin{3};
-		old_rho=varargin{4};
-		L1=L(1);
-		L2=L(2);
-		L3=L(3);
-		L4=L(4);
-		L5=L(5);
-		L6=L(6);
-		L7=L(7);
-		L8=L(8);
-		L9=L(9);
-		L10=L(10);
-		L11=L(11);
-		L12=L(12);
-		% the decision variable is rho
-		[prog,rho] = prog.newPos(1);
-		prog=prog.withPos(rho-old_rho);
-		w1=w(:,1);
-		w2=w(:,2);
-		w3=w(:,3);
-		w4=w(:,4);
-		[prog,slack]=prog.newPos(4);
-	otherwise
-		error('unknown method');
-	end
 
 	% polytope 1
-	V1dot=w1'*xdot;
-	constraint1=x(1);
-	constraint2=-x(2);
-	constraint3=-x(1)+x(2)-rho;
-	prog=prog.withSOS(-slack(1)-V1dot+L1*constraint1+L2*constraint2+L3*constraint3);
+	% V1dot=w1'*xdot;
+	% constraint1=x(1);
+	% constraint2=-x(2);
+	% constraint3=-x(1)+x(2)-rho;
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:3)*constraint1);
 
 	% polytope 2
-	V2dot=w2'*xdot;
-	constraint4=x(1);
-	constraint5=x(2);
-	constraint6=-x(1)-x(2)-rho;
-	prog=prog.withSOS(-slack(2)-V2dot+L4*constraint4+L5*constraint5+L6*constraint6);
+	% V2dot=w2'*xdot;
+	% constraint4=x(1);
+	% constraint5=x(2);
+	% constraint6=-x(1)-x(2)-rho;
+	prog=prog.withSOS(-slack(2)-V2dot+L(4:6)*constraint2);
 
 	% polytope 3
-	V3dot=w3'*xdot;
-	constraint7=x(2);
-	constraint8=-x(1);
-	constraint9=x(1)-x(2)-rho;
-	prog=prog.withSOS(-slack(3)-V3dot+L7*constraint7+L8*constraint8+L9*constraint9);
+	% V3dot=w3'*xdot;
+	% constraint7=x(2);
+	% constraint8=-x(1);
+	% constraint9=x(1)-x(2)-rho;
+	prog=prog.withSOS(-slack(3)-V3dot+L(7:9)*constraint3);
 
 	% polytope 4
-	V4dot=w4'*xdot;
-	constraint10=-x(1);
-	constraint11=-x(2);
-	constraint12=x(1)+x(2)-rho;
-	prog=prog.withSOS(-slack(4)-V4dot+L10*constraint10+L11*constraint11+L12*constraint12);
+	% V4dot=w4'*xdot;
+	% constraint10=-x(1);
+	% constraint11=-x(2);
+	% constraint12=x(1)+x(2)-rho;
+	prog=prog.withSOS(-slack(4)-V4dot+L(10:12)*constraint4);
 	options = spot_sdp_default_options();
 	options.verbose=1;
 
-	% vert0=[0;0];
-	% vert1=[0;rho];
-	% vert2=[-rho;0];
-	% vert3=[0;-rho];
-	% vert4=[rho;0];
-	% v1dot_at_verticies=[subs(V1dot,x,vert1);subs(V1dot,x,vert2);subs(V2dot,x,vert2);subs(V2dot,x,vert3);subs(V3dot,x,vert3);subs(V3dot,x,vert4);subs(V4dot,x,vert4);subs(V4dot,x,vert1)];
-
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
-	% if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
-	%   error('The solver threw an internal error.');
-	% end
-	% if ~sol.isPrimalFeasible
-	% 	error('Problem looks primal infeasible.');
-	% end
-
-	% if ~sol.isDualFeasible
-	% 	error('Problem looks dual infeasible. It is probably unbounded.');
-	% end
-
-	% if sol.status~=spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
-	% 	error('not primal and dual feasible');
-	% end
-
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
@@ -344,70 +219,26 @@ function [rho,Vertices_values,w,sol_OK]=diamond(x,xdot,df,method,varargin)
 		w3=double(sol.eval(w3));
 		w4=double(sol.eval(w4));
 		rho=double(sol.eval(rho));
+		% getting the right scale of the original w
 		w=[w1,w2,w3,w4]./rho;
-	% else if sol.status == spotsolstatus.STATUS_SOLVER_ERROR
-	%   	error('The solver threw an internal error.');
 
 	else 
 		sol_OK=false;
-		% fall back to the last valid rho
+		% falls back to the last valid rho
 		rho=varargin{1}/1.2;
 		Vertices_values=varargin{2};
 		w=varargin{3};
+		figure(2)
+		syms x1 x2;
+		V= piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*[x1;x2],x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*[x1;x2],x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*[x1;x2],-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*[x1;x2]);
+		fsurf(1e3*V); hold on
+		fcontour(V);
+		figure(3)
+		sym_xdot =[x2; -x1-x2.*(x1.^2-1)];
+		Vdot=piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*sym_xdot,x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*sym_xdot,x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*sym_xdot,-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*sym_xdot);
+		fsurf(1e3*Vdot); hold on
 	end
-	% L=[sol.eval(L1),sol.eval(L2),sol.eval(L3),sol.eval(L4),sol.eval(L5),sol.eval(L6),sol.eval(L7),sol.eval(L8),sol.eval(L9),sol.eval(L10),sol.eval(L11),sol.eval(L12)];
 end
 
 
 
-
-function plots(w,xdot)
-	x1=-1:.01:0;
-	y1=0:.01:1;
-	[X1,Y1]=meshgrid(x1,y1);
-	z1=w(1,1)*X1+w(2,1)*Y1;
-
-	x2=-1:.01:0;
-	y2=-1:.01:0;
-	[X2,Y2]=meshgrid(x2,y2);
-	z2=w(1,2)*X2+w(2,2)*Y2;
-
-	x3=0:.01:1;
-	y3=-1:.01:0;
-	[X3,Y3]=meshgrid(x3,y3);
-	z3=w(1,3)*X3+w(2,3)*Y3;
-
-	x4=0:.01:1;
-	y4=0:.01:1;
-	[X4,Y4]=meshgrid(x4,y4);
-	z4=w(1,4)*X4+w(2,4)*Y4;
-
-	[fullX,fullY]=meshgrid(-2:.05:2,-2:.05:2);
-	subplot(1,2,1);
-	surf(X1,Y1,z1);hold on
-	surf(X2,Y2,z2); hold on
-	surf(X3,Y3,z3);hold on
-	surf(X4,Y4,z4);
-
-	subplot(1,2,2);
-	contour(X1,Y1,z1);hold on
-	contour(X2,Y2,z2);hold on
-	contour(X3,Y3,z3);hold on
-	contour(X4,Y4,z4);hold on
-	quiver(fullX,fullY,fullY,-fullX-fullY.*(fullX.^2-1))
-
-	% subplot(1,3,3);
-	% surf(X1,Y1,z1);hold on
-	% surf(X2,Y2,z2);hold on
-	% surf(X3,Y3,z3);hold on
-	% surf(X4,Y4,z4);hold on
-
-	% figure(2);
-	% tri = delaunay(X1,Y1);
-	% trisurf(tri,X1,Y1,z1);
-	% X=[X1,X2,X3,X4];
-	% Y=[Y1,Y2,Y3,Y4];
-	% z=[z1,z2,z3,z4];
-	% surf(X,Y,z);
-	% contour(X,Y,z);
-end
