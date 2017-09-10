@@ -100,68 +100,58 @@ function diamond(x,xdot,do_plots,varargin)
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
-        V=sol.eval(V)
-        w=sol.eval(w)
+        V=sol.eval(V);
+        w=sol.eval(w);
+        combined=[-x(1)+x(2)-rho;-x(1)-x(2)-rho;x(1)-x(2)-rho;x(1)+x(2)-rho;];
         [a,b]=meshgrid(-rho:rho/100:rho,-rho:rho/100:rho);
-        z=(dmsubs(V,x,[a(:)';b(:)']));
+        regional=[min(dmsubs(combined,x,[a(:)';b(:)'])<=0)];
+        z=regional.*(dmsubs(V,x,[a(:)';b(:)']));
         z=max(z,[],1);
+        z(z==0) = NaN;
         z=reshape(z,size(a));
         figure(1)
-        subplot(1,2,1)
+        subplot(1,5,1)
         surf(a,b,z);
-        title('$$ max(V) $$','interpreter','latex','fontsize',20) 
+        title('$$max(V)$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
 
-        subplot(1,2,2)
+        subplot(1,5,2)
         contour(a,b,z);
-        title('$$ max(V) contour$$','interpreter','latex','fontsize',20) 
+        title('$$ max(V)$$ contour','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
-
 
         regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
         z=(regional).*(dmsubs(V,x,[a(:)';b(:)']));
         z=max(z,[],1);
         z=reshape(z,size(a));
         z(z==0) = NaN;
-        figure(2)
-        subplot(1,2,1)
+        subplot(1,5,3)
         surf(a,b,z);
-        title('$$ PWA $$','interpreter','latex','fontsize',20) 
+        title('piecewise affine $$V$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
 
 
-        subplot(1,2,2)
+        subplot(1,5,4)
         contour(a,b,z);
-        title('$$ PWA contour $$','interpreter','latex','fontsize',20) 
+        title('piecewise affine $$V$$ contour' ,'interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
 
-
-        % if do_plots
-        % 	figure(2)
-        % 	syms x1 x2;
-        % 	V= piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*[x1;x2],x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*[x1;x2],x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*[x1;x2],-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*[x1;x2],NaN);
-        % 	fsurf(V); hold on
-        % 	% fcontour(V);
-        % 	figure(3)
-        % 	% sym_xdot=[-2*x1+x1^3; -2*x2+x2^3];
-        % 	sym_xdot =-[x2; -x1-x2.*(x1.^2-1)];
-        % 	Vdot=piecewise(x1<=0&-x2<=0&-x1+x2-rho<=0,w(:,1)'*sym_xdot,x1<=0&x2<=0&-x1-x2-rho<=0,w(:,2)'*sym_xdot,x2<=0&-x1<=0&x1-x2-rho<=0,w(:,3)'*sym_xdot,-x1<=0&-x2<=0&x1+x2-rho<=0,w(:,4)'*sym_xdot,NaN);
-        % 	fsurf(Vdot); hold on
-        % end
-
-
-		% Vertices_values=double(sol.eval(Vertices_values));
-		% w1=double((sol.eval(w1)));
-		% w2=double(sol.eval(w2));
-		% w3=double(sol.eval(w3));
-		% w4=double(sol.eval(w4));
-		% rho=double(sol.eval(rho));
-		% getting the right scale of the original w
-
+        subplot(1,5,5)
+        V=sol.eval(V);
+        w=sol.eval(w);
+        regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
+        z=(regional).*(dmsubs(w*xdot,x,[a(:)';b(:)']));
+        z=sum(z,1);
+        z=reshape(z,size(a));
+        z(z==0) = NaN;
+        surf(a,b,z);
+        title('piecewise $$\dot{V}$$','interpreter','latex','fontsize',20) 
+        xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
+        ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho
