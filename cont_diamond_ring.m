@@ -1,13 +1,10 @@
-function [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,df,last_rho,last_vertice_values,delta_rho,do_plots)
+function [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,last_rho,last_vertice_values,delta_rho,do_plots)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 	[prog,this_vert_values] = prog.newPos(4);
 	prog=prog.withPos(this_vert_values-1e-6*last_rho*ones(4,1));
 	Vmonom = monomials(x,0:1);
-	[prog,V1] = prog.newFreePoly(Vmonom);
-	[prog,V2] = prog.newFreePoly(Vmonom);
-	[prog,V3] = prog.newFreePoly(Vmonom);
-	[prog,V4] = prog.newFreePoly(Vmonom);
+	[prog,V] = prog.newFreePoly(Vmonom,4);
 
 	vert1=[0;last_rho];
 	vert2=[-last_rho;0];
@@ -18,35 +15,35 @@ function [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,df,last_rho,las
 	vert7=[0;-last_rho-delta_rho];
 	vert8=[last_rho+delta_rho;0];
 
-	prog=prog.withPos(-(subs(V1,x,vert1)-last_vertice_values(1)));
-	prog=prog.withPos(-(subs(V1,x,vert2)-last_vertice_values(2)));
-	prog=prog.withPos(-(subs(V2,x,vert2)-last_vertice_values(2)));
-	prog=prog.withPos(-(subs(V2,x,vert3)-last_vertice_values(3)));
-	prog=prog.withPos(-(subs(V3,x,vert3)-last_vertice_values(3)));
-	prog=prog.withPos(-(subs(V3,x,vert4)-last_vertice_values(4)));
-	prog=prog.withPos(-(subs(V4,x,vert4)-last_vertice_values(4)));
-	prog=prog.withPos(-(subs(V4,x,vert1)-last_vertice_values(1)));
+	prog=prog.withPos(-(subs(V(1),x,vert1)-last_vertice_values(1)));
+	prog=prog.withPos(-(subs(V(1),x,vert2)-last_vertice_values(2)));
+	prog=prog.withPos(-(subs(V(2),x,vert2)-last_vertice_values(2)));
+	prog=prog.withPos(-(subs(V(2),x,vert3)-last_vertice_values(3)));
+	prog=prog.withPos(-(subs(V(3),x,vert3)-last_vertice_values(3)));
+	prog=prog.withPos(-(subs(V(3),x,vert4)-last_vertice_values(4)));
+	prog=prog.withPos(-(subs(V(4),x,vert4)-last_vertice_values(4)));
+	prog=prog.withPos(-(subs(V(4),x,vert1)-last_vertice_values(1)));
 
 
-	prog=prog.withPos((subs(V1,x,vert5)-last_vertice_values(1)));
-	prog=prog.withPos((subs(V1,x,vert6)-last_vertice_values(2)));
-	prog=prog.withPos((subs(V2,x,vert6)-last_vertice_values(2)));
-	prog=prog.withPos((subs(V2,x,vert7)-last_vertice_values(3)));
-	prog=prog.withPos((subs(V3,x,vert7)-last_vertice_values(3)));
-	prog=prog.withPos((subs(V3,x,vert8)-last_vertice_values(4)));
-	prog=prog.withPos((subs(V4,x,vert8)-last_vertice_values(4)));
-	prog=prog.withPos((subs(V4,x,vert5)-last_vertice_values(1)));
+	prog=prog.withPos((subs(V(1),x,vert5)-last_vertice_values(1)));
+	prog=prog.withPos((subs(V(1),x,vert6)-last_vertice_values(2)));
+	prog=prog.withPos((subs(V(2),x,vert6)-last_vertice_values(2)));
+	prog=prog.withPos((subs(V(2),x,vert7)-last_vertice_values(3)));
+	prog=prog.withPos((subs(V(3),x,vert7)-last_vertice_values(3)));
+	prog=prog.withPos((subs(V(3),x,vert8)-last_vertice_values(4)));
+	prog=prog.withPos((subs(V(4),x,vert8)-last_vertice_values(4)));
+	prog=prog.withPos((subs(V(4),x,vert5)-last_vertice_values(1)));
 
 
-	% prog=prog.withEqs(subs(V1,x,vert5)-this_vert_values(1));
-	% prog=prog.withEqs(subs(V1,x,vert5)-this_vert_values(1));
-	% prog=prog.withEqs(subs(V1,x,vert6)-this_vert_values(2));
-	% prog=prog.withEqs(subs(V2,x,vert6)-this_vert_values(2));
-	% prog=prog.withEqs(subs(V2,x,vert7)-this_vert_values(3));
-	% prog=prog.withEqs(subs(V3,x,vert7)-this_vert_values(3));
-	% prog=prog.withEqs(subs(V3,x,vert8)-this_vert_values(4));
-	% prog=prog.withEqs(subs(V4,x,vert8)-this_vert_values(4));
-	% prog=prog.withEqs(subs(V4,x,vert5)-this_vert_values(1));
+	% prog=prog.withEqs(subs(V(1),x,vert5)-this_vert_values(1));
+	% prog=prog.withEqs(subs(V(1),x,vert5)-this_vert_values(1));
+	% prog=prog.withEqs(subs(V(1),x,vert6)-this_vert_values(2));
+	% prog=prog.withEqs(subs(V(2),x,vert6)-this_vert_values(2));
+	% prog=prog.withEqs(subs(V(2),x,vert7)-this_vert_values(3));
+	% prog=prog.withEqs(subs(V(3),x,vert7)-this_vert_values(3));
+	% prog=prog.withEqs(subs(V(3),x,vert8)-this_vert_values(4));
+	% prog=prog.withEqs(subs(V(4),x,vert8)-this_vert_values(4));
+	% prog=prog.withEqs(subs(V(4),x,vert5)-this_vert_values(1));
 	
 	Lmonom = monomials(x,0:2);
 	[prog,L] = prog.newSOSPoly(Lmonom,16);
@@ -64,10 +61,10 @@ function [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,df,last_rho,las
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 	% manufactured scaling, somehow improves numerical condition...
-	V1dot=diff(V1,x)*xdot*sum_rho;
-	V2dot=diff(V2,x)*xdot*sum_rho;
-	V3dot=diff(V3,x)*xdot*sum_rho;
-	V4dot=diff(V4,x)*xdot*sum_rho;
+	V1dot=diff(V(1),x)*xdot*sum_rho;
+	V2dot=diff(V(2),x)*xdot*sum_rho;
+	V3dot=diff(V(3),x)*xdot*sum_rho;
+	V4dot=diff(V(4),x)*xdot*sum_rho;
 	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)'*constraint1);
 	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)'*constraint2);
 	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)'*constraint3);
@@ -78,26 +75,25 @@ function [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,df,last_rho,las
 	sol=prog.minimize(-sum(0),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
-		% Vertices_values=double(sol.eval(Vertices_values));
-		w1=double(sol.eval(diff(V1,x)));
-		w2=double(sol.eval(diff(V2,x)));
-		w3=double(sol.eval(diff(V3,x)));
-		w4=double(sol.eval(diff(V4,x)));
+		w1=double(sol.eval(diff(V(1),x)));
+		w2=double(sol.eval(diff(V(2),x)));
+		w3=double(sol.eval(diff(V(3),x)));
+		w4=double(sol.eval(diff(V(4),x)));
 		w=[w1,w2,w3,w4];
 		delta_rho=double(sol.eval(delta_rho));
-		b1=double(sol.eval(subs(V1,x,zeros(2,1))));
-		b2=double(sol.eval(subs(V2,x,zeros(2,1))));
-		b3=double(sol.eval(subs(V3,x,zeros(2,1))));
-		b4=double(sol.eval(subs(V4,x,zeros(2,1))));
+		b1=double(sol.eval(subs(V(1),x,zeros(2,1))));
+		b2=double(sol.eval(subs(V(2),x,zeros(2,1))));
+		b3=double(sol.eval(subs(V(3),x,zeros(2,1))));
+		b4=double(sol.eval(subs(V(4),x,zeros(2,1))));
 		% b1=0;
 		% b2=0;
 		% b3=0;
 		% b4=0;
 
-		V1=(sol.eval(V1));
-		V2=(sol.eval(V2));
-		V3=(sol.eval(V3));
-		V4=(sol.eval(V4));
+		V1=(sol.eval(V(1)));
+		V2=(sol.eval(V(2)));
+		V3=(sol.eval(V(3)));
+		V4=(sol.eval(V(4)));
 
 		Vertices_values=double(sol.eval(this_vert_values))
         sol.eval(V1dot)

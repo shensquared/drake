@@ -1,9 +1,6 @@
-function [V,rho]=dis_diamond(x,xdot,do_plots,varargin)
+function [V,rho]=dis_diamond(x,xdot,do_plots,rho)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-	rho=varargin{1};
-	level=varargin{2};
-	last_V=varargin{3};
 
 	Vmonom = monomials(x,0:1);
 	[prog,V] = prog.newFreePoly(Vmonom,4);
@@ -21,8 +18,6 @@ function [V,rho]=dis_diamond(x,xdot,do_plots,varargin)
 	vert7=[rho;0];
 	vert8=[0;rho];
 
-
-
 	prog=prog.withEqs(subs(V,x,vert0)-zeros(4,1));
 % all V strictly positive at verts
 	prog=prog.withPos((subs(V(1),x,vert1))-1e-6);
@@ -34,15 +29,9 @@ function [V,rho]=dis_diamond(x,xdot,do_plots,varargin)
 	prog=prog.withPos((subs(V(4),x,vert7))-1e-6);
 	prog=prog.withPos((subs(V(4),x,vert8))-1e-6);
 
-
 % the normals, without scaling (so that w is at the same scale as vertice values)
 	w=diff(V,x);
-	% w1=[-Vertices_values(2);Vertices_values(1)];
-	% w2=[-Vertices_values(2);-Vertices_values(3)];
-	% w3=[Vertices_values(4);-Vertices_values(3)];
-	% w4=[Vertices_values(4);Vertices_values(1)];
-	% slack variables, pushing the solution into the interior of the feasible set
-	
+% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
 
 	constraint1=[x(1);-x(2);-x(1)+x(2)-rho;];
@@ -50,22 +39,16 @@ function [V,rho]=dis_diamond(x,xdot,do_plots,varargin)
 	constraint3=[x(2);-x(1);x(1)-x(2)-rho;];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-rho;];
 
-	% polytope 1
 	V1dot=w(1,:)*xdot*rho;
-	prog=prog.withSOS(-slack(1)-V1dot+L(1:3)'*constraint1);
-
-	% polytope 2
 	V2dot=w(2,:)*xdot*rho;
-	prog=prog.withSOS(-slack(2)-V2dot+L(4:6)'*constraint2);
-
-	% polytope 3
 	V3dot=w(3,:)*xdot*rho;
-	prog=prog.withSOS(-slack(3)-V3dot+L(7:9)'*constraint3);
-
-	% polytope 4
 	V4dot=w(4,:)*xdot*rho;
+
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:3)'*constraint1);
+	prog=prog.withSOS(-slack(2)-V2dot+L(4:6)'*constraint2);
+	prog=prog.withSOS(-slack(3)-V3dot+L(7:9)'*constraint3);
 	prog=prog.withSOS(-slack(4)-V4dot+L(10:12)'*constraint4);
-	
+
 	options = spot_sdp_default_options();
 	options.verbose=1;
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
@@ -76,9 +59,6 @@ function [V,rho]=dis_diamond(x,xdot,do_plots,varargin)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho
-		rho=varargin{1}/1.2;
-		Vertices_values=varargin{2};
-		w=varargin{3};
 		if do_plots
 			figure(2)
 			syms x1 x2;

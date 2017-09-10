@@ -1,7 +1,4 @@
-function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin)
-	last_rho=varargin{1};
-	level=varargin{2};
-	delta_rho=varargin{3};
+function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -37,8 +34,6 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin)
 		prog=prog.withPos((subs(V(3),x,vert8))-1e-6);
 		prog=prog.withPos((subs(V(4),x,vert8))-1e-6);
 	else
-		last_V=varargin{4};
-		all_V=varargin{5};
 		last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
 		% evaluated at inner verts, last_V>=V
 		prog=prog.withPos(last_max(1)-(subs(V(1),x,vert1)));
@@ -69,20 +64,14 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin)
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 
-	% polytope 1
 	V1dot=w(1,:)*xdot*delta_rho;
-	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)'*constraint1);
-
-	% polytope 2
 	V2dot=w(2,:)*xdot*delta_rho;
-	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)'*constraint2);
-
-	% polytope 3
 	V3dot=w(3,:)*xdot*delta_rho;
-	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)'*constraint3);
-
-	% polytope 4
 	V4dot=w(4,:)*xdot*delta_rho;
+	
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)'*constraint1);
+	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)'*constraint2);
+	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)'*constraint3);
 	prog=prog.withSOS(-slack(4)-V4dot+L(13:16)'*constraint4);
 	
 	options = spot_sdp_default_options();
@@ -102,9 +91,7 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho
-		rho=varargin{1}/1.2;
-		Vertices_values=varargin{2};
-		w=varargin{3};
+		rho=last_rho;
 		if do_plots
 			figure(2)
 			syms x1 x2;
