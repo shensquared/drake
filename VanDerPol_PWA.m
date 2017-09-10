@@ -1,4 +1,4 @@
-function VanDerPol_PWA()
+function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	do_plots=false;
 	checkDependency('spotless');
 	checkDependency('mosek');
@@ -14,11 +14,11 @@ function VanDerPol_PWA()
 	w=zeros(2,4);
 	sol_OK=true;
 	level=0;
-	[V,rho,all_V]=dis_diamond_ring(x,xdot,do_plots,0,level,rho);
+	[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,0,level,rho);
 	level=1;
 	while(sol_OK)
 		disp(level);
-		[V,rho,all_V]=dis_diamond_ring(x,xdot,do_plots,rho,1,delta_rho,V,all_V);
+		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,rho,1,delta_rho,V,all_V);
 		level=level+1;
     end
 
@@ -29,7 +29,7 @@ function VanDerPol_PWA()
 end
 
 
-function [V,rho,all_V]=dis_diamond_ring(x,xdot,do_plots,varargin)
+function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin)
 	last_rho=varargin{1};
 	level=varargin{2};
 	delta_rho=varargin{3};
@@ -129,7 +129,7 @@ function [V,rho,all_V]=dis_diamond_ring(x,xdot,do_plots,varargin)
         % subplot(1,5,1)
         clf
         combined=[-x(1)+x(2)-sum_rho;-x(1)-x(2)-sum_rho;x(1)-x(2)-sum_rho;x(1)+x(2)-sum_rho;];
-        [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
+        [a,b]=meshgrid(-sum_rho:sum_rho/50:sum_rho,-sum_rho:sum_rho/50:sum_rho);
         regional=[min(dmsubs(combined,x,[a(:)';b(:)'])<=0)];
         if level==0
         	all_V=V;
