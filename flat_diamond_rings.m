@@ -39,7 +39,11 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 	else
-		last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
+		if debug_flag
+			last_max=ones(4,1);
+		else
+			last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
+		end
 		% evaluated at inner verts, last_V>=V
 		prog=prog.withPos(last_max(1)-(subs(V(1),x,vert1)));
 		prog=prog.withPos(last_max(1)-(subs(V(4),x,vert1)));

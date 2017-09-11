@@ -38,7 +38,11 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 		prog=prog.withPos((subs(V(3),x,vert8))-1e-6);
 		prog=prog.withPos((subs(V(4),x,vert8))-1e-6);
 	else
-		last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
+		if debug_flag
+			last_max=ones(4,1);
+		else
+			last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
+		end
 		% evaluated at inner verts, last_V>=V
 		prog=prog.withPos(last_max(1)-(subs(V(1),x,vert1)));
 		prog=prog.withPos(last_max(1)-(subs(V(4),x,vert1)));
