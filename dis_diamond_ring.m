@@ -63,11 +63,11 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 
-	% delta_rho_order=1^(floor(log10(sum_rho)));
-	V1dot=w(1,:)*xdot*delta_rho;
-	V2dot=w(2,:)*xdot*delta_rho;
-	V3dot=w(3,:)*xdot*delta_rho;
-	V4dot=w(4,:)*xdot*delta_rho;
+	delta_rho_order=10^(floor(log10(sum_rho)));
+	V1dot=w(1,:)*xdot*delta_rho_order;
+	V2dot=w(2,:)*xdot*delta_rho_order;
+	V3dot=w(3,:)*xdot*delta_rho_order;
+	V4dot=w(4,:)*xdot*delta_rho_order;
 	
 	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)'*constraint1);
 	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)'*constraint2);

@@ -22,7 +22,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	outter_verts=[vert5,vert6,vert7,vert8];
 
 	[prog,this_flat_value]=prog.newPos(1);
-	prog=prog.withPos(this_flat_value-1e-6)
+	prog=prog.withPos(this_flat_value-1e-6);
 	if level==0
 		% all V zero at zero
 		prog=prog.withEqs(subs(V,x,vert0)-zeros(4,1));
@@ -35,7 +35,6 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 		prog=prog.withEqs((subs(V(3),x,vert7))-this_flat_value);
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
-
 	else
 		last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
 		% evaluated at inner verts, last_V>=V
@@ -70,17 +69,17 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	w=diff(V,x);
 	% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
+	
 
 	constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
 	constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
-
-	% delta_rho_order=1^(floor(log10(sum_rho)));
-	V1dot=w(1,:)*xdot*delta_rho;
-	V2dot=w(2,:)*xdot*delta_rho;
-	V3dot=w(3,:)*xdot*delta_rho;
-	V4dot=w(4,:)*xdot*delta_rho;
+	delta_rho_order=10^(floor(log10(sum_rho)));
+	V1dot=w(1,:)*xdot*delta_rho_order;
+	V2dot=w(2,:)*xdot*delta_rho_order;
+	V3dot=w(3,:)*xdot*delta_rho_order;
+	V4dot=w(4,:)*xdot*delta_rho_order;
 	
 	prog=prog.withSOS((-slack(1)-V1dot+L(1:4)'*constraint1));
 	prog=prog.withSOS((-slack(2)-V2dot+L(5:8)'*constraint2));
@@ -89,11 +88,16 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	
 	options = spot_sdp_default_options();
 	options.verbose=1;
-	sol=prog.minimize(-sum(slack),@spot_mosek,options);
+	sol=prog.minimize(sum(-slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=sol.eval(V);
+        L=sol.eval(L)
+        disp('V2dot')
+        V2dot=sol.eval(V2dot)
+        % debug_plots(x,V2dot,sum_rho)
+        this_flat_value=sol.eval(this_flat_value)
         if level==0
         	all_V=V;
         else
