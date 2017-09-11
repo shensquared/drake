@@ -1,8 +1,8 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
 
-	% flags.method='flat';
-	flags.method='discontinuous';
+	flags.method='flat';
+	% flags.method='discontinuous';
 	flags.do_plots=false;
 	flags.verbose=true;
 	flags.debug=true;
@@ -16,8 +16,8 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	% xdot=[-x(1);-x(2)];
 	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=0;
-	delta_rho=3e-1;
+	last_rho=5;
+	delta_rho=3e-0;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;

@@ -100,7 +100,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=sol.eval(V);
-        this_flat_value=sol.eval(this_flat_value)
+        this_flat_value=sol.eval(this_flat_value);
         if last_rho==0
         	all_V=V;
         else
@@ -109,12 +109,10 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
         plots_stuff(x,xdot,V,all_V,last_rho,delta_rho);        
         rho=sum_rho;
         if debug_flag
-        	disp('V');
-        	V
         	disp('L')
         	L=sol.eval(L)
         	sol.eval(diff(V,x)*xdot)
-        	sol.eval(this_flat_value) 
+        	this_flat_value
         	% debug_plots(x,V2dot,sum_rho)
 	else 
 		sol_OK=false;
