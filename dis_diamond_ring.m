@@ -63,16 +63,16 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 
-	delta_rho_order=1^(floor(log10(sum_rho)));
-	V1dot=w(1,:)*xdot;
-	V2dot=w(2,:)*xdot;
-	V3dot=w(3,:)*xdot;
-	V4dot=w(4,:)*xdot;
+	% delta_rho_order=1^(floor(log10(sum_rho)));
+	V1dot=w(1,:)*xdot*delta_rho;
+	V2dot=w(2,:)*xdot*delta_rho;
+	V3dot=w(3,:)*xdot*delta_rho;
+	V4dot=w(4,:)*xdot*delta_rho;
 	
-	prog=prog.withSOS(-slack(1)-V1dot+1/delta_rho_order*L(1:4)'*constraint1);
-	prog=prog.withSOS(-slack(2)-V2dot+1/delta_rho_order*L(5:8)'*constraint2);
-	prog=prog.withSOS(-slack(3)-V3dot+1/delta_rho_order*L(9:12)'*constraint3);
-	prog=prog.withSOS(-slack(4)-V4dot+1/delta_rho_order*L(13:16)'*constraint4);
+	prog=prog.withSOS(-slack(1)-V1dot+L(1:4)'*constraint1);
+	prog=prog.withSOS(-slack(2)-V2dot+L(5:8)'*constraint2);
+	prog=prog.withSOS(-slack(3)-V3dot+L(9:12)'*constraint3);
+	prog=prog.withSOS(-slack(4)-V4dot+L(13:16)'*constraint4);
 	
 	options = spot_sdp_default_options();
 	options.verbose=1;
