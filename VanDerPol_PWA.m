@@ -9,12 +9,12 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	% xdot=[-x(1);-x(2)];
 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=3;
+	last_rho=0;
 	delta_rho=3e-2;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
-	level=1;
+	level=0;
 	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
 	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
 	% level=1;

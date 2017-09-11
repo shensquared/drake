@@ -74,11 +74,11 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
 	constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 	constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
-	delta_rho_order=10^(floor(log10(sum_rho)));
-	V1dot=w(1,:)*xdot*delta_rho_order;
-	V2dot=w(2,:)*xdot*delta_rho_order;
-	V3dot=w(3,:)*xdot*delta_rho_order;
-	V4dot=w(4,:)*xdot*delta_rho_order;
+	sum_rho_order=10^(floor(log10(sum_rho)));
+	V1dot=w(1,:)*xdot*sum_rho_order;
+	V2dot=w(2,:)*xdot*sum_rho_order;
+	V3dot=w(3,:)*xdot*sum_rho_order;
+	V4dot=w(4,:)*xdot*sum_rho_order;
 	
 	prog=prog.withSOS((-slack(1)-V1dot+L(1:4)'*constraint1));
 	prog=prog.withSOS((-slack(2)-V2dot+L(5:8)'*constraint2));
@@ -87,7 +87,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(-slack),@spot_mosek,options);
+	sol=prog.minimize(slack.^2,@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
