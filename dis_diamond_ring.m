@@ -1,4 +1,4 @@
-function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,flags)
+function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	do_plots=flag.do_plots;
 	verbose=flag.verbose;
 	debug_flag=flags.debug;
@@ -25,7 +25,7 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 	inner_verts=[vert1,vert2,vert3,vert4];
 	outter_verts=[vert5,vert6,vert7,vert8];
 
-	if level==0
+	if last_rho==0
 		% all V zero at zero
 		prog=prog.withEqs(subs(V,x,vert0)-zeros(4,1));
 		% all V strictly positive at verts
@@ -89,7 +89,7 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=sol.eval(V);
-        if level==0
+        if last_rho==0
         	all_V=V;
         else
         	all_V=[all_V;V];

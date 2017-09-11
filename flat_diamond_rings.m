@@ -1,7 +1,8 @@
-function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,flags)
+function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	do_plots=flags.do_plots;
 	verbose=flags.verbose;
 	debug_flag=flags.debug;
+
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -26,7 +27,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 
 	[prog,this_flat_value]=prog.newPos(1);
 	prog=prog.withPos(this_flat_value-1e-6);
-	if level==0
+	if last_rho==0
 		% all V zero at zero
 		prog=prog.withEqs(subs(V,x,vert0)-zeros(4,1));
 		% all V strictly positive at outer verts
@@ -99,18 +100,22 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=sol.eval(V);
-        % L=sol.eval(L)
-        disp('V2dot')
-        V2dot=sol.eval(V2dot)
-        % debug_plots(x,V2dot,sum_rho)
         this_flat_value=sol.eval(this_flat_value)
-        if level==0
+        if last_rho==0
         	all_V=V;
         else
         	all_V=[all_V;V];
         end
         plots_stuff(x,xdot,V,all_V,last_rho,delta_rho);        
         rho=sum_rho;
+        if debug_flag
+        	disp('V');
+        	V
+        	disp('L')
+        	L=sol.eval(L)
+        	sol.eval(diff(V,x)*xdot)
+        	sol.eval(this_flat_value) 
+        	% debug_plots(x,V2dot,sum_rho)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho

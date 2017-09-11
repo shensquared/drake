@@ -1,9 +1,12 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
 
+	flags.method='flat';
+	% flag.method='discontinuous';
 	flags.do_plots=false;
 	flags.verbose=true;
-	flags.debug=false;
+	flags.debug=true;
+
 
 	checkDependency('spotless');
 	checkDependency('mosek');
@@ -13,15 +16,17 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	% xdot=[-x(1);-x(2)];
 	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=1.4;
+	last_rho=0;
 	delta_rho=3e-1;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
-	level=1;
-	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,flags)
-	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
-	% level=1;
+	switch flags.method
+	case 'flat'
+		[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
+	case 'discontinuous'
+		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+	end
 	% while(sol_OK)
 	% 	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
 	% 	level=level+1;
