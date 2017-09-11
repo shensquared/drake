@@ -9,8 +9,8 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho)
         combined=[-x(1)+x(2)-sum_rho;-x(1)-x(2)-sum_rho;x(1)-x(2)-sum_rho;x(1)+x(2)-sum_rho;];
         [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
         regional=[min(dmsubs(combined,x,[a(:)';b(:)'])<=0)];
-        z=regional.*(dmsubs(V,x,[a(:)';b(:)']));
-        z=max(z,[],1);
+        z=(dmsubs(V,x,[a(:)';b(:)']));
+        z=regional.*max(z,[],1);
         z(z==0) = NaN;
         z=reshape(z,size(a));
         surf(a,b,z);

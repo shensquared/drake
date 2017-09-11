@@ -87,7 +87,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(slack.^2,@spot_mosek,options);
+	sol=prog.minimize(sum(-slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
