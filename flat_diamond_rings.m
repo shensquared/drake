@@ -55,14 +55,16 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 		prog=prog.withPos(last_max(4)-(subs(V(3),x,vert4)));
 		prog=prog.withPos(last_max(4)-(subs(V(4),x,vert4)));
 		% V at outter verts are bigger than inner verts
-		prog=prog.withPos((subs(V(1),x,vert5-vert1)));
-		prog=prog.withPos((subs(V(4),x,vert5-vert1)));
-		prog=prog.withPos((subs(V(1),x,vert6-vert2)));
-		prog=prog.withPos((subs(V(2),x,vert6-vert2)));
-		prog=prog.withPos((subs(V(2),x,vert7-vert3)));
-		prog=prog.withPos((subs(V(3),x,vert7-vert3)));
-		prog=prog.withPos((subs(V(3),x,vert8-vert4)));
-		prog=prog.withPos((subs(V(4),x,vert8-vert4)));
+
+
+		prog=prog.withPos(subs(V(1),x,vert5)-subs(V(1),x,vert1));
+		prog=prog.withPos(subs(V(4),x,vert5)-subs(V(4),x,vert1));
+		prog=prog.withPos(subs(V(1),x,vert6)-subs(V(1),x,vert2));
+		prog=prog.withPos(subs(V(2),x,vert6)-subs(V(2),x,vert2));
+		prog=prog.withPos(subs(V(2),x,vert7)-subs(V(2),x,vert3));
+		prog=prog.withPos(subs(V(3),x,vert7)-subs(V(3),x,vert3));
+		prog=prog.withPos(subs(V(3),x,vert8)-subs(V(3),x,vert4));
+		prog=prog.withPos(subs(V(4),x,vert8)-subs(V(4),x,vert4));
 		% all outer verts flat
 		prog=prog.withEqs((subs(V(1),x,vert5))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert5))-this_flat_value);

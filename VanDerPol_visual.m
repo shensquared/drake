@@ -1,7 +1,7 @@
-bound=2.5;
-delta=.05;
+bound=5;
+delta=.5;
 
-x=-bound:delta:bound;
+x=-8:delta:8;
 y=x;
 [X,Y]=meshgrid(x,y);
 % V=(4.7092e-06)+(0.2837)*X.^2+(0.0087485)*X.^4+(0.18161)*Y.^2+(0.016551)*Y.^4+(-0.34678)*Y.*X+(0.065717)*Y.*(X.^3)+(0.10657)*(Y.^2).*(X.^2)+(-0.061218)*(Y.^3).*X;
@@ -14,10 +14,12 @@ y=x;
 
 % contourf(X,Y,100*V);
 % hold on
+figure(3)
 x1=X;
 x2=Y;
 % xdot = [x2; -x1-x2.*(x1.^2-1)];
-quiver(X,Y,x2,-x1-x2.*(x1.^2-1));hold on
+xdot=[; -2*x(2)+x(2)^3];
+quiver(X,Y,-2*X+X.^3,-2*Y+Y.^3)
 
 
 
