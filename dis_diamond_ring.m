@@ -1,6 +1,6 @@
 function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
-	do_plots=flag.do_plots;
-	verbose=flag.verbose;
+	do_plots=flags.do_plots;
+	verbose=flags.verbose;
 	debug_flag=flags.debug;
 
 	sum_rho=last_rho+delta_rho;

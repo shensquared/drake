@@ -1,8 +1,8 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
 
-	flags.method='flat';
-	% flag.method='discontinuous';
+	% flags.method='flat';
+	flags.method='discontinuous';
 	flags.do_plots=false;
 	flags.verbose=true;
 	flags.debug=true;
@@ -25,7 +25,7 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	case 'flat'
 		[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	case 'discontinuous'
-		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	end
 	% while(sol_OK)
 	% 	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
@@ -34,16 +34,4 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 
 	% [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,rho,delta_rho,V,all_V,do_plots)
 	% [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,rho,zeros(4,1),delta_rho,do_plots)
-	% [V,rho]=dis_diamond(x,xdot,do_plots,rho);
-	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,rho,delta_rho,V,V,do_plots)
-
-	% [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,0,zeros(4,1),rho,do_plots);
-	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin);
-	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,0,level,rho);
-	% while(sol_OK)
-	% 	disp(level);
-	% 	[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,rho,1,delta_rho,V,all_V);
-	% 	level=level+1;
- %    end
-
 end
