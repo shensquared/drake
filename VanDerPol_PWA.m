@@ -1,21 +1,25 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
-	do_plots=false;
-	verbose=false;
+	flags=struct();
+
+	flags.do_plots=false;
+	flags.verbose=true;
+	flags.debug=false;
+
 	checkDependency('spotless');
 	checkDependency('mosek');
 	x=msspoly('x',2);
 
-	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 	% xdot=[-x(1);-x(2)];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=0;
-	delta_rho=3e-2;
+	last_rho=1.4;
+	delta_rho=3e-1;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
-	level=0;
-	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
+	level=1;
+	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,flags)
 	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
 	% level=1;
 	% while(sol_OK)

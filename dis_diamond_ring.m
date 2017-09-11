@@ -1,4 +1,8 @@
-function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,flags)
+	do_plots=flag.do_plots;
+	verbose=flag.verbose;
+	debug_flag=flags.debug;
+
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -75,7 +79,7 @@ function [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,l
 	prog=prog.withSOS(-slack(4)-V4dot+L(13:16)'*constraint4);
 	
 	options = spot_sdp_default_options();
-	options.verbose=1;
+	options.verbose=verbose;
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
