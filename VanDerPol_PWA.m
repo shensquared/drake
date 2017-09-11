@@ -8,15 +8,19 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	% xdot=[-x(1);-x(2)];
 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	rho=3e-4;
+	last_rho=0;
 	delta_rho=3e-4;
-	Vertices_values=zeros(4,1);
+	last_V=zeros(4,1);
+	all_V=[];
 	sol_OK=true;
 	level=0;
-
-	[rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,rho,zeros(4,1),delta_rho,do_plots)
-	[V,rho]=dis_diamond(x,xdot,do_plots,rho);
-	[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,rho,delta_rho,V,V,do_plots)
+	[V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+% 	level=1;
+	% [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,rho,delta_rho,V,all_V,do_plots)
+	% [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,rho,zeros(4,1),delta_rho,do_plots)
+	% [V,rho]=dis_diamond(x,xdot,do_plots,rho);
+	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,level,rho,delta_rho,V,V,do_plots)
 
 	% [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,0,zeros(4,1),rho,do_plots);
 	% [V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,do_plots,varargin);
