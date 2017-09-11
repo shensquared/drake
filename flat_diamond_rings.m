@@ -1,4 +1,4 @@
-function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots)
+function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -69,7 +69,6 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	w=diff(V,x);
 	% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
-	
 
 	constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
 	constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
@@ -87,13 +86,13 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho
 	prog=prog.withSOS((-slack(4)-V4dot+L(13:16)'*constraint4));
 	
 	options = spot_sdp_default_options();
-	options.verbose=1;
+	options.verbose=verbose;
 	sol=prog.minimize(sum(-slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=sol.eval(V);
-        L=sol.eval(L)
+        % L=sol.eval(L)
         disp('V2dot')
         V2dot=sol.eval(V2dot)
         % debug_plots(x,V2dot,sum_rho)
