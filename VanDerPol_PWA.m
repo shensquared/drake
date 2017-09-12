@@ -1,7 +1,7 @@
 function VanDerPol_PWA()
 	flags=struct();
-	% flags.method='diamond';
-	flags.method='square';
+	flags.method='diamond';
+	% flags.method='square';
 	flags.scaling=false;
 	flags.do_plots=true;
 	flags.verbose=true;

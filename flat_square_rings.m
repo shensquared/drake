@@ -84,10 +84,10 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint4=diag([1,1,1/sum_rho_order])*constraint4;
 		end
 
-		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1+l(1:3)'*constraint1));
-		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2+l(4:6)'*constraint2));
-		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3+l(7:9)'*constraint3));
-		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(4)']*constraint4+l(10:12)'*constraint4));	
+		prog=prog.withSOS((-slack(1)-V1dot+[L(1:2)',LwConst(1)']*constraint1+l(1:3)'*constraint1));
+		prog=prog.withSOS((-slack(2)-V2dot+[L(3:4)',LwConst(2)']*constraint2+l(4:6)'*constraint2));
+		prog=prog.withSOS((-slack(3)-V3dot+[L(5:6)',LwConst(3)']*constraint3+l(7:9)'*constraint3));
+		prog=prog.withSOS((-slack(4)-V4dot+[L(7:8)',LwConst(4)']*constraint4+l(10:12)'*constraint4));	
 
 	else
 		[prog,L] = prog.newSOSPoly(Lmonom,8);
@@ -113,16 +113,16 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint3;
 			constraint4=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint4;
 		end
-		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1)+l(1:4)'*constraint1);
-		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2)+l(5:8)'*constraint2);
-		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3)+l(9:12)'*constraint3);
-		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(7:8)']*constraint4)+l(13:16)'*constraint4);	
+		prog=prog.withSOS((-slack(1)-V1dot+[L(1:2)',LwConst(1:2)']*constraint1)+l(1:4)'*constraint1);
+		prog=prog.withSOS((-slack(2)-V2dot+[L(3:4)',LwConst(3:4)']*constraint2)+l(5:8)'*constraint2);
+		prog=prog.withSOS((-slack(3)-V3dot+[L(5:6)',LwConst(5:6)']*constraint3)+l(9:12)'*constraint3);
+		prog=prog.withSOS((-slack(4)-V4dot+[L(7:8)',LwConst(7:8)']*constraint4)+l(13:16)'*constraint4);	
 
 	end
 
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(w),@spot_mosek,options);
+	sol=prog.minimize(sum(-w),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;

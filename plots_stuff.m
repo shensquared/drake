@@ -25,19 +25,19 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         z=max(z,[],1);
         z=reshape(z,size(a));
         z(z==0) = NaN;
-        subplot(1,3,1)
+        subplot(1,2,1)
         surf(a,b,z);
         title('piecewise affine $$V$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
-        subplot(1,3,2)
-        contour(a,b,z);
+        subplot(1,2,2)
+        contour(a,b,z,10);
         title('piecewise affine $$V$$ contour' ,'interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
-        % figure(2)
+        figure(2)
         % Vdot plot
-        subplot(1,3,3)
+        subplot(1,2,1)
         w=diff(V,x);
         regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<0)];
         z=(regional).*(dmsubs(w*xdot,x,[a(:)';b(:)']));
@@ -48,4 +48,10 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         title('piecewise $$\dot{V}$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+        subplot(1,2,2)
+        contour(a,b,z,10);
+        title('piecewise affine $$\dot{V}$$ contour' ,'interpreter','latex','fontsize',20) 
+        xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
+        ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+
 end
