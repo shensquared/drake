@@ -1,8 +1,9 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
 
-	flags.method='flat';
+% 	flags.method='flat';
 % 	flags.method='discontinuous';
+	flags.method='square'
 	flags.do_plots=false;
 	flags.verbose=true;
 	flags.debug=true;
@@ -14,11 +15,11 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 
 	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 
-	% xdot=[-x(1);-x(2)];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot=[-x(1);-x(2)];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=0;
-	delta_rho=2e-2;
+	last_rho=1;
+	delta_rho=1;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
@@ -28,6 +29,8 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 		[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	case 'discontinuous'
 		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
+	case 'square'
+		[last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	end
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)

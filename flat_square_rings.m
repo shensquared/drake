@@ -1,4 +1,4 @@
-function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
+function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	do_plots=flags.do_plots;
 	verbose=flags.verbose;
 	debug_flag=flags.debug;
@@ -6,22 +6,23 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-
+	
 	Vmonom = monomials(x,0:1);
 	[prog,V] = prog.newFreePoly(Vmonom,4);
 	w=diff(V,x);
 
 	Lmonom = monomials(x,0:2);
-
+	sum_rho=last_rho+delta_rho;
 	vert0=[0;0];
-	vert1=[0;last_rho];
-	vert2=[-last_rho;0];
-	vert3=[0;-last_rho];
-	vert4=[last_rho;0];
-	vert5=[0;last_rho+delta_rho];
-	vert6=[-last_rho-delta_rho;0];
-	vert7=[0;-last_rho-delta_rho];
-	vert8=[last_rho+delta_rho;0];
+	vert1=[-last_rho;last_rho];
+	vert2=[-last_rho;-last_rho];
+	vert3=[last_rho;-last_rho];
+	vert4=[last_rho;last_rho];
+
+	vert5=[-sum_rho;sum_rho];
+	vert6=[-sum_rho;-sum_rho];
+	vert7=[sum_rho;-sum_rho];
+	vert8=[sum_rho;sum_rho];
 	inner_verts=[vert1,vert2,vert3,vert4];
 	outter_verts=[vert5,vert6,vert7,vert8];
 
@@ -50,10 +51,10 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 		[prog,L] = prog.newSOSPoly(Lmonom,12);
-		constraint1=diag([1,1,1/sum_rho_order])*[x(1);-x(2);-x(1)+x(2)-sum_rho;];
-		constraint2=diag([1,1,1/sum_rho_order])*[x(1);x(2);-x(1)-x(2)-sum_rho;];
-		constraint3=diag([1,1,1/sum_rho_order])*[x(2);-x(1);x(1)-x(2)-sum_rho];
-		constraint4=diag([1,1,1/sum_rho_order])*[-x(1);-x(2);x(1)+x(2)-sum_rho];
+		constraint1=diag([1,1,1/sum_rho_order])*[-sum_rho-x(1);x(1)+x(2);x(1)-x(2)];
+		constraint2=diag([1,1,1/sum_rho_order])*[-sum_rho-x(2);x(2)-x(1);x(1)+x(2)];
+		constraint3=diag([1,1,1/sum_rho_order])*[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho];
+		constraint4=diag([1,1,1/sum_rho_order])*[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2)];
 
 		prog=prog.withSOS((-slack(1)-V1dot+L(1:3)'*constraint1));
 		prog=prog.withSOS((-slack(2)-V2dot+L(4:6)'*constraint2));
@@ -95,10 +96,10 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 
-		constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
-		constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
-		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
-		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+        constraint1=[-sum_rho-x(1);x(1)+x(2);x(1)-x(2);-(-last_rho-x(1))];
+        constraint2=[-sum_rho-x(2);x(2)-x(1);x(1)+x(2);-(-last_rho-x(2))];
+        constraint3=[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho;-(x(1)-last_rho)];
+        constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
 
 		prog=prog.withSOS((-slack(1)-V1dot+1/sum_rho_order*L(1:4)'*constraint1));
 		prog=prog.withSOS((-slack(2)-V2dot+1/sum_rho_order*L(5:8)'*constraint2));
@@ -119,7 +120,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
         else
         	all_V=[all_V;V];
         end
-        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho);        
+        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags);        
         rho=sum_rho;
         if debug_flag
         	disp('L')
