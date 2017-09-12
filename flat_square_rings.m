@@ -41,7 +41,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	w=diff(V,x);
 
 	Lmonom = monomials(x,1:2);
-	LwConstMonom=monomials(x,0:2);
+	LwConstMonom=monomials(x,1:2);
 
 	[prog,this_flat_value]=prog.newPos(1);
 	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
@@ -148,10 +148,12 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint3;
 			constraint4=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint4;
 		end
-		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1));
-		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2));
-		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3));
-		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(7:8)']*constraint4));	
+		[prog,l]=prog.newPos(16);
+		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1)+l(1:4)'*constraint1);
+		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2)+l(5:8)'*constraint2);
+		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3)+l(9:12)'*constraint3);
+		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(7:8)']*constraint4)+l(13:16)'*constraint4);	
+
 	end
 
 	options = spot_sdp_default_options();
