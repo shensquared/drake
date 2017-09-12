@@ -11,7 +11,9 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	[prog,V] = prog.newFreePoly(Vmonom,4);
 	w=diff(V,x);
 
-	Lmonom = monomials(x,0:2);
+	Lmonom = monomials(x,1:2);
+	LwConstMonom=monomials(x,0:2);
+
 	sum_rho=last_rho+delta_rho;
 	vert0=[0;0];
 	vert1=[-last_rho;last_rho];
@@ -50,19 +52,23 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		prog=prog.withEqs((subs(V(3),x,vert7))-this_flat_value);
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
-		[prog,L] = prog.newSOSPoly(Lmonom,12);
-		constraint1=diag([1,1,1/sum_rho_order])*[-sum_rho-x(1);x(1)+x(2);x(1)-x(2)];
-		constraint2=diag([1,1,1/sum_rho_order])*[-sum_rho-x(2);x(2)-x(1);x(1)+x(2)];
-		constraint3=diag([1,1,1/sum_rho_order])*[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho];
-		constraint4=diag([1,1,1/sum_rho_order])*[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2)];
+		[prog,L] = prog.newSOSPoly(Lmonom,8);
+		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,4);
 
-		prog=prog.withSOS((-slack(1)-V1dot+L(1:3)'*constraint1));
-		prog=prog.withSOS((-slack(2)-V2dot+L(4:6)'*constraint2));
-		prog=prog.withSOS((-slack(3)-V3dot+L(7:9)'*constraint3));
-		prog=prog.withSOS((-slack(4)-V4dot+L(10:12)'*constraint4));	
+		constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
+		constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;];
+		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
+		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
+
+		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1));
+		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2));
+		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3));
+		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(4)']*constraint4));	
 
 	else
-		[prog,L] = prog.newSOSPoly(Lmonom,16);
+		[prog,L] = prog.newSOSPoly(Lmonom,8);
+		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,8);
+
 		if debug_flag
 			last_max=ones(4,1);
 		else
@@ -96,15 +102,15 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 
-        constraint1=[-sum_rho-x(1);x(1)+x(2);x(1)-x(2);-(-last_rho-x(1))];
-        constraint2=[-sum_rho-x(2);x(2)-x(1);x(1)+x(2);-(-last_rho-x(2))];
-        constraint3=[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho;-(x(1)-last_rho)];
-        constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
+		constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
+		constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
+		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
+		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 
-		prog=prog.withSOS((-slack(1)-V1dot+1/sum_rho_order*L(1:4)'*constraint1));
-		prog=prog.withSOS((-slack(2)-V2dot+1/sum_rho_order*L(5:8)'*constraint2));
-		prog=prog.withSOS((-slack(3)-V3dot+1/sum_rho_order*L(9:12)'*constraint3));
-		prog=prog.withSOS((-slack(4)-V4dot+1/sum_rho_order*L(13:16)'*constraint4));	
+		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1));
+		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2));
+		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3));
+		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(7:8)']*constraint4));	
 	end
 
 	options = spot_sdp_default_options();
