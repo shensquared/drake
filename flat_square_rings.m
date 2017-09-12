@@ -2,8 +2,36 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	do_plots=flags.do_plots;
 	verbose=flags.verbose;
 	debug_flag=flags.debug;
+	method=flags.method;
 
 	sum_rho=last_rho+delta_rho;
+	sum_rho_order=10^(floor(log10(sum_rho)));	
+
+	switch flags.method
+	case 'diamond'
+		vert1=[0;last_rho];
+		vert2=[-last_rho;0];
+		vert3=[0;-last_rho];
+		vert4=[last_rho;0];
+		vert5=[0;last_rho+delta_rho];
+		vert6=[-last_rho-delta_rho;0];
+		vert7=[0;-last_rho-delta_rho];
+		vert8=[last_rho+delta_rho;0];
+	case 'square'
+		vert1=[-last_rho;last_rho];
+		vert2=[-last_rho;-last_rho];
+		vert3=[last_rho;-last_rho];
+		vert4=[last_rho;last_rho];
+		vert5=[-sum_rho;sum_rho];
+		vert6=[-sum_rho;-sum_rho];
+		vert7=[sum_rho;-sum_rho];
+		vert8=[sum_rho;sum_rho];
+	end
+	inner_verts=[vert1,vert2,vert3,vert4];
+	outter_verts=[vert5,vert6,vert7,vert8];
+
+
+
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 
@@ -14,27 +42,12 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	Lmonom = monomials(x,1:2);
 	LwConstMonom=monomials(x,0:2);
 
-	sum_rho=last_rho+delta_rho;
-	vert0=[0;0];
-	vert1=[-last_rho;last_rho];
-	vert2=[-last_rho;-last_rho];
-	vert3=[last_rho;-last_rho];
-	vert4=[last_rho;last_rho];
-
-	vert5=[-sum_rho;sum_rho];
-	vert6=[-sum_rho;-sum_rho];
-	vert7=[sum_rho;-sum_rho];
-	vert8=[sum_rho;sum_rho];
-	inner_verts=[vert1,vert2,vert3,vert4];
-	outter_verts=[vert5,vert6,vert7,vert8];
-
 	[prog,this_flat_value]=prog.newPos(1);
 	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
 
 	% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
 
-	sum_rho_order=10^(floor(log10(sum_rho)));	
 	V1dot=w(1,:)*xdot;
 	V2dot=w(2,:)*xdot;
 	V3dot=w(3,:)*xdot;
@@ -54,11 +67,18 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 		[prog,L] = prog.newSOSPoly(Lmonom,8);
 		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,4);
-
-		constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
-		constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;];
-		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
-		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
+		switch flags.method
+		case 'diamond'
+			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
+			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;];
+			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
+			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
+		case 'square'
+			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
+			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;];
+			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
+			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
+		end
 
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1));
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2));
@@ -102,10 +122,18 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
 		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 
-		constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
-		constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
-		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
-		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+		switch flags.method
+		case 'diamond'
+			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
+			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
+			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
+			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+		case 'square'
+			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
+			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
+			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
+			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+		end
 
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1));
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2));

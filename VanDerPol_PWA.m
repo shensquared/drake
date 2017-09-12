@@ -1,6 +1,6 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
-% 	flags.method='diamond';
+	% flags.method='diamond';
 	flags.method='square'
 	flags.do_plots=true;
 	flags.verbose=true;
@@ -25,19 +25,5 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
-
-	switch flags.method
-	case 'diamond'
-		[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
-	case 'square'
-		[last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
-	end
-
-	% while(sol_OK)
-	% 	[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,last_rho,delta_rho,last_V,all_V,do_plots,verbose)
-	% 	level=level+1;
-	% end
-
-	% [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,level,rho,delta_rho,V,all_V,do_plots)
-	% [rho,Vertices_values,w,sol_OK]=cont_diamond_ring(x,xdot,rho,zeros(4,1),delta_rho,do_plots)
+	[last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 end
