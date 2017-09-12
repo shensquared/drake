@@ -12,13 +12,13 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	checkDependency('mosek');
 	x=msspoly('x',2);
 
-	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 
 	% xdot=[-x(1);-x(2)];
-% 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=5;
-	delta_rho=3;
+	last_rho=0;
+	delta_rho=2e-2;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
