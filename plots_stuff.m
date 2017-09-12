@@ -22,7 +22,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         % true piecewise
         regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
         z=(regional).*(dmsubs(V,x,[a(:)';b(:)']));
-        z=max(z,[],1);
+        z=sum(z,1);
         z=reshape(z,size(a));
         z(z==0) = NaN;
         subplot(1,2,1)

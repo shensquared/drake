@@ -13,14 +13,14 @@ function VanDerPol_PWA()
 	x=msspoly('x',2);
 
 	% xdot=[-x(1);-x(2)];
-	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)
     end
     
-    last_rho=0;
+    last_rho=1;
 	delta_rho=3e-3;
 	last_V=zeros(4,1);
 	all_V=[];
