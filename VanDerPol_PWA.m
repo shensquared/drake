@@ -1,13 +1,12 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
-
 	flags.method='diamond';
 % 	flags.method='discontinuous';
 	% flags.method='square'
-	flags.do_plots=false;
+	flags.do_plots=true;
 	flags.verbose=true;
 	flags.debug=true;
-	flags.quiver=true;
+	flags.quiver=false;
 
 	checkDependency('spotless');
 	checkDependency('mosek');
@@ -17,11 +16,13 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 % 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
-	last_rho=2;
+	last_rho=.8;
+    
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)
-		
-	delta_rho=4e-3;
+    end
+    
+	delta_rho=.1;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;

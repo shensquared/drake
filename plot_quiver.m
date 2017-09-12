@@ -11,6 +11,4 @@ function plot_quiver(x,xdot,sum_rho)
 	title('$$\dot{x}$$','interpreter','latex','fontsize',20) 
 	xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
 	ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
-
-
 end

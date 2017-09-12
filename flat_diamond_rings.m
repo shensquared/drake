@@ -29,7 +29,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 	sum_rho_order=10^(floor(log10(sum_rho)));	
 
 	[prog,this_flat_value]=prog.newPos(1);
-	prog=prog.withPos(this_flat_value-1e-6);
+	% prog=prog.withPos(this_flat_value-1e-6);
 
 	% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
@@ -65,7 +65,8 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(4)']*constraint4));	
 
 	else
-		[prog,L] = prog.newSOSPoly(Lmonom,16);
+		[prog,L] = prog.newSOSPoly(Lmonom,8);
+		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,8);
 		if debug_flag
 			last_max=ones(4,1);
 		else
@@ -104,10 +105,10 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 		constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 		constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 
-		prog=prog.withSOS((-slack(1)-V1dot+1/sum_rho_order*L(1:4)'*constraint1));
-		prog=prog.withSOS((-slack(2)-V2dot+1/sum_rho_order*L(5:8)'*constraint2));
-		prog=prog.withSOS((-slack(3)-V3dot+1/sum_rho_order*L(9:12)'*constraint3));
-		prog=prog.withSOS((-slack(4)-V4dot+1/sum_rho_order*L(13:16)'*constraint4));	
+		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1));
+		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2));
+		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3));
+		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(7:8)']*constraint4));	
 	end
 
 	options = spot_sdp_default_options();

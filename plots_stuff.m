@@ -15,7 +15,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
                 constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
                 combined=[-sum_rho-x(1);-sum_rho-x(2);x(1)-sum_rho;x(2)-sum_rho;]
         end
-        [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
+        [a,b]=meshgrid(-sum_rho:sum_rho/50:sum_rho,-sum_rho:sum_rho/50:sum_rho);
 
         figure(1)
         clf
