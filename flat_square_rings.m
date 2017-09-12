@@ -8,6 +8,21 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	sum_rho_order=10^(floor(log10(sum_rho)));	
 	delta_rho_order=10^(floor(log10(sum_rho)));	
 
+	prog = spotsosprog;
+	prog = prog.withIndeterminate(x);
+
+	% the normals
+	[prog,w]=prog.newPos(1);
+	% prog=prog.withPos(w-1e-3);
+	% slack variables, pushing the solution into the interior of the feasible set
+	[prog,slack]=prog.newPos(4);
+	
+	Lmonom = monomials(x,1:2);
+	LwConstMonom=monomials(x,1:2);
+
+	[prog,this_flat_value]=prog.newPos(1);
+	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
+
 	switch flags.method
 	case 'diamond'
 		vert1=[0;last_rho];
@@ -18,6 +33,11 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		vert6=[-last_rho-delta_rho;0];
 		vert7=[0;-last_rho-delta_rho];
 		vert8=[last_rho+delta_rho;0];
+		V1=-w*x(1)+w*x(2);
+		V2=-w*x(1)-w*x(2);
+		V3=w*x(1)-w*x(2);
+		V4=w*x(1)+w*x(2);
+
 	case 'square'
 		vert1=[-last_rho;last_rho];
 		vert2=[-last_rho;-last_rho];
@@ -27,47 +47,23 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		vert6=[-sum_rho;-sum_rho];
 		vert7=[sum_rho;-sum_rho];
 		vert8=[sum_rho;sum_rho];
+		V1=-w*x(1);
+		V2=-w*x(2);
+		V3=w*x(1);
+		V4=w*x(2);
 	end
 	inner_verts=[vert1,vert2,vert3,vert4];
 	outter_verts=[vert5,vert6,vert7,vert8];
 
-
-
-	prog = spotsosprog;
-	prog = prog.withIndeterminate(x);
-
-	Vmonom = monomials(x,1:1);
-	[prog,V] = prog.newFreePoly(Vmonom,4);
-	w=diff(V,x);
-
-	Lmonom = monomials(x,1:2);
-	LwConstMonom=monomials(x,1:2);
-
-	[prog,this_flat_value]=prog.newPos(1);
-	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
-
-	% slack variables, pushing the solution into the interior of the feasible set
-	[prog,slack]=prog.newPos(4);
-
-	V1dot=w(1,:)*xdot;
-	V2dot=w(2,:)*xdot;
-	V3dot=w(3,:)*xdot;
-	V4dot=w(4,:)*xdot;
-
+	V1dot=diff(V1,x)*xdot;
+	V2dot=diff(V2,x)*xdot;
+	V3dot=diff(V3,x)*xdot;
+	V4dot=diff(V4,x)*xdot;
+	
 	if last_rho==0
-		% all V zero at zero
-		prog=prog.withEqs(subs(V,x,vert0)-zeros(4,1));
-		% all V strictly positive at outer verts
-		prog=prog.withEqs((subs(V(4),x,vert5))-this_flat_value);
-		prog=prog.withEqs((subs(V(1),x,vert5))-this_flat_value);
-		prog=prog.withEqs((subs(V(1),x,vert6))-this_flat_value);
-		prog=prog.withEqs((subs(V(2),x,vert6))-this_flat_value);
-		prog=prog.withEqs((subs(V(2),x,vert7))-this_flat_value);
-		prog=prog.withEqs((subs(V(3),x,vert7))-this_flat_value);
-		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
-		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
 		[prog,L] = prog.newSOSPoly(Lmonom,8);
 		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,4);
+		[prog,l]=prog.newPos(12);
 		switch flags.method
 		case 'diamond'
 			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
@@ -87,48 +83,17 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=diag([1,1,1/sum_rho_order])*constraint3;
 			constraint4=diag([1,1,1/sum_rho_order])*constraint4;
 		end
-		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1));
-		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2));
-		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3));
-		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(4)']*constraint4));	
+
+		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1+l(1:3)'*constraint1));
+		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2+l(4:6)'*constraint2));
+		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3+l(7:9)'*constraint3));
+		prog=prog.withSOS((-slack(4)-(sum_rho_order)^2*V4dot+[L(7:8)',LwConst(4)']*constraint4+l(10:12)'*constraint4));	
 
 	else
 		[prog,L] = prog.newSOSPoly(Lmonom,8);
 		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,8);
-
-		if debug_flag
-			last_max=ones(4,1);
-		else
-			last_max=max((dmsubs(last_V,x,inner_verts)),[],2);
-		end
-		% evaluated at inner verts, last_V>=V
-		prog=prog.withPos(last_max(1)-(subs(V(1),x,vert1)));
-		prog=prog.withPos(last_max(1)-(subs(V(4),x,vert1)));
-		prog=prog.withPos(last_max(2)-(subs(V(1),x,vert2)));
-		prog=prog.withPos(last_max(2)-(subs(V(2),x,vert2)));
-		prog=prog.withPos(last_max(3)-(subs(V(2),x,vert3)));
-		prog=prog.withPos(last_max(3)-(subs(V(3),x,vert3)));
-		prog=prog.withPos(last_max(4)-(subs(V(3),x,vert4)));
-		prog=prog.withPos(last_max(4)-(subs(V(4),x,vert4)));
-		% V at outter verts are bigger than inner verts
-		prog=prog.withPos(subs(V(1),x,vert5)-subs(V(1),x,vert1));
-		prog=prog.withPos(subs(V(4),x,vert5)-subs(V(4),x,vert1));
-		prog=prog.withPos(subs(V(1),x,vert6)-subs(V(1),x,vert2));
-		prog=prog.withPos(subs(V(2),x,vert6)-subs(V(2),x,vert2));
-		prog=prog.withPos(subs(V(2),x,vert7)-subs(V(2),x,vert3));
-		prog=prog.withPos(subs(V(3),x,vert7)-subs(V(3),x,vert3));
-		prog=prog.withPos(subs(V(3),x,vert8)-subs(V(3),x,vert4));
-		prog=prog.withPos(subs(V(4),x,vert8)-subs(V(4),x,vert4));
-		% all outer verts flat
-		prog=prog.withEqs((subs(V(1),x,vert5))-this_flat_value);
-		prog=prog.withEqs((subs(V(4),x,vert5))-this_flat_value);
-		prog=prog.withEqs((subs(V(1),x,vert6))-this_flat_value);
-		prog=prog.withEqs((subs(V(2),x,vert6))-this_flat_value);
-		prog=prog.withEqs((subs(V(2),x,vert7))-this_flat_value);
-		prog=prog.withEqs((subs(V(3),x,vert7))-this_flat_value);
-		prog=prog.withEqs((subs(V(3),x,vert8))-this_flat_value);
-		prog=prog.withEqs((subs(V(4),x,vert8))-this_flat_value);
-
+		[prog,l]=prog.newPos(16);
+		
 		switch flags.method
 		case 'diamond'
 			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
@@ -148,7 +113,6 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint3;
 			constraint4=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint4;
 		end
-		[prog,l]=prog.newPos(16);
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1)+l(1:4)'*constraint1);
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2)+l(5:8)'*constraint2);
 		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3)+l(9:12)'*constraint3);
@@ -162,7 +126,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
-        V=sol.eval(V);
+        V=[sol.eval(V1);sol.eval(V2);sol.eval(V3);sol.eval(V4)];
         this_flat_value=sol.eval(this_flat_value);
         if last_rho==0
         	all_V=V;
@@ -176,8 +140,8 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
         	L=sol.eval(L)
         	sol.eval(LwConst)
         	sol.eval(l)
-        	disp('V')
-        	sol.eval(V) 
+        	% disp('V')
+        	% sol.eval(V) 
         	disp('Vdot')
         	sol.eval(diff(V,x)*xdot)
         	disp('flat_value')
