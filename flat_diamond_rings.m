@@ -7,7 +7,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 
-	Vmonom = monomials(x,0:1);
+	Vmonom = monomials(x,1:1);
 	[prog,V] = prog.newFreePoly(Vmonom,4);
 	w=diff(V,x);
 
@@ -26,7 +26,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 	outter_verts=[vert5,vert6,vert7,vert8];
 
 	[prog,this_flat_value]=prog.newPos(1);
-	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
+	prog=prog.withPos(this_flat_value-1e-6*sum_rho);
 
 	% slack variables, pushing the solution into the interior of the feasible set
 	[prog,slack]=prog.newPos(4);
@@ -108,7 +108,7 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
 
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(0),@spot_mosek,options);
+	sol=prog.minimize(sum(-slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
@@ -119,17 +119,18 @@ function [V,rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_
         else
         	all_V=[all_V;V];
         end
-        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho);        
+        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags);        
         rho=sum_rho;
         if debug_flag
         	disp('L')
         	L=sol.eval(L)
+        	disp('Vdot')
         	sol.eval(diff(V,x)*xdot)
+        	disp('flat_value')
         	this_flat_value
         	% debug_plots(x,V2dot,sum_rho)
 	else 
 		sol_OK=false;
-		% falls back to the last valid rho
 		rho=last_rho;
 		if do_plots
 			figure(2)

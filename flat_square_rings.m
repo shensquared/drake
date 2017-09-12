@@ -7,7 +7,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
 	
-	Vmonom = monomials(x,0:1);
+	Vmonom = monomials(x,1:1);
 	[prog,V] = prog.newFreePoly(Vmonom,4);
 	w=diff(V,x);
 
@@ -125,9 +125,10 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
         if debug_flag
         	disp('L')
         	L=sol.eval(L)
+        	disp('Vdot')
         	sol.eval(diff(V,x)*xdot)
+        	disp('flat_value')
         	this_flat_value
-        	% debug_plots(x,V2dot,sum_rho)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho

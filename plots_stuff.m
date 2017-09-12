@@ -2,7 +2,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         sum_rho=last_rho+delta_rho;
 
         switch flags.method
-        case 'flat'        
+        case 'diamond'        
                 constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
                 constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
                 constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
@@ -18,6 +18,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
 
         figure(1)
+        clf
         % true piecewise
         regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
         z=(regional).*(dmsubs(V,x,[a(:)';b(:)']));
