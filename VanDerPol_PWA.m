@@ -1,8 +1,7 @@
 function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	flags=struct();
-	flags.method='diamond';
-% 	flags.method='discontinuous';
-	% flags.method='square'
+% 	flags.method='diamond';
+	flags.method='square'
 	flags.do_plots=true;
 	flags.verbose=true;
 	flags.debug=true;
@@ -32,8 +31,6 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 		[last_V,last_rho,all_V,sol_OK]=flat_diamond_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	case 'square'
 		[last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
-	case 'discontinuous'
-		[V,rho,all_V,sol_OK]=dis_diamond_ring(x,xdot,last_rho,delta_rho,last_V,all_V,flags)
 	end
 
 	% while(sol_OK)
