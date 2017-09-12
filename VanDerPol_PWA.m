@@ -1,8 +1,8 @@
 function VanDerPol_PWA()
 	flags=struct();
-	flags.method='diamond';
-% 	flags.method='square';
-	flags.scaling=true;
+	% flags.method='diamond';
+	flags.method='square';
+	flags.scaling=false;
 	flags.do_plots=true;
 	flags.verbose=true;
 	flags.debug=true;
@@ -13,15 +13,15 @@ function VanDerPol_PWA()
 	x=msspoly('x',2);
 
 	% xdot=[-x(1);-x(2)];
-	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)
     end
     
     last_rho=.5;
-	delta_rho=3e-3;
+	delta_rho=3e-2;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;

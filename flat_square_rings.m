@@ -75,10 +75,10 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
 			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
 		case 'square'
-			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;];
-			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;];
-			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho];
-			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
+			constraint1=[-sum_rho-x(1);x(1)+x(2);x(1)-x(2)];
+			constraint2=[-sum_rho-x(2);x(2)-x(1);x(1)+x(2)];
+			constraint3=[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho];
+			constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2)];
 		end
 
 		if flags.scaling
@@ -136,10 +136,10 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
 			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 		case 'square'
-			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
-			constraint2=[x(1);x(2);-x(1)-x(2)-sum_rho;-(-x(1)-x(2)-last_rho)];
-			constraint3=[x(2);-x(1);x(1)-x(2)-sum_rho;-(x(1)-x(2)-last_rho)];
-			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
+			constraint1=[-sum_rho-x(1);x(1)+x(2);x(1)-x(2);-(-last_rho-x(1))];
+	        constraint2=[-sum_rho-x(2);x(2)-x(1);x(1)+x(2);-(-last_rho-x(2))];
+	        constraint3=[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho;-(x(1)-last_rho)];
+	        constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
 		end
 
 		if flags.scaling
@@ -175,6 +175,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
         	disp('L')
         	L=sol.eval(L)
         	sol.eval(LwConst)
+        	sol.eval(l)
         	disp('V')
         	sol.eval(V) 
         	disp('Vdot')
