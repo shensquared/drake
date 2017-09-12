@@ -18,7 +18,7 @@ function [V,rho,all_V,sol_OK]=VanDerPol_PWA()
 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
 	last_rho=0;
-	delta_rho=5e-3;
+	delta_rho=4e-3;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;

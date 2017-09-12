@@ -6,7 +6,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	sum_rho=last_rho+delta_rho;
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
-	
+
 	Vmonom = monomials(x,1:1);
 	[prog,V] = prog.newFreePoly(Vmonom,4);
 	w=diff(V,x);
