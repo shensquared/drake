@@ -6,6 +6,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 
 	sum_rho=last_rho+delta_rho;
 	sum_rho_order=10^(floor(log10(sum_rho)));	
+	delta_rho_order=10^(floor(log10(sum_rho)));	
 
 	switch flags.method
 	case 'diamond'
@@ -80,6 +81,12 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
 		end
 
+		% if flags.scaling
+		% 	constraint1=
+		% 	constraint2=
+		% 	constraint3=
+		% 	constraint4=
+		% end
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1));
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2));
 		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3));
@@ -135,6 +142,12 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho;-(x(1)+x(2)-last_rho)];
 		end
 
+		if flags.scaling
+			constraint1=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint1;
+			constraint2=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint2;
+			constraint3=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint3;
+			constraint4=diag([1,1,1/sum_rho_order,1/delta_rho_order])*constraint4;
+		end
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1:2)']*constraint1));
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(3:4)']*constraint2));
 		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(5:6)']*constraint3));
@@ -143,7 +156,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(0),@spot_mosek,options);
+	sol=prog.minimize(sum(-slack),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
@@ -159,6 +172,9 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
         if debug_flag
         	disp('L')
         	L=sol.eval(L)
+        	sol.eval(LwConst)
+        	disp('V')
+        	sol.eval(V) 
         	disp('Vdot')
         	sol.eval(diff(V,x)*xdot)
         	disp('flat_value')
