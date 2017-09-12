@@ -81,12 +81,12 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 			constraint4=[-x(1);-x(2);x(1)+x(2)-sum_rho];
 		end
 
-		% if flags.scaling
-		% 	constraint1=
-		% 	constraint2=
-		% 	constraint3=
-		% 	constraint4=
-		% end
+		if flags.scaling
+			constraint1=diag([1,1,1/sum_rho_order])*constraint1;
+			constraint2=diag([1,1,1/sum_rho_order])*constraint2;
+			constraint3=diag([1,1,1/sum_rho_order])*constraint3;
+			constraint4=diag([1,1,1/sum_rho_order])*constraint4;
+		end
 		prog=prog.withSOS((-slack(1)-(sum_rho_order)^2*V1dot+[L(1:2)',LwConst(1)']*constraint1));
 		prog=prog.withSOS((-slack(2)-(sum_rho_order)^2*V2dot+[L(3:4)',LwConst(2)']*constraint2));
 		prog=prog.withSOS((-slack(3)-(sum_rho_order)^2*V3dot+[L(5:6)',LwConst(3)']*constraint3));
