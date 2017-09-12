@@ -20,8 +20,8 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 	Lmonom = monomials(x,1:2);
 	LwConstMonom=monomials(x,1:2);
 
-	[prog,this_flat_value]=prog.newPos(1);
-	prog=prog.withPos(this_flat_value-1e-6*delta_rho);
+	% [prog,this_flat_value]=prog.newPos(1);
+	prog=prog.withPos(slack-1e-9*ones(4,1));
 
 	switch flags.method
 	case 'diamond'
@@ -93,7 +93,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 		[prog,L] = prog.newSOSPoly(Lmonom,8);
 		[prog,LwConst] = prog.newSOSPoly(LwConstMonom,8);
 		[prog,l]=prog.newPos(16);
-		
+
 		switch flags.method
 		case 'diamond'
 			constraint1=[x(1);-x(2);-x(1)+x(2)-sum_rho;-(-x(1)+x(2)-last_rho)];
@@ -122,30 +122,33 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(-slack),@spot_mosek,options);
+	sol=prog.minimize(sum(w),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
         V=[sol.eval(V1);sol.eval(V2);sol.eval(V3);sol.eval(V4)];
-        this_flat_value=sol.eval(this_flat_value);
         if last_rho==0
         	all_V=V;
         else
         	all_V=[all_V;V];
         end
-        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags);        
+        
+        if do_plots
+	        plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags);        
+	    end
+
         rho=sum_rho;
         if debug_flag
         	disp('L')
         	L=sol.eval(L)
         	sol.eval(LwConst)
         	sol.eval(l)
-        	% disp('V')
-        	% sol.eval(V) 
+        	disp('V')
+        	sol.eval(V) 
         	disp('Vdot')
         	sol.eval(diff(V,x)*xdot)
-        	disp('flat_value')
-        	this_flat_value
+        	disp('slack')
+        	slack=sol.eval(slack)
 	else 
 		sol_OK=false;
 		% falls back to the last valid rho

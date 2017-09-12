@@ -13,7 +13,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
                 constraint2=[-sum_rho-x(2);x(2)-x(1);x(1)+x(2);-(-last_rho-x(2))];
                 constraint3=[x(2)-x(1);-x(1)-x(2);x(1)-sum_rho;-(x(1)-last_rho)];
                 constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
-                combined=[-sum_rho-x(1);-sum_rho-x(2);x(1)-sum_rho;x(2)-sum_rho;]
+                combined=[-sum_rho-x(1);-sum_rho-x(2);x(1)-sum_rho;x(2)-sum_rho];
         end
         [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
 
@@ -39,7 +39,7 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         % Vdot plot
         subplot(1,3,3)
         w=diff(V,x);
-        regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
+        regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<0)];
         z=(regional).*(dmsubs(w*xdot,x,[a(:)';b(:)']));
         z=sum(z,1);
         z=reshape(z,size(a));

@@ -1,7 +1,7 @@
 function VanDerPol_PWA()
 	flags=struct();
-	flags.method='diamond';
-	% flags.method='square';
+	% flags.method='diamond';
+	flags.method='square';
 	flags.scaling=false;
 	flags.do_plots=true;
 	flags.verbose=true;
@@ -21,7 +21,7 @@ function VanDerPol_PWA()
     end
     
     last_rho=0;
-	delta_rho=3e-2;
+	delta_rho=3e-3;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
