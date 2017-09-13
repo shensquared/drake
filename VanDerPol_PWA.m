@@ -20,8 +20,8 @@ function VanDerPol_PWA()
 		plot_quiver(x,xdot,last_rho)
     end
     
-    last_rho=1;
-	delta_rho=3e-3;
+    last_rho=0;
+	delta_rho=3e-6;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
