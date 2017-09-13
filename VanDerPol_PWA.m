@@ -1,6 +1,7 @@
 function VanDerPol_PWA()
 	flags=struct();
-	flags.method='diamond';
+	flags.method='ran_tri';
+	% flags.method='diamond';
 	% flags.method='square';
 	flags.scaling=false;
 	flags.do_plots=true;
@@ -12,9 +13,9 @@ function VanDerPol_PWA()
 	checkDependency('mosek');
 	x=msspoly('x',2);
 
-	xdot=[-x(1);-x(2)];
+% 	xdot=[-x(1);-x(2)];
 % 	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)
@@ -25,5 +26,8 @@ function VanDerPol_PWA()
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
-	[last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags);
+	% [last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags);
+	if flags.method=='ran_tri'
+		ran_tri(x,xdot,flags);
+	end
 end
