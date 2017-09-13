@@ -122,7 +122,7 @@ function [V,rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V
 
 	options = spot_sdp_default_options();
 	options.verbose=verbose;
-	sol=prog.minimize(sum(-w-slack),@spot_mosek,options);
+	sol=prog.minimize(sum(0),@spot_mosek,options);
 
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;

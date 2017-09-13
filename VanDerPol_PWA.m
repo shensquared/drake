@@ -12,8 +12,8 @@ function VanDerPol_PWA()
 	checkDependency('mosek');
 	x=msspoly('x',2);
 
-	% xdot=[-x(1);-x(2)];
-	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	xdot=[-x(1);-x(2)];
+% 	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
 	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	
 	if flags.quiver
@@ -21,7 +21,7 @@ function VanDerPol_PWA()
     end
     
     last_rho=0;
-	delta_rho=3e-6;
+	delta_rho=3e-2;
 	last_V=zeros(4,1);
 	all_V=[];
 	sol_OK=true;
