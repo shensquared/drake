@@ -15,14 +15,14 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
                 constraint4=[x(2)-sum_rho;-x(1)-x(2);x(1)-x(2);-(x(2)-last_rho)];
                 combined=[-sum_rho-x(1);-sum_rho-x(2);x(1)-sum_rho;x(2)-sum_rho];
         end
-        [a,b]=meshgrid(-sum_rho:sum_rho/100:sum_rho,-sum_rho:sum_rho/100:sum_rho);
+        [a,b]=meshgrid(-sum_rho:sum_rho/50:sum_rho,-sum_rho:sum_rho/50:sum_rho);
 
         figure(1)
         clf
         % true piecewise
-        regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<=0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<=0)];
+        regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<0)];
         z=(regional).*(dmsubs(V,x,[a(:)';b(:)']));
-        z=sum(z,1);
+        z=1e5*sum(z,1);
         z=reshape(z,size(a));
         z(z==0) = NaN;
         subplot(1,2,1)
@@ -30,28 +30,32 @@ function plots_stuff(x,xdot,V,all_V,last_rho,delta_rho,flags)
         title('piecewise affine $$V$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+        axis equal tight
         subplot(1,2,2)
         contour(a,b,z,10);
         title('piecewise affine $$V$$ contour' ,'interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+        axis equal tight
         figure(2)
         % Vdot plot
         subplot(1,2,1)
         w=diff(V,x);
         regional=[min(dmsubs(constraint1,x,[a(:)';b(:)'])<0);min(dmsubs(constraint2,x,[a(:)';b(:)'])<0);min(dmsubs(constraint3,x,[a(:)';b(:)'])<0);min(dmsubs(constraint4,x,[a(:)';b(:)'])<0)];
         z=(regional).*(dmsubs(w*xdot,x,[a(:)';b(:)']));
-        z=sum(z,1);
+        z=1e5*sum(z,1);
         z=reshape(z,size(a));
         z(z==0) = NaN;
         surf(a,b,z);
         title('piecewise $$\dot{V}$$','interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+        axis equal tight
         subplot(1,2,2)
         contour(a,b,z,10);
         title('piecewise affine $$\dot{V}$$ contour' ,'interpreter','latex','fontsize',20) 
         xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
         ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
+        axis equal tight
 
 end
