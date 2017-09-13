@@ -54,6 +54,7 @@ function [rho,V,sol_OK]=line_search_rho(x,xdot,rho,V,samples,flags)
 		end
 	end	
 end
+
 function containment=checkContainment(x,samples)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
@@ -68,6 +69,10 @@ function containment=checkContainment(x,samples)
 	else
 		containment=false;
 	end
+end
+
+function sol_OK=checkVdotatSamples()
+
 end
 
 function V=oneLevelV(x,samples)
