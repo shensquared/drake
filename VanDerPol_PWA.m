@@ -14,20 +14,25 @@ function VanDerPol_PWA()
 	x=msspoly('x',2);
 
 % 	xdot=[-x(1);-x(2)];
-% 	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	
 	if flags.quiver
 		plot_quiver(x,xdot,last_rho)
     end
+
+    
     
     last_rho=0;
 	delta_rho=3e-2;
 	last_V=zeros(4,1);
 	all_V=[];
-	sol_OK=true;
+	sol_OK=false;
+	rho=1;
 	% [last_V,last_rho,all_V,sol_OK]=flat_square_rings(x,xdot,last_rho,delta_rho,last_V,all_V,flags);
 	if flags.method=='ran_tri'
-		ran_tri(x,xdot,flags);
+		% while(~sol_OK)
+		[samples,V,rho,sol_OK]=ran_tri(x,xdot,flags,rho)
+		% end
 	end
 end

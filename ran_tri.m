@@ -1,5 +1,6 @@
-function ran_tri(x,xdot,flags)
+function [samples,V,rho,sol_OK]=ran_tri(x,xdot,flags,rho)
 	containment=false;
+	sol_OK=false;
 	% generating samples containning the origin
 	samples=zeros(3,2);
 	while (~containment)
@@ -7,8 +8,17 @@ function ran_tri(x,xdot,flags)
 		containment=checkContainment(x,samples);
 	end
 	% disp(samples)
-	V=oneLevelV(x,samples)
+	V=oneLevelV(x,samples);
+	while(~sol_OK)
+		[rho,V,sol_OK]=line_search_rho(x,xdot,rho,V,samples,flags);
+		rho=rho/1.2
+	end
 
+
+end
+
+
+function [rho,V,sol_OK]=line_search_rho(x,xdot,rho,V,samples,flags)
 	V1dot=diff(V(1),x)*xdot;
 	V2dot=diff(V(2),x)*xdot;
 	V3dot=diff(V(3),x)*xdot;
@@ -18,9 +28,9 @@ function ran_tri(x,xdot,flags)
 	Lmonom = monomials(x,0:2);
 	[prog,L] = prog.newSOSPoly(Lmonom,9);
 
-	constraint1=[V(1)-1;V(2)-V(1);V(3)-V(1)];
-	constraint2=[V(2)-1;V(1)-V(2);V(3)-V(2)];
-	constraint3=[V(3)-1;V(1)-V(3);V(2)-V(3)];
+	constraint1=[V(1)-rho;V(2)-V(1);V(3)-V(1)];
+	constraint2=[V(2)-rho;V(1)-V(2);V(3)-V(2)];
+	constraint3=[V(3)-rho;V(1)-V(3);V(2)-V(3)];
 
 	[prog,slack]=prog.newPos(3);
 	% [prog,scalings]=prog.newPos(3);
@@ -33,15 +43,17 @@ function ran_tri(x,xdot,flags)
 	options.verbose=0;
 	sol=prog.minimize(-sum(slack),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
+		sol_OK=true;
 		disp('L')
 		sol.eval(L)
 		tri_plots(x,xdot,samples,V,flags)
 	else
-		error('derivative condition can not be satisified')
-	end
-
+		sol_OK=false;
+		if rho<1e-8
+			error('derivative condition can not be satisified')
+		end
+	end	
 end
-
 function containment=checkContainment(x,samples)
 	prog = spotsosprog;
 	prog = prog.withIndeterminate(x);
