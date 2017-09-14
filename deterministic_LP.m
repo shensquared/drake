@@ -1,117 +1,122 @@
-function [samples,V,rho,sol_OK]=deterministic_LP(x,xdot,flags,rho)
-	containment=false;
+function deterministic_LP()
 	sol_OK=false;
-	% generating two linearly indepdenet samples
-	linear_depedent=false;
-	samples=zeros(2,2);
-	while (~linear_depedent)
-		samples=randn(2,2);
-		linear_depedent=rank(samples==2);
+
+	rho=1;
+	[a,b]=meshgrid(-rho:rho/4:rho,-rho:rho/4:rho);
+	[centroid_a,centroid_b]=meshgrid(-11/12*rho:rho/4:5/6*rho,-11/12*rho:rho/4:5/6*rho);
+	[centroid_c,centroid_d]=meshgrid(-5/6*rho:rho/4:11/12*rho,-5/6*rho:rho/4:11/12*rho);
+
+	% a=reshape(a,[81,1]);
+	% b=reshape(b,[81,1]);
+	centroid_a=reshape(centroid_a,[64,1]);
+	centroid_b=reshape(centroid_b,[64,1]);
+	centroid_c=reshape(centroid_c,[64,1]);
+	centroid_d=reshape(centroid_d,[64,1]);
+	% clf
+	% scatter(a,b); hold on
+	% scatter(centroid_a,centroid_b)
+	x=msspoly('x',2);
+	% xdot = [-2*x(1); -2*x(2)];
+	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
+
+	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+
+	df=diff(xdot,x);
+
+	A1=dmsubs(df(:,1),x,[centroid_a(:)';centroid_b(:)']);
+	A2=dmsubs(df(:,2),x,[centroid_a(:)';centroid_b(:)']);
+	A=[];
+	for i =1:64
+		A=[A,A1(:,i),A2(:,i)];
 	end
-	centroid=2/3*[sum(samples,1);sum(samples,2)];
+	% A=mat2cell(A,2,2*ones(64,1));
 
-	% disp(samples)
-
-	while(~sol_OK)
-		[rho,V,sol_OK]=line_search_rho(x,xdot,rho,V,samples,flags);
-		rho=rho/1.2
-	end
-
-
+	vert_values=find_V(x,xdot,A,rho,a,b);
+	% scatter(centroid_c,centroid_d)
+	% A=dmsubs(diff(xdot,x),x,centroids);
 end
 
-function [V,level_values]=find_V(x,xdot,samples,centroid,flags)
+function vert_values=find_V(x,xdot,A,rho,a,b)
 	prog=spotsosprog;
 	prog=prog.withIndeterminate(x);
-	Vmonom=monomials(x,1:1);
-	[prog,V]=prog.newFreePoly(Vmonom);
+	[prog,vert_values]=prog.newPos(81);
+	[prog,slacks]=prog.newPos(64);
+	slacks=reshape(slacks,[8,8])
+	vert_values=reshape(vert_values,[9,9]);
+	prog=prog.withEqs(vert_values(5,5));
+	% the exterior values are the same
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,2));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,3));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,4));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,5));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,6));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,7));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,8));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(1,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(2,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(3,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(4,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(5,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(6,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(7,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(8,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,1));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,2));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,3));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,4));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,5));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,6));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,7));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,8));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(9,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(8,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(7,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(6,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(5,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(4,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(3,9));
+	prog=prog.withEqs(vert_values(1,1)-vert_values(2,9));
+	prog=prog.withEqs(vert_values(1,1)-1);
+	vert_values_no_top=vert_values(2:9,:);
+	vert_values_no_right=vert_values(:,1:8);
 
-	% zero at zero
-	prog=prog.withEqs(subs(V,x,zeros(2,1)));
-	% strictly positive at the other vertices
-	prog=prog.withPos(subs(V,x,samples));
+	for i=1:8
+		for j=1:8
+			w1(i,j)=(1/(.25*rho)).*(vert_values_no_top(i,j+1)-vert_values_no_top(i,j));
+			w2(i,j)=(1/(.25*rho)).*(vert_values_no_right(i+1,j)-vert_values_no_right(i,j));
+		end
+	end
+	w1=reshape(w1,64,1);
+	w2=reshape(w2,64,1);
+	% for i=1:64
+	% 	Vdot(i)=[w1(i),w2(i)]*A{i}*x
+	% end
+	xrep=repmat(x,[64,1]);
+	Vdot=[w1,w2]*A*xrep;
+	Vdot=reshape(Vdot,[8,8]);
 
-	df=diff(xdot,x);%nbyn
-	A=subs(df,x,centroid);
+	for i=1:8
+		for j=1:8
+			% verts=[(a(i,j);b(i,j));;(a(i+1,j);b(i+1,j))];
+			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
+			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i+1,j);b(i+1,j)])));
+			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
 
-	partialV=diff(V,x);  %1byn
+		end
+	end
+	slacks=reshape(slacks,[64,1]);
+
 	% vdot<0 at the vertices, with f approxiamted at the centroid
-	prog=prog.withPos(-(subs(partialV*A*x,x,samples)));
 	
 	options = spot_sdp_default_options();
-	options.verbose=0;
-	sol=prog.minimize(-sum(0),@spot_mosek,options);
+	options.verbose=1;
+	sol=prog.minimize(-sum(slacks),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
-		sol.eval(L)
-		tri_plots(x,xdot,samples,V,flags)
-	else
-		sol_OK=false;
-		if rho<1e-8
-			error('derivative condition can not be satisified')
-		end
-	end	
+		values=double(sol.eval(vert_values))
+		surf(a,b,values);
+	end
 end
 
 
 
-
-function [rho,V,sol_OK]=line_search_rho(x,xdot,rho,V,samples,flags)
-	V1dot=diff(V(1),x)*xdot;
-	V2dot=diff(V(2),x)*xdot;
-	V3dot=diff(V(3),x)*xdot;
-	prog = spotsosprog;
-	prog = prog.withIndeterminate(x);
-
-	Lmonom = monomials(x,0:2);
-	[prog,L] = prog.newSOSPoly(Lmonom,9);
-
-	constraint1=[V(1)-rho;V(2)-V(1);V(3)-V(1)];
-	constraint2=[V(2)-rho;V(1)-V(2);V(3)-V(2)];
-	constraint3=[V(3)-rho;V(1)-V(3);V(2)-V(3)];
-
-	[prog,slack]=prog.newPos(3);
-	% [prog,scalings]=prog.newPos(3);
-
-	prog=prog.withSOS(-slack(1)-V1dot+[L(1:3)']*constraint1);
-	prog=prog.withSOS(-slack(2)-V2dot+[L(4:6)']*constraint2);
-	prog=prog.withSOS(-slack(3)-V3dot+[L(7:9)']*constraint3);
-
-	options = spot_sdp_default_options();
-	options.verbose=0;
-	sol=prog.minimize(-sum(slack),@spot_mosek,options);
-	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
-		sol_OK=true;
-		disp('L')
-		sol.eval(L)
-		tri_plots(x,xdot,samples,V,flags)
-	else
-		sol_OK=false;
-		if rho<1e-8
-			error('derivative condition can not be satisified')
-		end
-	end	
-end
-
-
-function V=oneLevelV(x,samples)
-	prog = spotsosprog;
-	prog = prog.withIndeterminate(x);
-	Vmonom = monomials(x,1:1);
-	[prog,V] = prog.newFreePoly(Vmonom,3);
-	prog=prog.withEqs(subs(V(1),x,samples(1,:)')-1);
-	prog=prog.withEqs(subs(V(2),x,samples(1,:)')-1);
-	prog=prog.withEqs(subs(V(2),x,samples(2,:)')-1);
-	prog=prog.withEqs(subs(V(3),x,samples(2,:)')-1);
-	prog=prog.withEqs(subs(V(3),x,samples(3,:)')-1);
-	prog=prog.withEqs(subs(V(1),x,samples(3,:)')-1);
-
-	options = spot_sdp_default_options();
-	options.verbose=0;
-	sol=prog.minimize(0,@spot_mosek,options);
-	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
-		V=sol.eval(V);
-	else
-		error('can not find a valid tuple of candidate V')
-    end
-end
