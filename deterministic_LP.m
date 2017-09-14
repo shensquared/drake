@@ -1,89 +1,62 @@
 function deterministic_LP()
 	sol_OK=false;
 
-	rho=1;
-	resolution=4;
+	rho=1.5;
+	resolution=8;
+	row_verts=2*resolution+1;
 	num_tris=(2*resolution)^2;
-	[a,b]=meshgrid(-rho:rho/resolution:rho,-rho:rho/resolution:rho);
-	[centroid_a,centroid_b]=meshgrid(-11/12*rho:rho/4:5/6*rho,-11/12*rho:rho/4:5/6*rho);
-	% [centroid_c,centroid_d]=meshgrid(-5/6*rho:rho/4:11/12*rho,-5/6*rho:rho/4:11/12*rho);
+	num_verts=(row_verts)^2;
 
-	% a=reshape(a,[81,1]);
-	% b=reshape(b,[81,1]);
+
+	[a,b]=meshgrid(-rho:rho/resolution:rho,-rho:rho/resolution:rho);
+	[centroid_a,centroid_b]=meshgrid((-3+1/resolution)*rho/3:rho/resolution:(3-2/resolution)*rho/3,(-3+1/resolution)*rho/3:rho/resolution:(3-2/resolution)*rho/3);
+	[centroid_c,centroid_d]=meshgrid((-3+2/resolution)*rho/3:rho/resolution:(3-1/resolution)*rho/3,(-3+2/resolution)*rho/3:rho/resolution:(3-1/resolution)*rho/3);
+
 	centroid_a=reshape(centroid_a,[num_tris,1]);
 	centroid_b=reshape(centroid_b,[num_tris,1]);
-	% centroid_c=reshape(centroid_c,[num_tris,1]);
-	% centroid_d=reshape(centroid_d,[num_tris,1]);
+	centroid_c=reshape(centroid_c,[num_tris,1]);
+	centroid_d=reshape(centroid_d,[num_tris,1]);
 	% clf
-	% scatter(a,b); hold on
-	% scatter(centroid_a,centroid_b)
+	scatter(reshape(a,[num_verts,1]),reshape(b,[num_verts,1])); hold on
+	scatter(centroid_a,centroid_b); hold on
+	scatter(centroid_c,centroid_d); hold on
+
 	x=msspoly('x',2);
 	% xdot = [-2*x(1); -2*x(2)];
 	% xdot = [-2*x(1)+x(1)^3; -2*x(2)+x(2)^3];
-
 	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 
 	df=diff(xdot,x);
-
 	A1=dmsubs(df(:,1),x,[centroid_a(:)';centroid_b(:)']);
 	A2=dmsubs(df(:,2),x,[centroid_a(:)';centroid_b(:)']);
 	A=[];
 	for i =1:num_tris
 		A=[A,A1(:,i),A2(:,i)];
 	end
-	% A=mat2cell(A,2,2*ones(64,1));
 
-	vert_values=find_V(x,xdot,A,rho,resolution,a,b);
+	% vert_values=find_V(x,xdot,A,rho,resolution,a,b);
 	% scatter(centroid_c,centroid_d)
-	% A=dmsubs(diff(xdot,x),x,centroids);
 end
 
 function vert_values=find_V(x,xdot,A,rho,resolution,a,b)
 	row_verts=2*resolution+1;
-	num_tris=(2*resolution)^2
+	num_tris=(2*resolution)^2;
 	num_verts=(row_verts)^2;
 	prog=spotsosprog;
 	prog=prog.withIndeterminate(x);
 	[prog,vert_values]=prog.newPos(num_verts);
 	[prog,slacks]=prog.newPos(num_tris);
-	slacks=reshape(slacks,[2*resolution,2*resolution])
+	slacks=reshape(slacks,[2*resolution,2*resolution]);
 	vert_values=reshape(vert_values,[row_verts,row_verts]);
 	prog=prog.withEqs(vert_values(resolution+1,resolution+1));
 	% the exterior values are the same
+	prog=prog.withEqs(vert_values(1,1)-1);
+
 	for i=1:row_verts
 		for j=1:row_verts
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,2));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,3));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,4));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,5));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,6));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,7));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,8));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(1,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(2,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(3,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(4,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(5,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(6,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(7,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(8,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,1));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,2));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,3));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,4));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,5));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,6));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,7));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,8));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(9,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(8,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(7,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(6,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(5,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(4,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(3,9));
-			prog=prog.withEqs(vert_values(1,1)-vert_values(2,9));
-			prog=prog.withEqs(vert_values(1,1)-1);
+			if i==1|j==1|i==row_verts|j==row_verts
+				prog=prog.withEqs(vert_values(i,j)-1);
+			end
 		end
 	end
 
@@ -121,12 +94,16 @@ function vert_values=find_V(x,xdot,A,rho,resolution,a,b)
 	
 	options = spot_sdp_default_options();
 	options.verbose=1;
-	sol=prog.minimize(-sum(0),@spot_mosek,options);
+	sol=prog.minimize(-sum(slacks),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
 		values=double(sol.eval(vert_values))
 		surf(a,b,values);
+		title('piecewise $$\dot{V}$$','interpreter','latex','fontsize',20) 
+		xlabel('$$ x_1 $$','interpreter','latex','fontsize',15)
+		ylabel('$$ x_2 $$','interpreter','latex','fontsize',15)
 	end
+
 end
 
 
