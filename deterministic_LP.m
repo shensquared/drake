@@ -1,8 +1,8 @@
 function deterministic_LP()
 	sol_OK=false;
 
-	rho=1;
-	resolution=10;
+	rho=.9;
+	resolution=18;
 	row_verts=2*resolution+1;
 	num_tris=(2*resolution)^2;
 	num_verts=(row_verts)^2;
