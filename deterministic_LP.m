@@ -1,12 +1,9 @@
 function deterministic_LP()
-	sol_OK=false;
-
 	rho=.9;
 	resolution=18;
 	row_verts=2*resolution+1;
 	num_tris=(2*resolution)^2;
 	num_verts=(row_verts)^2;
-
 
 	[a,b]=meshgrid(-rho:rho/resolution:rho,-rho:rho/resolution:rho);
 	[centroid_a,centroid_b]=meshgrid((-3+1/resolution)*rho/3:rho/resolution:(3-2/resolution)*rho/3,(-3+1/resolution)*rho/3:rho/resolution:(3-2/resolution)*rho/3);
@@ -65,22 +62,30 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b)
 	prog=prog.withEqs(vert_values(:,1)-1);
 	prog=prog.withEqs(vert_values(:,row_verts)-1);
 
+% partialVpartialx
 	column_diff=vert_values(:,2)-vert_values(:,1);
 	row_diff=vert_values(2,:)-vert_values(1,:);
-
 	for i=2:row_verts-1
 		column_diff=[column_diff,vert_values(:,i+1)-vert_values(:,i)];
 		row_diff=[row_diff;vert_values(i+1,:)-vert_values(i,:)];
 	end
+	xrep=repmat(x,[num_tris,1]);
 
 % % lower triangles
 	w1=column_diff(2:row_verts,:);
 	w2=row_diff(:,1:row_verts-1);
 	w1=reshape(w1,num_tris,1);
 	w2=reshape(w2,num_tris,1);
-	xrep=repmat(x,[num_tris,1]);
 	Vdot=[w1,w2]*A*xrep;
 	Vdot=reshape(Vdot,[2*resolution,2*resolution]);
+% upper triangless
+	n1=column_diff(1:row_verts-1,:);
+	n2=row_diff(:,2:row_verts);
+	n1=reshape(n1,num_tris,1);
+	n2=reshape(n2,num_tris,1);
+	Vdot_B=[n1,n2]*B*xrep;
+	Vdot_B=reshape(Vdot_B,[2*resolution,2*resolution]);
+
 	for i=1:2*resolution
 		for j=1:2*resolution
 			prog=prog.withPos(-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
@@ -88,14 +93,7 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b)
 			prog=prog.withPos(-(subs(Vdot(i,j),x,[a(i+1,j+1);b(i+1,j+1)])));
 		end
 	end
-% upper triangless
-	n1=column_diff(1:row_verts-1,:);
-	n2=row_diff(:,2:row_verts);
-	n1=reshape(n1,num_tris,1);
-	n2=reshape(n2,num_tris,1);
 
-	Vdot_B=[n1,n2]*B*xrep;
-	Vdot_B=reshape(Vdot_B,[2*resolution,2*resolution]);
 	% for i=1:2*resolution
 	% 	for j=1:2*resolution
 	% 		% verts=[(a(i,j);b(i,j));;(a(i+1,j);b(i+1,j))];
@@ -109,7 +107,6 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b)
 	% slacks=reshape(slacks,[num_tris,1]);
 	% slacks_B=reshape(slacks_B,[num_tris,1]);
 
-	
 	options = spot_sdp_default_options();
 	options.verbose=1;
 	sol=prog.minimize(0,@spot_mosek,options);
