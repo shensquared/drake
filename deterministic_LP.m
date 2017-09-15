@@ -39,44 +39,43 @@ function deterministic_LP()
 	for i =1:num_tris
 		B=[B,B1(:,i),B2(:,i)];
 	end
-	vert_values=find_V(x,xdot,A,rho,resolution,a,b);
+	vert_values=find_V(x,xdot,A,B,rho,resolution,a,b);
 end
 
-function vert_values=find_V(x,xdot,A,rho,resolution,a,b)
+function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b)
 	row_verts=2*resolution+1;
 	num_tris=(2*resolution)^2;
 	num_verts=(row_verts)^2;
 	prog=spotsosprog;
 	prog=prog.withIndeterminate(x);
 	[prog,vert_values]=prog.newPos(num_verts);
-	[prog,slacks]=prog.newPos(num_tris);
-	slacks=reshape(slacks,[2*resolution,2*resolution]);
+	% [prog,slacks]=prog.newPos(num_tris);
+	% slacks=reshape(slacks,[2*resolution,2*resolution]);
 
-	[prog,slacks_B]=prog.newPos(num_tris);
-	slacks_B=reshape(slacks_B,[2*resolution,2*resolution]);
+	% [prog,slacks_B]=prog.newPos(num_tris);
+	% slacks_B=reshape(slacks_B,[2*resolution,2*resolution]);
 
 % vertices values constrains
 	vert_values=reshape(vert_values,[row_verts,row_verts]);
 	% vert_value=0 at the origin
 	prog=prog.withEqs(vert_values(resolution+1,resolution+1));
 	% the exterior values are the same, all equal to 1
-	prog=prog.withEqs(vert_values(1,1)-1);
-	for i=1:row_verts
-		for j=1:row_verts
-			if i==1|j==1|i==row_verts|j==row_verts
-				prog=prog.withEqs(vert_values(i,j)-1);
-			end
-		end
+	prog=prog.withEqs(vert_values(1,:)-1);
+	prog=prog.withEqs(vert_values(row_verts,:)-1);
+	prog=prog.withEqs(vert_values(:,1)-1);
+	prog=prog.withEqs(vert_values(:,row_verts)-1);
+
+	column_diff=vert_values(:,2)-vert_values(:,1);
+	row_diff=vert_values(2,:)-vert_values(1,:);
+
+	for i=2:row_verts-1
+		column_diff=[column_diff,vert_values(:,i+1)-vert_values(:,i)];
+		row_diff=[row_diff;vert_values(i+1,:)-vert_values(i,:)];
 	end
-% lower triangles
-	vert_values_no_top=vert_values(2:row_verts,:);
-	vert_values_no_right=vert_values(:,1:row_verts-1);
-	for i=1:2*resolution
-		for j=1:2*resolution
-			w1(i,j)=(resolution/(rho)).*(vert_values_no_top(i,j+1)-vert_values_no_top(i,j));
-			w2(i,j)=(resolution/(rho)).*(vert_values_no_right(i+1,j)-vert_values_no_right(i,j));
-		end
-	end
+
+% % lower triangles
+	w1=column_diff(2:row_verts,:);
+	w2=row_diff(:,1:row_verts-1);
 	w1=reshape(w1,num_tris,1);
 	w2=reshape(w2,num_tris,1);
 	xrep=repmat(x,[num_tris,1]);
@@ -84,47 +83,39 @@ function vert_values=find_V(x,xdot,A,rho,resolution,a,b)
 	Vdot=reshape(Vdot,[2*resolution,2*resolution]);
 	for i=1:2*resolution
 		for j=1:2*resolution
-			% verts=[(a(i,j);b(i,j));;(a(i+1,j);b(i+1,j))];
-			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
-			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i+1,j);b(i+1,j)])));
-			prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
+			prog=prog.withPos(-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
+			prog=prog.withPos(-(subs(Vdot(i,j),x,[a(i+1,j);b(i+1,j)])));
+			prog=prog.withPos(-(subs(Vdot(i,j),x,[a(i+1,j+1);b(i+1,j+1)])));
+		end
+	end
+% upper triangless
+	n1=column_diff(1:row_verts-1,:);
+	n2=row_diff(:,2:row_verts);
+	n1=reshape(n1,num_tris,1);
+	n2=reshape(n2,num_tris,1);
 
-		end
-	end
-% upper triangles
-	vert_values_no_buttom=vert_values(1:row_verts-1,:);
-	vert_values_no_left=vert_values(:,2:row_verts);
-	for i=1:2*resolution
-		for j=1:2*resolution
-			n1(i,j)=(resolution/(rho)).*(vert_values_no_top(i,j+1)-vert_values_no_top(i,j));
-			n2(i,j)=(resolution/(rho)).*(vert_values_no_right(i+1,j)-vert_values_no_right(i,j));
-		end
-	end
-	% w1=reshape(w1,num_tris,1);
-	% w2=reshape(w2,num_tris,1);
-	% xrep=repmat(x,[num_tris,1]);
-	% Vdot=[w1,w2]*A*xrep;
-	% Vdot=reshape(Vdot,[2*resolution,2*resolution]);
+	Vdot_B=[n1,n2]*B*xrep;
+	Vdot_B=reshape(Vdot_B,[2*resolution,2*resolution]);
 	% for i=1:2*resolution
 	% 	for j=1:2*resolution
 	% 		% verts=[(a(i,j);b(i,j));;(a(i+1,j);b(i+1,j))];
-	% 		prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
-	% 		prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i+1,j);b(i+1,j)])));
-	% 		prog=prog.withPos(-slacks(i,j)-(subs(Vdot(i,j),x,[a(i,j);b(i,j)])));
+	% 		prog=prog.withPos(-(subs(Vdot_B(i,j),x,[a(i,j);b(i,j)])));
+	% 		prog=prog.withPos(-(subs(Vdot_B(i,j),x,[a(i,j+1);b(i,j+1)])));
+	% 		prog=prog.withPos(-(subs(Vdot_B(i,j),x,[a(i+1,j+1);b(i+1,j+1)])));
 
 	% 	end
 	% end
 
-	slacks=reshape(slacks,[num_tris,1]);
+	% slacks=reshape(slacks,[num_tris,1]);
+	% slacks_B=reshape(slacks_B,[num_tris,1]);
 
-	% vdot<0 at the vertices, with f approxiamted at the centroid
 	
 	options = spot_sdp_default_options();
 	options.verbose=1;
-	sol=prog.minimize(-sum(0),@spot_mosek,options);
+	sol=prog.minimize(0,@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
-		sol.eval(slacks)
+		% sol.eval(slacks)
 		values=double(sol.eval(vert_values))
 		tri = delaunay(a,b);
 		trisurf(tri,a,b,values);
