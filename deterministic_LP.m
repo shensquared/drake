@@ -22,8 +22,8 @@ function deterministic_LP()
 	centroid_d=reshape(centroid_d,[num_tris,1]);
 	
 	% xdot = [-2*x(1); -2*x(2)];
-	% xdot = [-x(1)+x(1)^3; -x(2)+x(2)^3];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	xdot = [-x(1)+x(1)^3; -x(2)+x(2)^3];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	A=[];Ax=[];bias_A=[];B=[];Bx=[];bias_B=[];
 	for i =1:num_tris
 		shifted_xdot=subs(xdot,x,[x(1)+centroid_a(i);x(2)+centroid_b(i)]);
@@ -92,7 +92,7 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	[prog,slacks_B]=prog.newPos(num_tris);
 	slacks_B=reshape(slacks_B,[2*resolution,2*resolution]);
 	[prog,ext_value]=prog.newPos(1);
-
+	prog=prog.withEqs(ext_value-10);
 % vertices values constrains
 	vert_values=reshape(vert_values,[row_verts,row_verts]);
 	% vert_value=0 at the origin
@@ -103,7 +103,7 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	prog=prog.withEqs(vert_values(row_verts,:)-ext_value);
 	prog=prog.withEqs(vert_values(:,1)-ext_value);
 	prog=prog.withEqs(vert_values(:,row_verts)-ext_value);
-	prog=prog.withPos(ext_value*ones(size(vert_values(2:end,2:end)))-vert_values(2:end,2:end));
+	% prog=prog.withPos(ext_value*ones(size(vert_values(2:end,2:end)))-vert_values(2:end,2:end));
 % partialVpartialx
 	column_diff=vert_values(:,2)-vert_values(:,1);
 	row_diff=vert_values(2,:)-vert_values(1,:);
@@ -163,26 +163,26 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	for i=1:2*resolution
 		for j=1:2*resolution
 			% lower tri
-			Vdotvert1=subs(Vdot(i,j),x,[grids(:,i+1,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j);
-			% true1=subs(trueVdotA(i,j),x,[grids(:,i+1,j)])
+			Vdotvert1=subs(Vdot(i,j),x,[grids(:,i,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j);
+			true1=subs(trueVdotA(i,j),x,[grids(:,i,j)]);
 			Vdotvert2=subs(Vdot(i,j),x,[grids(:,i,j+1)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j);
-			% true2=subs(trueVdotA(i,j),x,[grids(:,i,j+1)])
-			Vdotvert3=subs(Vdot(i,j),x,[grids(:,i+1,j+1)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j);
-			% true3=subs(trueVdotA(i,j),x,[grids(:,i+1,j+1)])
+			true2=subs(trueVdotA(i,j),x,[grids(:,i,j+1)]);
+			Vdotvert3=subs(Vdot(i,j),x,[grids(:,i+1,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j);
+			true3=subs(trueVdotA(i,j),x,[grids(:,i+1,j)]);
 			prog=prog.withPos(-slacks(i,j)-Vdotvert1);
 			prog=prog.withPos(-slacks(i,j)-Vdotvert2);
 			prog=prog.withPos(-slacks(i,j)-Vdotvert3);
 
 			% upper tri
-			Vdot_Bvert1=subs(Vdot_B(i,j),x,[grids(:,i,j+1)-[centroid_c(i,j);centroid_d(i,j)]])+bias_w_B(i,j);
-			% trueB1=subs(trueVdotB(i,j),x,[grids(:,i,j+1)])
+			Vdot_Bvert1=subs(Vdot_B(i,j),x,[grids(:,i+1,j)-[centroid_c(i,j);centroid_d(i,j)]])+bias_w_B(i,j);
+			trueB1=subs(trueVdotB(i,j),x,[grids(:,i+1,j)]);
 			Vdot_Bvert2=subs(Vdot_B(i,j),x,[grids(:,i+1,j+1)-[centroid_c(i,j);centroid_d(i,j)]])+bias_w_B(i,j);
-			% trueB2=subs(trueVdotB(i,j),x,[grids(:,i+1,j+1)])
-			Vdot_Bvert3=subs(Vdot_B(i,j),x,[grids(:,i+1,j)-[centroid_c(i,j);centroid_d(i,j)]])+bias_w_B(i,j);
-			% trueB3=subs(trueVdotB(i,j),x,[grids(:,i+1,j)])
-			% prog=prog.withPos(-slacks_B(i,j)-Vdot_Bvert1);
+			trueB2=subs(trueVdotB(i,j),x,[grids(:,i+1,j+1)]);
+			Vdot_Bvert3=subs(Vdot_B(i,j),x,[grids(:,i,j+1)-[centroid_c(i,j);centroid_d(i,j)]])+bias_w_B(i,j);
+			trueB3=subs(trueVdotB(i,j),x,[grids(:,i,j+1)]);
+			prog=prog.withPos(-slacks_B(i,j)-Vdot_Bvert1);
 			prog=prog.withPos(-slacks_B(i,j)-Vdot_Bvert2);
-			% prog=prog.withPos(-slacks_B(i,j)-Vdot_Bvert3);
+			prog=prog.withPos(-slacks_B(i,j)-Vdot_Bvert3);
 		end
 	end
 
@@ -192,7 +192,7 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	slacks_B=reshape(slacks_B,[num_tris,1]);
 	options = spot_sdp_default_options();
 	options.verbose=1;
-	sol=prog.minimize(0,@spot_mosek,options);
+	sol=prog.minimize(-sum(slacks)-sum(slacks_B),@spot_mosek,options);
 	if sol.status==spotsolstatus.STATUS_PRIMAL_AND_DUAL_FEASIBLE
 		sol_OK=true;
 		% sol.eval(slacks)
