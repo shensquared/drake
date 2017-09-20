@@ -2,8 +2,8 @@ function deterministic_LP()
 	findV=true;
 	pause_sec=0;
 
-	rho=.9;
-	resolution=10;
+	rho=1;
+	resolution=4;
 
 	checkDependency('spotless');
 	checkDependency('mosek');
@@ -21,21 +21,27 @@ function deterministic_LP()
 	centroid_c=reshape(centroid_c,[num_tris,1]);
 	centroid_d=reshape(centroid_d,[num_tris,1]);
 	
-	% xdot = [-2*x(1); -2*x(2)];
+	% centroid_a=reshape(centroid_a,[2*resolution,2*resolution]);
+	% centroid_b=reshape(centroid_b,[2*resolution,2*resolution]);
+	% centroid_c=reshape(centroid_c,[2*resolution,2*resolution]);
+	% centroid_d=reshape(centroid_d,[2*resolution,2*resolution]);
+
+
+	xdot = [-2*x(1); -2*x(2) ];
 	% xdot = [-x(1)+x(1)^3; -x(2)+x(2)^3];
-	xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
+	% xdot = -[x(2); -x(1)-x(2).*(x(1).^2-1)];
 	A=[];Ax=[];bias_A=[];B=[];Bx=[];bias_B=[];
-	for i =1:num_tris
+	% for i =1:2*resolution
+	% 	for j=1:2*resolution
+	for i=1:num_tris
 		shifted_xdot=subs(xdot,x,[x(1)+centroid_a(i);x(2)+centroid_b(i)]);
 		current_df=diff(shifted_xdot,x);
 		current_centroid=[centroid_a(i)';centroid_b(i)'];
 		current_bias=subs(xdot,x,current_centroid);
 		bias_A=[bias_A,current_bias];
-		A1=dmsubs(current_df(:,1),x,zeros(2,1));
-		A2=dmsubs(current_df(:,2),x,zeros(2,1));
-		current_A=[A1,A2];
-		A=[A,A1,A2];
-		Ax=[Ax,subs(current_A,x,zeros(2,1))];
+		current_A=subs(current_df,x,zeros(2,1));
+		A=[A,current_A];
+		% Ax=[Ax,subs(current_A,x,zeros(2,1))];
 
 		% shifted_xdot=subs(xdot,x,[x(1)-centroid_c(i);x(2)-centroid_d(i)]);
 		% current_df=diff(shifted_xdot,x);
@@ -47,6 +53,7 @@ function deterministic_LP()
 		% current_B=[B1,B2];
 		% B=[B,B1,B2];
 		% Bx=[Bx,subs(current_B,x,zeros(2,1))];
+		% end
 	end
 
 	% figure('units','normalized','outerposition',[0 0 1 1])
@@ -84,6 +91,12 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	row_verts=2*resolution+1;
 	num_tris=(2*resolution)^2;
 	num_verts=(row_verts)^2;
+	a=reshape(a,[num_verts,1]);
+	b=reshape(b,[num_verts,1]);
+	grids=[a';b'];
+	grids=reshape(grids,[2,row_verts,row_verts]);
+
+
 	prog=spotsosprog;
 	prog=prog.withIndeterminate(x);
 	[prog,vert_values]=prog.newPos(num_verts);
@@ -99,10 +112,10 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	% vert_value=0 at the origin
 	prog=prog.withEqs(vert_values(resolution+1,resolution+1));
 	% the exterior values are the same, all >ext_value
-	prog=prog.withEqs(vert_values(1,:)-ext_value);
-	prog=prog.withEqs(vert_values(row_verts,:)-ext_value);
-	prog=prog.withEqs(vert_values(:,1)-ext_value);
-	prog=prog.withEqs(vert_values(:,row_verts)-ext_value);
+	prog=prog.withPos(vert_values(1,:)-ext_value);
+	prog=prog.withPos(vert_values(row_verts,:)-ext_value);
+	prog=prog.withPos(vert_values(:,1)-ext_value);
+	prog=prog.withPos(vert_values(:,row_verts)-ext_value);
 	prog=prog.withPos(ext_value*ones(size(vert_values(2:end,2:end)))-vert_values(2:end,2:end));
 % partialVpartialx
 	column_diff=flip(vert_values(:,2)-vert_values(:,1))';
@@ -150,10 +163,6 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 	% bias_w_B=reshape(bias_w_B,[2*resolution,2*resolution]);
 	% trueVdotB=reshape(trueVdotB,[2*resolution,2*resolution]);
 
-	a=reshape(a,[num_verts,1]);
-	b=reshape(b,[num_verts,1]);
-	grids=[a';b'];
-	grids=reshape(grids,[2,row_verts,row_verts]);
 
 	centroid_a=reshape(centroid_a,[2*resolution,2*resolution]);
 	centroid_b=reshape(centroid_b,[2*resolution,2*resolution]);
@@ -165,12 +174,15 @@ function vert_values=find_V(x,xdot,A,B,rho,resolution,a,b,centroid_a,centroid_b,
 		for j=1:2*resolution
 			% lower tri
 			disp('lower')
-			Vdotvert1=subs(Vdot(i,j),x,[grids(:,i,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
-			true1=subs(trueVdotA(i,j),x,[grids(:,i,j)])
-			Vdotvert2=subs(Vdot(i,j),x,[grids(:,i,j+1)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
-			true2=subs(trueVdotA(i,j),x,[grids(:,i,j+1)])
-			Vdotvert3=subs(Vdot(i,j),x,[grids(:,i+1,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
-			true3=subs(trueVdotA(i,j),x,[grids(:,i+1,j)])
+			grids(:,i,j)
+			Vdotvert1=subs(Vdot(j,i),x,[grids(:,i,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
+			% true1=subs(trueVdotA(i,j),x,[grids(:,i,j)])
+			grids(:,i,j+1)
+			Vdotvert2=subs(Vdot(j,i),x,[grids(:,i,j+1)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
+			% true2=subs(trueVdotA(i,j),x,[grids(:,i,j+1)])
+			grids(:,i+1,j)
+			Vdotvert3=subs(Vdot(j,i),x,[grids(:,i+1,j)-[centroid_a(i,j);centroid_b(i,j)]])+bias_w(i,j)
+			% true3=subs(trueVdotA(i,j),x,[grids(:,i+1,j)])
 			prog=prog.withPos(-slacks(i,j)-Vdotvert1);
 			prog=prog.withPos(-slacks(i,j)-Vdotvert2);
 			prog=prog.withPos(-slacks(i,j)-Vdotvert3);
