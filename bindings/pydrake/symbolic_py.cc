@@ -11,10 +11,12 @@
 #include "drake/bindings/pydrake/pydrake_pybind.h"
 #include "drake/bindings/pydrake/symbolic_types_pybind.h"
 #include "drake/bindings/pydrake/util/wrap_pybind.h"
+#include "drake/solvers/sos_basis_generator.h"
 
 namespace drake {
 namespace pydrake {
 
+// using solvers::ConstructMonomialBasis;
 using std::map;
 using std::string;
 
@@ -313,7 +315,6 @@ PYBIND11_MODULE(_symbolic_py, m) {
       .def("floor", &symbolic::floor);
 
   m.def("if_then_else", &symbolic::if_then_else);
-
   m.def("Jacobian", [](const Eigen::Ref<const VectorX<Expression>>& f,
                        const Eigen::Ref<const VectorX<Variable>>& vars) {
     return Jacobian(f, vars);
@@ -469,6 +470,7 @@ PYBIND11_MODULE(_symbolic_py, m) {
            [](const Polynomial& self, const Environment::map& env) {
              return self.Evaluate(Environment{env});
            })
+      .def("ConstructMonomialBasis", &solvers::ConstructMonomialBasis)
       .def("Jacobian", [](const Polynomial& p,
                           const Eigen::Ref<const VectorX<Variable>>& vars) {
         return p.Jacobian(vars);
